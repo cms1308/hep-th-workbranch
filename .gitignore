@@ -1,0 +1,17 @@
+# LaTeX build artifacts
+*.aux
+*.log
+*.out
+*.toc
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.bbl
+*.blg
+
+.DS_Store
+__pycache__/
+
+# research projects stay local — only the generic harness is tracked
+projects/*
+!projects/.gitkeep
