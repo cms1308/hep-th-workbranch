@@ -39,6 +39,8 @@ projects/<slug>/
 /resume-project cold-start briefing in a new session, then continue
 /paper         JHEP-style draft from established results
 /revise        flow-aware revision of the draft
+/proofread     systematic read-through of the draft: stale refs, symbol collisions,
+               claim/data mismatches vs notes/calc, terminology drift
 ```
 
 If the user says they are about to clear/end the session, run the `/pause` protocol
