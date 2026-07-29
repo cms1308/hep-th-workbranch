@@ -77,6 +77,18 @@ The vault at `/Users/cms1308/git/LLMwiki` is the primary knowledge source
 ## Conventions
 
 - Interact with the user in Korean; write all artifacts (STATE, notes, paper) in English.
+- **Never invent terminology.** Do not coin a term, a label, or a compressed noun phrase
+  to name an idea. Two allowed moves: use the word the literature or the draft already
+  uses, or write the description out in full every time — including when no standard
+  term exists. Banned: notation-derived labels ("½-tensor" for a node with
+  $N_{\rm rank\text{-}2}=\tfrac12$), metaphors for technical operations ("its anomaly
+  filled by bifundamentals"), coined contrasts standing in for an argument, and rare
+  synonyms for something the draft already names. Test before writing any noun phrase
+  as a name: grep the draft — if it is not already there, it is not a term. A phrase
+  occurring exactly once is itself the smell.
+- **When a phrase is unclear, cut it, don't gloss it.** These readers do not need the
+  background restated; the surrounding equations and worked examples usually already
+  carry the content. Propose an expansion only if the information appears nowhere else.
 - Papers use the JHEP class (`jheppub.sty`).
 - Per-project notation (signature, normalizations, index conventions) is fixed in
   `PROJECT.md` and used consistently everywhere, including the paper.

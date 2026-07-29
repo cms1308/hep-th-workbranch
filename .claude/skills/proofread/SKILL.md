@@ -36,6 +36,12 @@ sections not yet proofread this session, in order.
    - **Terminology drift**: after a rename (notation, "scenario" vs
      "topology", criterion names), grep the whole file for survivors of the
      old term, including in generated tables and captions.
+   - **Coined terminology**: any noun phrase used as a name that the draft does not
+     already establish — notation-derived labels, metaphors for technical operations,
+     rare synonyms for something the draft already names. Hapax compounds are the
+     tell: grep each candidate, and one occurrence means it is description rather
+     than a term, so spell it out or cut it. Never repair such a phrase by adding an
+     explanatory gloss.
    - **Imported-text grammar**: legacy sentences with missing articles/verbs.
 
 3. **Physics changes are out of scope.** If a candidate fix would alter a
