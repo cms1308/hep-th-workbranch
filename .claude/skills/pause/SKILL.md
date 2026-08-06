@@ -6,6 +6,9 @@ description: Checkpoint the active research project before ending or clearing a 
 1. **Flush in-progress work.** An unfinished derivation goes into the current step's note
    as a `## WIP` section stating exactly where it stopped, what has been checked so far,
    and what remains. Scratch computations go into `calc/` with a one-line header comment.
+   If the draft was edited this session, bring `paper/PUNCHLINES.md` back in sync before
+   checkpointing; if that cannot be finished now, record in `STATE.md` exactly which
+   sections' entries are stale.
 2. **Rewrite `STATE.md`** so a fresh session with zero conversation memory can continue:
    - Status line (phase + date)
    - Plan checklist, up to date

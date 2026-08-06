@@ -1,6 +1,6 @@
 ---
 name: proofread
-description: Systematic section-by-section read-through of the active project's paper draft — find and fix stale references, symbol collisions, claim/data mismatches, and terminology drift. Use when the user asks to check, read through, or proofread a section or the whole draft (distinct from /revise, which applies a user-specified change).
+description: Systematic section-by-section read-through of the active project's paper draft — find and fix stale references, symbol collisions, claim/data mismatches, terminology drift, and paragraphs that no longer make the claim PUNCHLINES.md records for them. Use when the user asks to check, read through, or proofread a section or the whole draft (distinct from /revise, which applies a user-specified change).
 ---
 
 Input: optional section spec ("3.2", "sec:dualAF", "intro", "all"). Default: the
@@ -15,7 +15,24 @@ sections not yet proofread this session, in order.
    `calc/out/*.json` it cites. If a claim cannot be traced, that is itself a
    finding.
 
+   Read the thesis, the spine, and the target sections' blocks in
+   `paper/PUNCHLINES.md`. If the map has no block for a target section, write it
+   from `templates/PUNCHLINES.md` as you read — producing the punchlines *is* the
+   read-through, and what will not compress into one is a finding below.
+
 2. **Hunt with the checklist** (each item has caught real defects):
+   - **Paragraph against its punchline**: the paragraph no longer makes the
+     claim the map records for it. Decide which side moved, against the notes:
+     prose that drifted is a text finding, a map entry left behind by an earlier
+     revision is a map finding. Report which.
+   - **Paragraphs that carry no claim**: one you cannot state a punchline for,
+     or two whose punchlines are the same. Propose cutting or merging — a
+     paragraph that survives only because it is already written is the most
+     common thing a punchline pass catches.
+   - **Section against the spine**: a section whose punchline no spine claim
+     needs, or a spine claim no section establishes. This is structural, so
+     surface it to the user rather than repairing the map to agree with the
+     draft — silently rewriting the map hides the finding.
    - **Stale cross-references**: prose describing content that a later revision
      moved or deleted ("exhibited below", "as shown in Section X", "we quantify
      this in ..."). These are the most common casualty of restructuring passes.
@@ -53,7 +70,13 @@ sections not yet proofread this session, in order.
    0 errors and 0 undefined references/citations, and grep-check that renames
    left no orphans.
 
-5. **Commit** (per the project's standing commit policy) with a message
+5. **Re-sync the map**: grep every anchor in the target sections' blocks of
+   `paper/PUNCHLINES.md`. An anchor that no longer matches means the paragraph
+   moved, was rewritten, or is gone — update the entry either way. Then update
+   the punchlines the fixes changed, the section line numbers, and the `sync:`
+   line.
+
+6. **Commit** (per the project's standing commit policy) with a message
    listing the findings, and **report in Korean**: per finding — what was
    wrong, what it became, and why; state explicitly which sections are now
-   proofread and which remain.
+   proofread and which remain, and which sections the map now covers.

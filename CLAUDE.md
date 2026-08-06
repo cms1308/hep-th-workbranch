@@ -20,13 +20,15 @@ Never calculate or edit inside a project without having read its `PROJECT.md` an
 
 ```
 CLAUDE.md            this protocol
-templates/           PROJECT.md / STATE.md / note templates — start new files from these
+templates/           PROJECT.md / STATE.md / note / PUNCHLINES.md templates — start new files from these
 projects/<slug>/
   PROJECT.md         problem formulation, background, references, conventions (stable)
   STATE.md           live continuity: status, plan checklist, results, current step, open questions
   notes/NN-<step>.md permanent record of each completed step
   calc/              re-runnable scripts (sympy etc.), one per calculation
   paper/             JHEP LaTeX draft (created by /paper)
+    main.tex         the draft
+    PUNCHLINES.md    thesis, spine, and one punchline per section and per paragraph
 ```
 
 ## Lifecycle
@@ -40,7 +42,8 @@ projects/<slug>/
 /paper         JHEP-style draft from established results
 /revise        flow-aware revision of the draft
 /proofread     systematic read-through of the draft: stale refs, symbol collisions,
-               claim/data mismatches vs notes/calc, terminology drift
+               claim/data mismatches vs notes/calc, terminology drift, paragraphs that
+               no longer make the claim PUNCHLINES.md records for them
 ```
 
 If the user says they are about to clear/end the session, run the `/pause` protocol
@@ -73,6 +76,23 @@ The vault at `/Users/cms1308/git/LLMwiki` is the primary knowledge source
 
 - Update `STATE.md` at the end of **every completed step**, not only at `/pause`.
 - `notes/` is the permanent record; `STATE.md` holds only distilled results and pointers.
+
+## Paper discipline
+
+- Every draft carries `paper/PUNCHLINES.md` (from `templates/PUNCHLINES.md`): the paper's
+  thesis in one sentence, the spine of claims it rests on, and one punchline — the single
+  claim the text exists to make — for every section and every paragraph. Paragraphs are
+  identified by an anchor, their first ~6 words verbatim, so entries survive edits that
+  move text.
+- Read the map before touching the draft, and update it in the edit that changes what a
+  paragraph claims — never as a later sweep. A map that disagrees with the draft is worse
+  than no map, so `/proofread` treats a mismatch as a finding and resolves it against the
+  notes.
+- Never invent a punchline for a paragraph that makes no claim, and never adjust the
+  spine to accommodate a section that no spine claim needs. Both are findings for the
+  user, and both are the point of keeping the map.
+- The terminology rule below applies to the map as well: punchlines are written in the
+  draft's own words.
 
 ## Conventions
 
