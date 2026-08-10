@@ -59,6 +59,11 @@ sections not yet proofread this session, in order.
      tell: grep each candidate, and one occurrence means it is description rather
      than a term, so spell it out or cut it. Never repair such a phrase by adding an
      explanatory gloss.
+   - **Notes voice**: material `PAPER-STYLE.md` says does not cross from `notes/` —
+     verification bookkeeping, textbook-level review of standard facts, single-use
+     symbols, narration of the order the work happened in. Run its candidate triggers
+     as a grep, and read each setup or method paragraph against the question of
+     whether a referee would see a paper or uploaded project notes.
    - **Imported-text grammar**: legacy sentences with missing articles/verbs.
 
 3. **Physics changes are out of scope.** If a candidate fix would alter a

@@ -25,7 +25,9 @@ Never apply a requested edit blind. Protocol:
    complying. A change that contradicts the thesis or a spine claim is not a wording
    question: surface it as such.
 5. **Edit surgically**: the requested change plus the ripple edits it genuinely forces —
-   no drive-by rewording of untouched text.
+   no drive-by rewording of untouched text. New prose obeys `PAPER-STYLE.md`; text pulled
+   in from `notes/` to answer the request goes through its notes → paper filter rather
+   than being pasted across.
 6. **Update the map in the same edit.** Every paragraph whose claim changed, and every
    paragraph added, deleted, or moved; the section punchline if what the section
    contributes changed; the spine or thesis if the change reaches that far; anchors for

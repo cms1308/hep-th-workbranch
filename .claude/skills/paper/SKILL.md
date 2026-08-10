@@ -32,11 +32,20 @@ result goes where. Wait for the user's OK before writing.
 
 ## 4. Write
 
-Section by section from the notes: derivations compressed to paper level, long algebra
-moved to appendices, notation exactly as fixed in `PROJECT.md`. Abstract and
-introduction state precisely what is new.
+Read `PAPER-STYLE.md` first and apply its notes → paper filter to every section: the
+notes are written for the next session, the paper for a referee, and most of what a note
+records deliberately does not cross. Notation exactly as fixed in `PROJECT.md`. Abstract
+and introduction state precisely what is new.
 
-As each section is finished, record it in `paper/PUNCHLINES.md`: the section's punchline
+Order each section by what the reader needs next to accept the thesis, not by the order
+the steps were done in — the notes' order is the default the draft has to be moved off.
+
+As each section is finished, run the "Before leaving a section" checks in
+`PAPER-STYLE.md` on it — coined terminology, symbol hygiene, self-containedness, claims
+traceable — and fix what they find while the section is still open. Leaving them to
+`/proofread` means rewriting text that should not have been written that way.
+
+Then record the section in `paper/PUNCHLINES.md`: the section's punchline
 and one punchline per paragraph, with anchors. Do this while the section is fresh, not in
 a sweep at the end. A paragraph you cannot state a punchline for does not belong in the
 draft — cut it or merge it into its neighbour before moving on, and the same goes for two

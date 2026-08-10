@@ -20,6 +20,7 @@ Never calculate or edit inside a project without having read its `PROJECT.md` an
 
 ```
 CLAUDE.md            this protocol
+PAPER-STYLE.md       what keeps a draft from reading like project notes — read before writing paper/
 templates/           PROJECT.md / STATE.md / note / PUNCHLINES.md templates — start new files from these
 projects/<slug>/
   PROJECT.md         problem formulation, background, references, conventions (stable)
@@ -79,6 +80,9 @@ The vault at `/Users/cms1308/git/LLMwiki` is the primary knowledge source
 
 ## Paper discipline
 
+- `PAPER-STYLE.md` holds the notes → paper filter and the style rules the drafts here are
+  held to. Read it before writing or revising `paper/*.tex`. It grows by recording defects
+  found in real drafts.
 - Every draft carries `paper/PUNCHLINES.md` (from `templates/PUNCHLINES.md`): the paper's
   thesis in one sentence, the spine of claims it rests on, and one punchline — the single
   claim the text exists to make — for every section and every paragraph. Paragraphs are
@@ -110,5 +114,10 @@ The vault at `/Users/cms1308/git/LLMwiki` is the primary knowledge source
   background restated; the surrounding equations and worked examples usually already
   carry the content. Propose an expansion only if the information appears nowhere else.
 - Papers use the JHEP class (`jheppub.sty`).
+- **Never hard-wrap `.tex` prose.** Each paragraph is a single source line; newlines only
+  between paragraphs and around environments and comments. Environment internals
+  (`equation`, `tabular`, `tikzpicture`) and comment lines keep their own line structure.
+  This applies to every write and every edit of a `.tex` file — an edit must not
+  reintroduce mid-paragraph breaks into a line it touches.
 - Per-project notation (signature, normalizations, index conventions) is fixed in
   `PROJECT.md` and used consistently everywhere, including the paper.
