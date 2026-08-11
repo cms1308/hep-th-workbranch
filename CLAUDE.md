@@ -30,6 +30,7 @@ projects/<slug>/
   paper/             JHEP LaTeX draft (created by /paper)
     main.tex         the draft
     PUNCHLINES.md    thesis, spine, and one punchline per section and per paragraph
+  report/            plain-language TL;DR report (created by /report)
 ```
 
 ## Lifecycle
@@ -41,6 +42,7 @@ projects/<slug>/
 /pause         checkpoint before ending a session
 /resume-project cold-start briefing in a new session, then continue
 /paper         JHEP-style draft from established results
+/report        plain-language TL;DR report (tex+pdf) from notes/ — English by default, Korean on request
 /revise        flow-aware revision of the draft
 /proofread     systematic read-through of the draft: stale refs, symbol collisions,
                claim/data mismatches vs notes/calc, terminology drift, paragraphs that
