@@ -48,6 +48,11 @@ Plain `article` class (11pt, sensible margins via `geometry`), `amsmath`,
 `hyperref` — deliberately not the JHEP class. For Korean use `kotex` and compile
 with `latexmk -xelatex`; English compiles with `latexmk -pdf`.
 
+In a Korean report, technical terms stay in English: physics terminology
+(superpotential, anomaly matching, moduli space, ...), group/symmetry names, and
+mathematical objects are written in English as-is, with Korean carrying the
+surrounding prose. Do not translate or transliterate them into Korean.
+
 Sections, in order:
 
 1. **TL;DR** — a boxed paragraph of 3–5 sentences at the top: question, answer,
