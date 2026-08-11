@@ -58,6 +58,18 @@ has been fixed.
 - **No `\boxed` equations.** Emphasis on a display comes from the surrounding prose
   naming it as the result, not from a frame (user, 2026-08-11; removed from
   eq:positivity and eq:RY-closed in susu-quiver).
+- **A fact carried over from `notes/` states only itself.** The notes record a checked
+  fact in isolation, often in the source's framing; a draft that lifts the sentence tends
+  to supply the surrounding picture from nothing, and that picture is not checked. Before
+  writing a fact imported from a note, recompute its neighbours — the other members of the
+  set it belongs to — and write what the whole set does.
+  Real case (ad-chains, 2026-08-11, caught by the user twice a day apart): notes/06,07,10
+  record the two-sided parity fact as "the flipped middle Casimir sits at exactly $R=2/3$
+  with its partner $X$ at exactly $4/3$". Two successive drafts wrapped it in "in the
+  two-sided families no operator drops below the bound", which is false — every other
+  flipped Casimir sits strictly below $2/3$ and its partner strictly above $4/3$, so a
+  single $(2/3,4/3)$ pair was never the picture. The neighbours take one line to compute
+  and would have caught it either time.
 
 ## Before leaving a section
 
