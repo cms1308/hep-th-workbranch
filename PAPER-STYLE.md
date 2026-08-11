@@ -55,6 +55,9 @@ has been fixed.
   ways", not "validated on five anchors". The main text states background and facts.
 - **No single-use symbols.** Do not introduce a symbol whose value is never used; if the
   only thing said about it is a relation, state the relation in prose instead.
+- **No `\boxed` equations.** Emphasis on a display comes from the surrounding prose
+  naming it as the result, not from a frame (user, 2026-08-11; removed from
+  eq:positivity and eq:RY-closed in susu-quiver).
 
 ## Before leaving a section
 
