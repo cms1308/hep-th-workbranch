@@ -99,3 +99,9 @@ is what `/proofread` is for.
 Grep the main text for: `we checked`, `we verified`, `cross-check`, `sanity check`,
 `for completeness`, `as expected`, `it turns out`. These are notes voice; each occurrence
 is a candidate finding, not an automatic error.
+
+- **One normalization per quantity, paper-wide.** A quantity displayed in one
+  normalization is displayed in that normalization everywhere: if the paper's standard
+  form is $b_0=(\cdots)N+O(1)$, never write $b_0/N=\cdots+O(1/N)$ elsewhere — and never
+  mix the two inside one display (user, 2026-08-13; eq:multipair-b0 in susu-quiver had
+  $b_0^{(\widetilde1)}$ exact next to $b_0^{(2)\rm mag}/N$).
