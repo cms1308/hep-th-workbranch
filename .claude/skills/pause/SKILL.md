@@ -21,6 +21,10 @@ description: Checkpoint the active research project before ending or clearing a 
    - Current step: exactly ONE stopping point — this session's — and the very next
      action. The previous stopping point is superseded; delete it, its content is
      already in its note.
+   - Paper (projects with a draft): the standing style and content decisions, each
+     stated once. Supersede in place — a decision that replaced an earlier one leaves no
+     trace of the earlier one. `/revise` and `/proofread` write here as they go, so at
+     pause this section is checked for duplicates, not rebuilt.
    - Open questions / gotchas: failed approaches, subtle conventions, pending ingests —
      anything this session learned the hard way. Delete entries once resolved rather
      than striking them through.

@@ -81,7 +81,13 @@ sections not yet proofread this session, in order.
    the punchlines the fixes changed, the section line numbers, and the `sync:`
    line.
 
-6. **Commit** (per the project's standing commit policy) with a message
+6. **Record any standing decision in the same pass.** Where a finding was resolved by
+   fixing a rule rather than a sentence — a term banned, a symbol scoped, a convention
+   settled with the user — write it into the Paper section of `STATE.md` before
+   committing, superseding in place rather than appending beside the rule it replaces.
+   Findings resolved against the notes need no entry; what needs one is anything a later
+   session could reintroduce without knowing it had been decided.
+7. **Commit** (per the project's standing commit policy) with a message
    listing the findings, and **report in Korean**: per finding — what was
    wrong, what it became, and why; state explicitly which sections are now
    proofread and which remain, and which sections the map now covers.

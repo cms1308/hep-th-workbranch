@@ -33,6 +33,13 @@ Never apply a requested edit blind. Protocol:
    contributes changed; the spine or thesis if the change reaches that far; anchors for
    any paragraph whose opening words changed; the `sync:` line. A map that disagrees with
    the draft is worse than no map.
-7. **Recompile** (`latexmk -pdf`) and report in Korean: what changed, where ripple edits
+7. **Record any standing decision in the same edit.** If the change established a rule
+   rather than a one-off fix — a notation choice, a banned phrasing, a naming convention,
+   a citation set, a scope decision — write it into the Paper section of `STATE.md` now,
+   in the user's own terms. Supersede in place: replace the rule it changes rather than
+   leaving the old and the new side by side. The test is whether a later session could
+   undo it without knowing it was decided; if so it is a rule, and the draft alone does
+   not record it. A plain wording fix is not a rule — do not log every edit.
+8. **Recompile** (`latexmk -pdf`) and report in Korean: what changed, where ripple edits
    were needed and why, and which punchlines moved — flagging explicitly if the edit
    changed a spine claim or the thesis.
