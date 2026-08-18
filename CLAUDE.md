@@ -64,6 +64,15 @@ The vault at `/Users/cms1308/git/LLMwiki` is the primary knowledge source
   explicitly says so, and record that caveat in `STATE.md` open questions.
 - Never edit the vault from here. Results worth keeping → suggest `/wiki-ingest`.
 - Propagate wiki citations into notes, `PROJECT.md`, and the paper.
+- **Novelty claims require a literature search first** (user rule, 2026-08-18). Before
+  writing that a result is "new", "not in the literature", or "unremarked", search for it
+  beyond the wiki: alphaXiv/arXiv full-text and INSPIRE for the specific formula, identity,
+  or statement (searching the objects themselves — e.g. "fermionic expression Macdonald
+  index" — not just the papers already cited). Absence from the wiki or from the one source
+  paper is NOT evidence of novelty. Record in the note what was searched and what was (not)
+  found; if a match surfaces, cite it and recalibrate the claim (e.g. "proves the
+  conjecture of X" instead of "new"). Origin: step 26 of ad-chains claimed a fermionic form
+  as unremarked; it was Conjecture 1 of Foda–Zhu [1912.01896], caught by the user.
 
 ## Calculation discipline
 
