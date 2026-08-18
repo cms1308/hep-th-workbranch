@@ -25,7 +25,10 @@ For each step:
    into Established results as a new (R) entry, and REPLACE the current step and next
    action with this step's. The previous stopping point is superseded — delete it
    instead of leaving it beside the new one. `STATE.md` accumulates only in Established
-   results; every other section is rewritten in place.
+   results; every other section is rewritten in place. Bring Status with it whenever this
+   step changed what it says — a phase finished or entered, the next action moved, a plan
+   step opened or closed. Status is where the project stands now, in a few lines, not a
+   record of the sessions that got it there.
 
 If a step reveals the plan itself is wrong, propose the revised plan to the user before
 continuing — do not silently reroute.
