@@ -20,8 +20,12 @@ For each step:
    `STATE.md` open questions and tell the user.
 4. **Record.** Write `notes/NN-<slug>.md` from `templates/note.md`: goal, setup,
    derivation, boxed result, verification outcomes, interpretation.
-5. **Update `STATE.md`**: check off the step, distill the result into Established
-   results, set the current step and next action.
+5. **Update `STATE.md`**: check off the step as ONE checklist line (title, date,
+   notes/calc refs, (R) number — not a summary of what it found), distill the result
+   into Established results as a new (R) entry, and REPLACE the current step and next
+   action with this step's. The previous stopping point is superseded — delete it
+   instead of leaving it beside the new one. `STATE.md` accumulates only in Established
+   results; every other section is rewritten in place.
 
 If a step reveals the plan itself is wrong, propose the revised plan to the user before
 continuing — do not silently reroute.

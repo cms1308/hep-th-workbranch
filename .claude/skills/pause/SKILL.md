@@ -9,14 +9,26 @@ description: Checkpoint the active research project before ending or clearing a 
    If the draft was edited this session, bring `paper/PUNCHLINES.md` back in sync before
    checkpointing; if that cannot be finished now, record in `STATE.md` exactly which
    sections' entries are stale.
-2. **Rewrite `STATE.md`** so a fresh session with zero conversation memory can continue:
-   - Status line (phase + date)
-   - Plan checklist, up to date
-   - Established results with formulas inline
-   - Current step: exact stopping point and the very next action
+2. **Rewrite `STATE.md`** so a fresh session with zero conversation memory can continue.
+   Rewrite means REPLACE, never append: every section holds the current state, not a log
+   of the sessions that produced it.
+   - Status: phase + date. Replace the standing status; do not leave a dated paragraph
+     beside it.
+   - Plan: a checklist. One line per step — title, date, `[notes/NN, calc/*.py]`, and its
+     (R) number. What the step established goes in Established results, not here, and
+     never in both.
+   - Established results: the one place results accumulate, formulas inline.
+   - Current step: exactly ONE stopping point — this session's — and the very next
+     action. The previous stopping point is superseded; delete it, its content is
+     already in its note.
    - Open questions / gotchas: failed approaches, subtle conventions, pending ingests —
-     anything this session learned the hard way.
-3. **Verify the checkpoint**: re-read `STATE.md` and ask "could I continue from the files
+     anything this session learned the hard way. Delete entries once resolved rather
+     than striking them through.
+3. **Check the size.** `STATE.md` is a pointer file: it should stay far smaller than the
+   `notes/` it points to. If it grew this session, find what should have been replaced
+   and was appended instead — repeated dated blocks and per-step result summaries
+   duplicated between Plan and Established results are the usual causes.
+4. **Verify the checkpoint**: re-read `STATE.md` and ask "could I continue from the files
    alone?" If anything is missing, add it now.
-4. Report to the user in Korean: what was saved, and the one-line resume instruction
+5. Report to the user in Korean: what was saved, and the one-line resume instruction
    (`새 세션에서 /resume-project <slug>`).
