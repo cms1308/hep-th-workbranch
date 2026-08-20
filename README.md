@@ -15,11 +15,15 @@ Knowledge lives in the [LLMwiki](../LLMwiki) vault; continuity lives in each pro
 /resume-project [slug]      cold-start briefing in a new session, continue
 /paper                      JHEP-style draft from established results
 /revise <request>           flow-aware revision of the draft
+/proofread [section]        read-through for stale refs, symbol collisions, claim/data mismatches
+/report                     plain-language TL;DR report (tex + pdf) from notes/
 ```
 
 Each project is `projects/<slug>/` with `PROJECT.md` (formulation, stable),
 `STATE.md` (live state), `notes/` (per-step records), `calc/` (re-runnable scripts),
-`paper/` (LaTeX). See `CLAUDE.md` for the full protocol.
+`paper/` (LaTeX draft, plus `PUNCHLINES.md` recording the claim each section and
+paragraph exists to make), `report/` (plain-language TL;DR). See `CLAUDE.md` for the
+full protocol and `PAPER-STYLE.md` for the style rules drafts are held to.
 
 Research projects themselves stay local: `projects/` is gitignored, so this repo tracks
 only the generic harness. To adopt it, clone and edit the personal bits in `CLAUDE.md`
