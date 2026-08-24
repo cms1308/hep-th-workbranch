@@ -55,6 +55,13 @@ has been fixed.
   ways", not "validated on five anchors". The main text states background and facts.
 - **No single-use symbols.** Do not introduce a symbol whose value is never used; if the
   only thing said about it is a relation, state the relation in prose instead.
+- **Don't compress an argument into a summary clause.** A closing formula that
+  only a reader who already understands the paragraph can parse ("the one-sided
+  chains realize the two ends of the moment-map flow with the same fields")
+  hides the argument instead of making it. Write the steps out: which theories,
+  which operator, what adding it does. If the compressed line is redundant with
+  the paragraph, cut it; if it is not, the paragraph was missing a step (user,
+  2026-08-24, ad-chains §3 ¶5).
 - **No `\boxed` equations.** Emphasis on a display comes from the surrounding prose
   naming it as the result, not from a frame (user, 2026-08-11; removed from
   eq:positivity and eq:RY-closed in susu-quiver).
