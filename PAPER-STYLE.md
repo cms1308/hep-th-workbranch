@@ -55,6 +55,15 @@ has been fixed.
   ways", not "validated on five anchors". The main text states background and facts.
 - **No single-use symbols.** Do not introduce a symbol whose value is never used; if the
   only thing said about it is a relation, state the relation in prose instead.
+- **A technical clause states its role in the claim, not just its fact.** A soundness
+  condition dropped into a paragraph as a bare fact ("no gauge-invariant operator
+  violates the unitarity bound at any of the maxima") leaves the reader unable to say
+  what the paragraph's claim needs it for. Write the role: "the quoted central charges
+  are the infrared values --- nothing falls below the unitarity bound, so no decoupling
+  revises them." Test: delete the clause and ask what objection to the punchline
+  returns; that objection is what the clause should be phrased against. (ad-chains §4,
+  2026-08-26: the endpoint-soundness clause survived four rounds of author confusion
+  because its role was never stated.)
 - **Don't compress an argument into a summary clause.** A closing formula that
   only a reader who already understands the paragraph can parse ("the one-sided
   chains realize the two ends of the moment-map flow with the same fields")
