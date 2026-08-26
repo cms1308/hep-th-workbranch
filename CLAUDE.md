@@ -99,8 +99,10 @@ The vault at `/Users/cms1308/git/LLMwiki` is the primary knowledge source
   claim the text exists to make — for every section and every paragraph. Paragraphs are
   identified by an anchor, their first ~6 words verbatim, so entries survive edits that
   move text.
-- Read the map before touching the draft, and update it in the edit that changes what a
-  paragraph claims — never as a later sweep. A map that disagrees with the draft is worse
+- The map precedes the prose: `/paper` fixes the thesis, structures the claims that
+  establish it — the punchlines — and only then writes text to match (user rule,
+  2026-08-26). Read the map before touching the draft, and update it in the edit that
+  changes what a paragraph claims — never as a later sweep. A map that disagrees with the draft is worse
   than no map, so `/proofread` treats a mismatch as a finding and resolves it against the
   notes.
 - Never invent a punchline for a paragraph that makes no claim, and never adjust the

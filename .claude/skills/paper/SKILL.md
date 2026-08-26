@@ -30,26 +30,34 @@ result goes where. Wait for the user's OK before writing.
 - `paper/PUNCHLINES.md` from `templates/PUNCHLINES.md`, filled in with the signed-off
   thesis and spine. It is written before the prose, not after.
 
-## 4. Write
+## 4. Map first, then write
 
-Read `PAPER-STYLE.md` first and apply its notes → paper filter to every section: the
-notes are written for the next session, the paper for a referee, and most of what a note
-records deliberately does not cross. Notation exactly as fixed in `PROJECT.md`. Abstract
-and introduction state precisely what is new.
+**The full punchline map precedes all prose** (user rule, 2026-08-26: fix what the paper
+claims, structure the steps that establish it — those steps ARE the punchlines — and
+only then write text to match; never write first and extract punchlines after). Before
+any prose, extend `paper/PUNCHLINES.md` to the complete argument: every planned
+section's punchline, and under it one punchline per planned paragraph — each the single
+claim a unit of text will exist to make, ordered by what the reader needs next to accept
+the thesis, not by the order the steps were done in. This is structuring the argument,
+not summarizing text: a paragraph is planned because the spine needs its claim, never
+because material exists for it. Anchors stay empty at this stage — they are filled with
+the paragraph's first ~6 words once the prose exists.
 
-Order each section by what the reader needs next to accept the thesis, not by the order
-the steps were done in — the notes' order is the default the draft has to be moved off.
+Then write to the map: each paragraph is written to make exactly its pre-declared
+punchline. If writing reveals the map is wrong — a step missing, a claim that splits,
+a planned paragraph not needed — change the map first, deliberately, then write;
+never let the prose drift and re-derive its punchline afterwards.
+
+Read `PAPER-STYLE.md` before writing and apply its notes → paper filter to every
+section: the notes are written for the next session, the paper for a referee, and most
+of what a note records deliberately does not cross. Notation exactly as fixed in
+`PROJECT.md`. Abstract and introduction state precisely what is new.
 
 As each section is finished, run the "Before leaving a section" checks in
 `PAPER-STYLE.md` on it — coined terminology, symbol hygiene, self-containedness, claims
-traceable — and fix what they find while the section is still open. Leaving them to
-`/proofread` means rewriting text that should not have been written that way.
-
-Then record the section in `paper/PUNCHLINES.md`: the section's punchline
-and one punchline per paragraph, with anchors. Do this while the section is fresh, not in
-a sweep at the end. A paragraph you cannot state a punchline for does not belong in the
-draft — cut it or merge it into its neighbour before moving on, and the same goes for two
-paragraphs that come out with the same punchline.
+traceable — fix what they find while the section is still open (leaving them to
+`/proofread` means rewriting text that should not have been written that way), fill in
+the anchors, and confirm each paragraph still makes its mapped claim.
 
 ## 5. Compile and record
 
