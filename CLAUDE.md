@@ -64,7 +64,12 @@ The vault at `/Users/cms1308/git/LLMwiki` is the primary knowledge source
   explicitly says so, and record that caveat in `STATE.md` open questions.
 - Never edit the vault from here. Results worth keeping → suggest `/wiki-ingest`.
 - Propagate wiki citations into notes, `PROJECT.md`, and the paper.
-- **Novelty claims require a literature search first** (user rule, 2026-08-18). Before
+- **Novelty claims require a literature search first** (user rule, 2026-08-18).
+- **Citation-attribution checks also go beyond the wiki** (user rule, 2026-08-26): when
+  verifying who a result or convention should be credited to, read the primary sources
+  (arXiv/alphaXiv full text, INSPIRE), not just the wiki pages — wiki attribution can be
+  coarse. Origin: the (A_1,D_6)/(A_1,A_5) Schur indices were first conjectured in
+  Buican--Nishinaka [1505.05884], visible only in the CS/BN primary texts. Before
   writing that a result is "new", "not in the literature", or "unremarked", search for it
   beyond the wiki: alphaXiv/arXiv full-text and INSPIRE for the specific formula, identity,
   or statement (searching the objects themselves — e.g. "fermionic expression Macdonald
