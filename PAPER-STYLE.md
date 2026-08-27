@@ -97,6 +97,17 @@ in the same pass that records the punchlines.
 - **Every noun phrase used as a name**: grep the draft for it. Not already there means it
   is not a term — use the literature's word, or write the description out in full. Do not
   repair one by adding a gloss. A phrase that occurs exactly once is the tell.
+- **`notes/` vocabulary is not paper vocabulary.** The grep-the-draft test above is
+  circular once an earlier session has written the working label into the draft:
+  "termination", "one-sided/two-sided chain", "end superpotential", "active
+  deformation", "flip set", "frame", and a label system ("$D$/$A_1$/$A_2$
+  terminations", superpotentials named $W_{D|A_2}$ after them) all passed it for two
+  weeks in ad-chains until the user's professor flagged them as invented terms
+  (2026-08-27) and the paper had to be restructured to remove them. Test against the
+  literature: would a paper in the field use the phrase? If not, name the object by
+  what the literature names (the SCFT it flows to, an equation number) or describe the
+  configuration in full ("flavors at one end", "the superpotential terms at node
+  $n$"). When picking up a draft mid-project, audit it for this before adding to it.
 - **Every symbol**: defined before its first use, used more than once, and spelled as
   `PROJECT.md` fixes it.
 - **Self-containedness**: a reader with only the paper in hand has every definition,
