@@ -71,6 +71,14 @@ has been fixed.
   which operator, what adding it does. If the compressed line is redundant with
   the paragraph, cut it; if it is not, the paragraph was missing a step (user,
   2026-08-24, ad-chains §3 ¶5).
+- **No glosses on formulas, no interpretive closers.** A clause that explains what a
+  displayed formula already shows ("where $\phi_ib^2\phi_{i+1}$ is the unique gauge
+  contraction of the four fields", "which is why they carry the $X_k$", "the plethystic
+  exponential assembles the multi-letter states and the Haar integral projects onto gauge
+  singlets") or that restates a paragraph as its meaning ("a flow between two
+  non-Lagrangian theories is thereby realized by…") is filler to this reader. State the
+  fact once, in the formula or in the claim; do not narrate it (user, 2026-08-27,
+  ad-chains: "제발 이 논문에 필요없는 쓸데없는 말, 해석들 넣지 마").
 - **No `\boxed` equations.** Emphasis on a display comes from the surrounding prose
   naming it as the result, not from a frame (user, 2026-08-11; removed from
   eq:positivity and eq:RY-closed in susu-quiver).
