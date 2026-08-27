@@ -79,6 +79,7 @@ has been fixed.
   non-Lagrangian theories is thereby realized by…") is filler to this reader. State the
   fact once, in the formula or in the claim; do not narrate it (user, 2026-08-27,
   ad-chains: "제발 이 논문에 필요없는 쓸데없는 말, 해석들 넣지 마").
+- **A colon must add, not rename.** "realized by the singlets and the $\tr\phi_k^2$ that carry no $X$: the operators $M_0$, $M_j$ and $\tr\phi_k^2$ with $k>\lceil n/2\rceil$…" says the same set twice, once in words and once in symbols. Write the set once, in the form that carries the information — the symbols with their index ranges — and let the count follow from the ranges instead of being asserted ("Their number is $n$") (user, 2026-08-27, ad-chains §3 ¶3).
 - **No `\boxed` equations.** Emphasis on a display comes from the surrounding prose
   naming it as the result, not from a frame (user, 2026-08-11; removed from
   eq:positivity and eq:RY-closed in susu-quiver).
