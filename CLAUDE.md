@@ -30,6 +30,8 @@ projects/<slug>/
   paper/             JHEP LaTeX draft (created by /paper)
     main.tex         the draft
     PUNCHLINES.md    thesis, spine, and one punchline per section and per paragraph
+    CITATIONS.md     per-citation ledger: where in the cited paper the claim sits, and
+                     whether that paper is the original source (maintained by /cite-check)
   report/            plain-language TL;DR report (created by /report)
 ```
 
@@ -47,6 +49,9 @@ projects/<slug>/
 /proofread     systematic read-through of the draft: stale refs, symbol collisions,
                claim/data mismatches vs notes/calc, terminology drift, paragraphs that
                no longer make the claim PUNCHLINES.md records for them
+/cite-check    every \cite against the cited paper itself: exact location of the claim
+               (equation/section/table), whether the paper is the ORIGINAL source or a
+               restatement, bib entry vs INSPIRE; maintains paper/CITATIONS.md
 ```
 
 If the user says they are about to clear/end the session, run the `/pause` protocol
@@ -68,7 +73,12 @@ The vault at `/Users/cms1308/git/LLMwiki` is the primary knowledge source
 - **Citation-attribution checks also go beyond the wiki** (user rule, 2026-08-26): when
   verifying who a result or convention should be credited to, read the primary sources
   (arXiv/alphaXiv full text, INSPIRE), not just the wiki pages — wiki attribution can be
-  coarse. Origin: the (A_1,D_6)/(A_1,A_5) Schur indices were first conjectured in
+  coarse. The systematic form of this is `/cite-check` (user rule, 2026-08-27): every
+  citation in a draft is verified in the cited paper's own text — exact location, and
+  whether that paper is the original or merely restates/reproduces the result — with the
+  verdicts kept in `paper/CITATIONS.md`. A correct value with a secondary source is a
+  defect (origin: AMS [1610.05311] cited for AD central charges that are
+  Shapere–Tachikawa's [0804.1957, 0809.3238]). Origin: the (A_1,D_6)/(A_1,A_5) Schur indices were first conjectured in
   Buican--Nishinaka [1505.05884], visible only in the CS/BN primary texts. Before
   writing that a result is "new", "not in the literature", or "unremarked", search for it
   beyond the wiki: alphaXiv/arXiv full-text and INSPIRE for the specific formula, identity,
