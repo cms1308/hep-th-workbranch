@@ -83,6 +83,16 @@ has been fixed.
 - **No `\boxed` equations.** Emphasis on a display comes from the surrounding prose
   naming it as the result, not from a frame (user, 2026-08-11; removed from
   eq:positivity and eq:RY-closed in susu-quiver).
+- **When another paragraph absorbs a paragraph's content, cut it — do not trim the overlap.**
+  A rewrite that moves definitions or a rule into a new paragraph leaves the old paragraph
+  with nothing to claim; the reflex is to delete the repeated sentences and keep the rest,
+  which leaves a paragraph that survives only because it was already written. Ask first
+  whether it still has a punchline no other paragraph makes — and check the theory sections,
+  which usually carry the same content per case. Real case (ad-chains §2, 2026-08-28): the
+  $M$/$X$ paragraph kept "nothing decouples" as its job through a whole-draft proofread and a
+  targeted one, while §3–6 ¶2 already said it per theory ("the ones whose dimension does not
+  exceed 1"); once the new Method paragraph defined $M$ and $X$, the paragraph had no claim
+  left, and the user had to cut it.
 - **A fact carried over from `notes/` states only itself.** The notes record a checked
   fact in isolation, often in the source's framing; a draft that lifts the sentence tends
   to supply the surrounding picture from nothing, and that picture is not checked. Before
