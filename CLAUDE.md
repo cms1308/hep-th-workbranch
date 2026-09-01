@@ -67,7 +67,8 @@ without being asked.
 
 ## Knowledge protocol (LLMwiki)
 
-The vault at `/Users/cms1308/git/LLMwiki` is the primary knowledge source
+The vault at `C:\Users\ccms1\dev\hep-th-wiki-private` (until 2026-09-01:
+`/Users/cms1308/git/LLMwiki` on the old macOS machine) is the primary knowledge source
 (`Index.md` → `wiki/` pages; `sources/` only for equation-level detail).
 
 - Before formulating or solving, check the wiki for relevant topics, methods, and results.
