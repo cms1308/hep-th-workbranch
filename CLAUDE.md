@@ -8,6 +8,12 @@ conversation**: each project's `STATE.md` is the single source of truth for wher
 
 Before doing anything else in this repo:
 
+0. Run `git fetch --quiet && git status -sb` **for this repo itself** (not for
+   `projects/*`, which are separate repos and gitignored here). Report the result to the
+   user in one line and let them decide — never pull, commit, or push on your own:
+   - behind `origin/main` → say by how many commits and offer `git pull --ff-only`;
+   - ahead, or tracked files modified → say so and offer to commit and push;
+   - in sync and clean → say nothing, just continue.
 1. `ls projects/`. If empty, wait for the user to bring a problem and suggest `/new-project`.
 2. Read the `## Status` block of every `projects/*/STATE.md`.
 3. If the user names a project, or exactly one project is active, read that `STATE.md` in
