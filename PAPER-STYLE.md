@@ -2,10 +2,15 @@
 
 What separates a draft that reads like a paper from one that reads like uploaded project
 notes. Read before writing or revising any `paper/*.tex`. Every rule here traces to a
-defect found in a real draft; extend it the same way, not with adjectives. The planned
-next extension is to take passages from a small corpus of papers in the project's own
-subfield, write the same passage the way a draft here would come out, and record what the
-published version leaves out — the omissions are what does not show up from reading alone.
+defect found in a real draft, or to a correction the professor made to one; extend it the
+same way, not with adjectives. Project-specific decisions (banned words, notation, section
+shapes) live in the project's `STATE.md` Paper section, not here.
+
+Reorganized 2026-09-05 (user: 'paper style 정리') from the rule list that had grown since
+2026-08-10 plus the observations of the professor's 2026-09-05 correction pass; every
+earlier rule is kept, grouped by theme, with its origin. Two conflicts between the old
+rules and the professor's practice were resolved in the professor's direction and are
+marked RESOLVED below; the user can reverse either.
 
 ## The notes → paper filter
 
@@ -47,64 +52,170 @@ needs next in order to accept the thesis. A section whose order still matches th
 order is the most common reason a draft still reads like notes after every sentence in it
 has been fixed.
 
-## Established rules
+**A section is justified by a spine claim, not by having a punchline.** The professor cut
+ad-chains §4 (the negative-result scan) although it was true, verified, and mapped: the
+paper's flow — four theories, evidence for each — did not need it (2026-09-05). Before
+keeping a section, name the spine claim the reader cannot accept without it.
 
-- **No textbook-level review.** Do not spell out standard facts experts know (free chiral
-  $R=\tfrac23$, $\Delta=\tfrac32 R$, gaugino $R=1$, the KPS replacement procedure).
+## Voice and register
+
+Recorded from the professor's correction pass on ad-chains (2026-09-05; the diff of the
+professor's file against the harness's last version is the corpus the planned "small
+corpus of papers in the subfield" extension was meant to supply).
+
+- **Guided narrative in the first person plural.** "Consider a quiver gauge theory…", "Let
+  us look at the spectrum", "We do this by splitting the two fundamentals…", "We choose the
+  superpotential as", "Repeating the same procedure as in Section 2.1, we obtain", "We fix
+  the $R$-charges from 1) …, 2) …, and 3) …", "Interestingly, we find…", "Notice that…". The
+  harness wrote impersonal result sentences ("Performing $a$-maximization as in Section 2.1
+  gives the $R$-charges of Table 3 for every $n\ge2$"). Walk the reader through the steps
+  and name the agent.
+- **Claim, then evidence, in the standard hedged register.** "We claim that these two
+  gauge theories … are infrared dual", "Our claim implies having identical superconformal
+  indices", "The duality implies that the RHS of (2.9) equals the RHS of (2.10). An
+  analytic proof of this identity would be desirable. Instead, we explicitly compute…",
+  "This is consistent with the conjecture that…". The harness asserted ("The duality
+  asserts that (2.9) equals (2.10)"). The hedge is register only: the quantifier that says
+  how far the claim was checked stays (see Precision below).
+- **A short physics remark is not a gloss (RESOLVED, supersedes the 2026-08-27 "no glosses,
+  no interpretive closers" rule in part).** Banned, as before: a clause that paraphrases
+  what a display already shows ("where $\phi_ib^2\phi_{i+1}$ is the unique gauge
+  contraction of the four fields", "the plethystic exponential assembles the multi-letter
+  states and the Haar integral projects onto gauge singlets") or restates a paragraph as its
+  meaning ("a flow between two non-Lagrangian theories is thereby realized by…") — user,
+  2026-08-27: "제발 이 논문에 필요없는 쓸데없는 말, 해석들 넣지 마". Allowed, as the
+  professor writes them: a remark that states a checkable fact the reader would otherwise
+  have to work out — "Notice that unlike usual quivers, we only have exactly one, not a
+  pair, of bifundamentals for each edge", "The length of the quiver equals the rank of the
+  Argyres-Douglas theory", "This agrees with the expectation since $(A_1,A_{2n})$ theory
+  does not have any flavor symmetry", "which is the only other gauge-invariant operator
+  that has $R=4/3$, $f=-2$". Test: does the sentence carry a fact that is not in the
+  display or the claim next to it? If not, it is a gloss. The professor's own closing
+  claim per case ("Therefore, we claim our gauge theory flows to … in the infrared,
+  exhibiting supersymmetry enhancement") stays.
+- **Orientation at the point of use.** A one-line reminder of a definition where it is
+  used ("once again $M_i$ are the flip fields for the `mesonic' operators, and $X_k$ …
+  `Coulomb branch' operators") and "theory" after every label ("the $(A_1,A_{2n})$ theory")
+  are not restatements in the sense of the colon rule below; keep them.
+- **Parentheses are the aside device.** "(flip) deformations", "(triplet)", "(generalized)",
+  "(unflipped)", "(baryonic)", "(subregular)", "(see Appendix A for the precise definitions
+  of symbols)". Colons, semicolons and em-dashes stay rare in the harness's own prose
+  (user, 2026-09-02: ':,;,--- 사용하는거 좀 자제해'); a colon introducing a display and a
+  caption's column-list colon are fine.
+- **Literature jargon yes, coinages no (RESOLVED).** "Casimir operators", "mesonic
+  operators", "(generalized) mesons", "nilpotent Higgsing", "dual frame", "verbatim" are
+  the professor's words and stay when the professor writes them. The never-invent-
+  terminology rule (CLAUDE.md) targets coined labels, metaphors for operations and rare
+  synonyms, not standard jargon; a project's banned list in `STATE.md` records the user's
+  own reactions to specific drafts and governs the harness's own prose there.
+- **Compact index ranges, in-line enumerations, narrated derivations.**
+  "$M_{i=0,1,\cdots,\lfloor n/2\rfloor}$", "$\Delta(M_{i\ge1})$" instead of "the $M_i$
+  with $1\le i\le\lfloor n/2\rfloor$"; "1) …, 2) …, and 3) …"; "Then, we compute … to
+  obtain [display]. Now, using the relations … we get [display]."
+- **Citations are sparser and placed once,** where the reader would look the fact up (the
+  first case section, a summary table's caption), not on every restatement. Exceptions in
+  Precision below.
+- **Grammar is the harness's job.** The professor's copies drop articles and slip number
+  agreement; fix these silently on the next pass, never copy them as style.
+
+## Parallel case sections
+
+(user, 2026-09-05, on the four theory subsections of ad-chains; supersedes the naive
+reading of the 2026-09-03 instruction '똑같은 형식의 문장 반복하지말고 알아서 rephrase'.)
+
+- **The running order is identical in every case section**, so the reader navigates by
+  position: definition → derivation/result → spectrum → flavor → (flow) → $n=1$ → index →
+  Schur limit → closing claim, or whatever the project fixes.
+- **The procedure is written once, in full, in the first case.** Every later case points
+  back in one sentence ("Repeating the same procedure as in Section 2.1, we obtain…", "We
+  proceed as in Section 2.1") and gives only what differs plus the data — the table, the
+  display, the value.
+- **Vary the connective sentences lightly; never re-describe the procedure in new words.**
+  Consecutive sections must not read as one template with the labels swapped, but
+  rephrasing is not a goal: a fresh paraphrase of the same content costs the reader
+  attention and hides what actually differs. Never let a variation smuggle in information
+  the first case did not state.
+- **What genuinely differs is said outright** — a flow paragraph that exists only for two
+  of the cases, a flavor symmetry that is $SU(2)\times U(1)$ here and $U(1)$ there — as a
+  sentence of its own, not inside a reworded template sentence.
+
+## Precision that must survive editing
+
+The professor's pass dropped every quantifier along with the assertive register
+(ad-chains, 2026-09-05: "at every computed order", the $\ft^9$/$\ft^6$ orders, "with the
+flavor fugacities set to one" all went, and the intro said "agree to leading order").
+These are defects to restore, not style to adopt.
+
+- **How far a claim was checked is stated somewhere in the paper** — the order of the
+  expansion, the fugacities kept or set to one, the range of $n$. Once is enough; zero is
+  not. A hedge ("we claim", "consistent with") never replaces the quantifier.
+- **A conjecture attributed to others keeps its citation**, and so does a value quoted
+  from a paper the first time it is quoted.
 - **No verification bookkeeping in the main text** — not "cross-checked three independent
-  ways", not "validated on five anchors". The main text states background and facts.
+  ways", not "validated on five anchors". The quantifier above is the fact of the check,
+  not its bookkeeping.
+- **No textbook-level review.** Do not spell out standard facts experts know (free chiral
+  $R=\tfrac23$, $\Delta=\tfrac32R$, gaugino $R=1$, the KPS replacement procedure).
+
+## Formulas and symbols
+
 - **No single-use symbols.** Do not introduce a symbol whose value is never used; if the
   only thing said about it is a relation, state the relation in prose instead.
+- **One normalization per quantity, paper-wide** (user, 2026-08-13). A quantity displayed
+  in one normalization is displayed in that normalization everywhere: never $b_0=(\cdots)N
+  +O(1)$ in one place and $b_0/N=\cdots+O(1/N)$ in another, and never both inside one
+  display (eq:multipair-b0 in susu-quiver). Second case (ad-chains, 2026-09-05): the flavor
+  central charge written as $-6\,\tr R\,T^AT^B$ with $\tr_{\rm fund}T^AT^B=\tfrac12$ in one
+  section and as $-3\,\tr RFF$ in another — the two agree only in different generator
+  normalizations, and a reader using the stated one gets half the value.
+- **A colon must add, not rename.** "realized by the singlets and the $\tr\phi_k^2$ that
+  carry no $X$: the operators $M_0$, $M_j$ and $\tr\phi_k^2$ with $k>\lceil n/2\rceil$…"
+  says the same set twice, once in words and once in symbols. Write the set once, in the
+  form that carries the information — the symbols with their index ranges — and let the
+  count follow from the ranges instead of being asserted ("Their number is $n$") (user,
+  2026-08-27, ad-chains §3 ¶3).
+- **No `\boxed` equations.** Emphasis on a display comes from the surrounding prose naming
+  it as the result, not from a frame (user, 2026-08-11; removed from eq:positivity and
+  eq:RY-closed in susu-quiver).
+
+## Paragraphs and arguments
+
 - **A technical clause states its role in the claim, not just its fact.** A soundness
-  condition dropped into a paragraph as a bare fact ("no gauge-invariant operator
-  violates the unitarity bound at any of the maxima") leaves the reader unable to say
-  what the paragraph's claim needs it for. Write the role: "the quoted central charges
-  are the infrared values --- nothing falls below the unitarity bound, so no decoupling
-  revises them." Test: delete the clause and ask what objection to the punchline
-  returns; that objection is what the clause should be phrased against. (ad-chains §4,
-  2026-08-26: the endpoint-soundness clause survived four rounds of author confusion
-  because its role was never stated.)
-- **Don't compress an argument into a summary clause.** A closing formula that
-  only a reader who already understands the paragraph can parse ("the one-sided
-  chains realize the two ends of the moment-map flow with the same fields")
-  hides the argument instead of making it. Write the steps out: which theories,
-  which operator, what adding it does. If the compressed line is redundant with
-  the paragraph, cut it; if it is not, the paragraph was missing a step (user,
-  2026-08-24, ad-chains §3 ¶5).
-- **No glosses on formulas, no interpretive closers.** A clause that explains what a
-  displayed formula already shows ("where $\phi_ib^2\phi_{i+1}$ is the unique gauge
-  contraction of the four fields", "which is why they carry the $X_k$", "the plethystic
-  exponential assembles the multi-letter states and the Haar integral projects onto gauge
-  singlets") or that restates a paragraph as its meaning ("a flow between two
-  non-Lagrangian theories is thereby realized by…") is filler to this reader. State the
-  fact once, in the formula or in the claim; do not narrate it (user, 2026-08-27,
-  ad-chains: "제발 이 논문에 필요없는 쓸데없는 말, 해석들 넣지 마").
-- **A colon must add, not rename.** "realized by the singlets and the $\tr\phi_k^2$ that carry no $X$: the operators $M_0$, $M_j$ and $\tr\phi_k^2$ with $k>\lceil n/2\rceil$…" says the same set twice, once in words and once in symbols. Write the set once, in the form that carries the information — the symbols with their index ranges — and let the count follow from the ranges instead of being asserted ("Their number is $n$") (user, 2026-08-27, ad-chains §3 ¶3).
-- **No `\boxed` equations.** Emphasis on a display comes from the surrounding prose
-  naming it as the result, not from a frame (user, 2026-08-11; removed from
-  eq:positivity and eq:RY-closed in susu-quiver).
-- **When another paragraph absorbs a paragraph's content, cut it — do not trim the overlap.**
-  A rewrite that moves definitions or a rule into a new paragraph leaves the old paragraph
-  with nothing to claim; the reflex is to delete the repeated sentences and keep the rest,
-  which leaves a paragraph that survives only because it was already written. Ask first
-  whether it still has a punchline no other paragraph makes — and check the theory sections,
-  which usually carry the same content per case. Real case (ad-chains §2, 2026-08-28): the
-  $M$/$X$ paragraph kept "nothing decouples" as its job through a whole-draft proofread and a
-  targeted one, while §3–6 ¶2 already said it per theory ("the ones whose dimension does not
-  exceed 1"); once the new Method paragraph defined $M$ and $X$, the paragraph had no claim
-  left, and the user had to cut it.
-- **A fact carried over from `notes/` states only itself.** The notes record a checked
-  fact in isolation, often in the source's framing; a draft that lifts the sentence tends
-  to supply the surrounding picture from nothing, and that picture is not checked. Before
+  condition dropped into a paragraph as a bare fact ("no gauge-invariant operator violates
+  the unitarity bound at any of the maxima") leaves the reader unable to say what the
+  paragraph's claim needs it for. Write the role: "the quoted central charges are the
+  infrared values --- nothing falls below the unitarity bound, so no decoupling revises
+  them." Test: delete the clause and ask what objection to the punchline returns; that
+  objection is what the clause should be phrased against. (ad-chains §4, 2026-08-26: the
+  endpoint-soundness clause survived four rounds of author confusion because its role was
+  never stated.)
+- **Don't compress an argument into a summary clause.** A closing formula that only a
+  reader who already understands the paragraph can parse ("the one-sided chains realize
+  the two ends of the moment-map flow with the same fields") hides the argument instead of
+  making it. Write the steps out: which theories, which operator, what adding it does. If
+  the compressed line is redundant with the paragraph, cut it; if it is not, the paragraph
+  was missing a step (user, 2026-08-24, ad-chains §3 ¶5).
+- **When another paragraph absorbs a paragraph's content, cut it — do not trim the
+  overlap.** A rewrite that moves definitions or a rule into a new paragraph leaves the old
+  paragraph with nothing to claim; the reflex is to delete the repeated sentences and keep
+  the rest, which leaves a paragraph that survives only because it was already written.
+  Ask first whether it still has a punchline no other paragraph makes — and check the
+  theory sections, which usually carry the same content per case. Real case (ad-chains §2,
+  2026-08-28): the $M$/$X$ paragraph kept "nothing decouples" as its job through a
+  whole-draft proofread and a targeted one, while §3–6 ¶2 already said it per theory ("the
+  ones whose dimension does not exceed 1"); once the new Method paragraph defined $M$ and
+  $X$, the paragraph had no claim left, and the user had to cut it.
+- **A fact carried over from `notes/` states only itself.** The notes record a checked fact
+  in isolation, often in the source's framing; a draft that lifts the sentence tends to
+  supply the surrounding picture from nothing, and that picture is not checked. Before
   writing a fact imported from a note, recompute its neighbours — the other members of the
-  set it belongs to — and write what the whole set does.
-  Real case (ad-chains, 2026-08-11, caught by the user twice a day apart): notes/06,07,10
-  record the two-sided parity fact as "the flipped middle Casimir sits at exactly $R=2/3$
-  with its partner $X$ at exactly $4/3$". Two successive drafts wrapped it in "in the
-  two-sided families no operator drops below the bound", which is false — every other
-  flipped Casimir sits strictly below $2/3$ and its partner strictly above $4/3$, so a
-  single $(2/3,4/3)$ pair was never the picture. The neighbours take one line to compute
-  and would have caught it either time.
+  set it belongs to — and write what the whole set does. Real case (ad-chains, 2026-08-11,
+  caught by the user twice a day apart): notes/06,07,10 record the two-sided parity fact as
+  "the flipped middle Casimir sits at exactly $R=2/3$ with its partner $X$ at exactly
+  $4/3$". Two successive drafts wrapped it in "in the two-sided families no operator drops
+  below the bound", which is false — every other flipped Casimir sits strictly below $2/3$
+  and its partner strictly above $4/3$, so a single $(2/3,4/3)$ pair was never the picture.
+  The neighbours take one line to compute and would have caught it either time.
 
 ## Before leaving a section
 
@@ -119,14 +230,14 @@ in the same pass that records the punchlines.
 - **`notes/` vocabulary is not paper vocabulary.** The grep-the-draft test above is
   circular once an earlier session has written the working label into the draft:
   "termination", "one-sided/two-sided chain", "end superpotential", "active
-  deformation", "flip set", "frame", and a label system ("$D$/$A_1$/$A_2$
-  terminations", superpotentials named $W_{D|A_2}$ after them) all passed it for two
-  weeks in ad-chains until the user's professor flagged them as invented terms
-  (2026-08-27) and the paper had to be restructured to remove them. Test against the
-  literature: would a paper in the field use the phrase? If not, name the object by
-  what the literature names (the SCFT it flows to, an equation number) or describe the
-  configuration in full ("flavors at one end", "the superpotential terms at node
-  $n$"). When picking up a draft mid-project, audit it for this before adding to it.
+  deformation", "flip set", "frame", and a label system ("$D$/$A_1$/$A_2$ terminations",
+  superpotentials named $W_{D|A_2}$ after them) all passed it for two weeks in ad-chains
+  until the user's professor flagged them as invented terms (2026-08-27) and the paper had
+  to be restructured to remove them. Test against the literature: would a paper in the
+  field use the phrase? If not, name the object by what the literature names (the SCFT it
+  flows to, an equation number) or describe the configuration in full ("flavors at one
+  end", "the superpotential terms at node $n$"). When picking up a draft mid-project, audit
+  it for this before adding to it.
 - **Every symbol**: defined before its first use, used more than once, and spelled as
   `PROJECT.md` fixes it.
 - **Self-containedness**: a reader with only the paper in hand has every definition,
@@ -144,94 +255,18 @@ is what `/proofread` is for.
 
 Grep the main text for: `we checked`, `we verified`, `cross-check`, `sanity check`,
 `for completeness`, `as expected`, `it turns out`. These are notes voice; each occurrence
-is a candidate finding, not an automatic error.
+is a candidate finding, not an automatic error ("It turns out that" is in the professor's
+own §2.1 and stays there).
 
-- **One normalization per quantity, paper-wide.** A quantity displayed in one
-  normalization is displayed in that normalization everywhere: if the paper's standard
-  form is $b_0=(\cdots)N+O(1)$, never write $b_0/N=\cdots+O(1/N)$ elsewhere — and never
-  mix the two inside one display (user, 2026-08-13; eq:multipair-b0 in susu-quiver had
-  $b_0^{(\widetilde1)}$ exact next to $b_0^{(2)\rm mag}/N$).
+## Process: the professor's copies
 
-## Observed: the professor's correction pass (ad-chains v3, 2026-09-05)
-
-Source: a word-level diff of the professor's `main.tex` (2026-09-05, §4 cut) against the
-last harness-written version (the `main.pdf` of 2026-09-03). Recorded as observations of
-what the professor changed, kept, and cut. Where an observation conflicts with a rule above,
-the conflict is marked and left for the user; nothing here overrides a rule yet.
-
-1. **Cuts go by flow, not by content.** §4 (the negative-result scan, "other superpotential
-   terms") was removed because it does not serve the flow — four theories, evidence for each
-   — although it was true, verified, and mapped. A section is not justified by having a
-   punchline; it is justified by a spine claim the reader needs. (Also gone: the appendix's
-   closing orders sentence and the Discussion's 5d-construction paragraph — deliberate or
-   stale-base, for the user.)
-2. **Guided narrative in the first person plural.** "Consider a quiver gauge theory…", "Let
-   us look at the spectrum", "We do this by splitting the two fundamentals…", "We choose the
-   superpotential as", "Repeating the same procedure as in Section 2.1, we obtain", "We fix
-   the $R$-charges from 1) …, 2) …, and 3) …", "Interestingly, we find…", "Notice that…". The
-   harness wrote impersonal result sentences ("Performing $a$-maximization as in Section 2.1
-   gives the $R$-charges of Table 3 for every $n\ge2$"). The professor walks the reader
-   through the steps and names the agent.
-3. **Orientation is repeated at the point of use, not factored out.** Each subsection
-   restates what $M_i$ and $X_k$ flip ("once again $M_i$ are the flip fields for the
-   `mesonic' operators, and $X_k$ … `Coulomb branch' operators"; "As before, we have cubic
-   interactions for the fundamentals at both ends, quartic interactions for the
-   bifundamentals, and flip fields for…"), and "theory" follows every label ("the
-   $(A_1,A_{2n})$ theory"; subsection titles "… theory"). The cut-don't-gloss and
-   colon-restatement rules above were written against invented glosses; a one-line reminder
-   of a definition where it is used is not their target.
-4. **Short physics remarks are wanted where the harness cut them.** "Notice that unlike
-   usual quivers, we only have exactly one, not a pair, of bifundamentals for each edge";
-   "The length of the quiver equals the rank of the Argyres-Douglas theory"; "This agrees
-   with the expectation since $(A_1,A_{2n})$ theory does not have any flavor symmetry";
-   "which is the only other gauge-invariant operator that has $R=4/3$, $f=-2$"; "which is a
-   Drinfeld-Sokolov reduction … via subregular orbit". CONFLICT with "No glosses on formulas,
-   no interpretive closers". The difference: each remark is a checkable fact the reader would
-   otherwise have to work out, not a paraphrase of the display it follows. User to decide
-   how the rule is reworded.
-5. **Claim and evidence are separated, in the standard hedged register.** "We claim that
-   these two gauge theories … are infrared dual", "Our claim implies having identical
-   superconformal indices", "The duality implies that the RHS of (2.9) equals the RHS of
-   (2.10). An analytic proof of this identity would be desirable. Instead, we explicitly
-   compute…", "This is consistent with the conjecture that…", "They should be identical to
-   the vacuum characters…". The harness asserted ("The duality asserts that (2.9) equals
-   (2.10)"; "which are, at every computed order, the vacuum characters…"). Cost riding on
-   this: every quantifier went too — "at every computed order", the $\ft^9$/$\ft^6$ orders,
-   "with the flavor fugacities set to one" — and the intro now says "agree to leading order",
-   which understates. Hedging the claim is style; losing the statement of how far it was
-   checked is a defect to restore.
-6. **Citations are sparser and placed once.** The AD central charges are cited in §2.1 and in
-   Table 1's caption, then stated bare in §3.1/§3.2; the $k_F$ citations, the
-   VOA-identification citations and the Virasoro-conjecture citation were dropped. The
-   harness's cite-on-every-claim habit (the /cite-check regime) is not the professor's; a
-   citation for a conjecture attributed to others must stay regardless.
-7. **Literature jargon is used freely.** "Casimir operators", "mesonic operators",
-   "(generalized) mesons", "flipper", "nilpotent Higgsing", "dual frame", "Coulomb branch
-   operators" (unhyphenated), "verbatim". Several are on the ad-chains banned list, but the
-   professor's complaint of 2026-08-27 was about INVENTED terms ("Claude's weird terms").
-   The ban targets coinages, not standard jargon; user to decide whether "Casimir",
-   "verbatim", "frame" stay banned for the harness's own prose.
-8. **Parenthetical qualifiers as the aside device.** "(and their respective
-   superpotential)", "(flip) deformations", "(triplet)", "(generalized)", "(unflipped)",
-   "(baryonic)", "(subregular)", "(see Appendix A for the precise definitions of symbols)".
-   Colons and semicolons also return. The punctuation-restraint rule was about the harness's
-   overuse of colons and em-dashes; the professor's parentheses are a different device.
-9. **Compact index ranges in subscripts, enumerations in-line, derivations narrated between
-   displays.** "$M_{i=0,1,\cdots,\lfloor n/2\rfloor}$",
-   "$\tr\phi^2_{k=1,\cdots,\lceil n/2\rceil-1}$", "$\Delta(M_{i\ge1})$" instead of "the $M_i$
-   with $1\le i\le\lfloor n/2\rfloor$"; "1) …, 2) …, and 3) …"; "Then, we compute … to
-   obtain [display]. Now, using the relations … we get [display]."
-10. **Grammar is looser than the harness's — not a style to copy.** Dropped articles ("gives
-    $n$-dimensional Coulomb branch", "flows to $(A_1,D_{2n+1})$ theory"), number agreement
-    ("They indeed agrees", "This indices", "The cross … denote", "each fields"), a missing
-    "In" before "Sections …". These the harness fixes silently on the next pass.
-11. **What was left untouched:** the displays, the tables, the index series, Discussion
-    ¶2–¶4, the appendix body. The professor edits the prose that carries the argument —
-    openers, derivation, spectrum, flavor, flow, $n=1$, closers — and leaves the data.
-12. **Process: the professor works in their own copy, and every copy is a partial merge.**
-    The 2026-09-05 file has §2.1, the Discussion and the appendix prose from the professor's
-    2026-09-02 file (the harness's same-night objective fixes — "Coulomm", "denote", the
-    $k$-citations, the caption AD labels, $\xi^F\to\xi^f$, the (1.1) period — reverted again)
-    with the 2026-09-03 body integrals and (A.9) pasted in. Before touching a professor copy:
-    diff it against the last harness PDF, list what it reverted, and re-apply the objective
-    fixes as a list — never assume the copy is a superset.
+The professor works in their own copy, and every copy is a partial merge. The ad-chains
+file of 2026-09-05 had §2.1, the Discussion and the appendix prose from the professor's
+2026-09-02 file (the harness's same-night objective fixes — "Coulomm", "denote", the
+$k$-citations, the caption AD labels, $\xi^F\to\xi^f$, the (1.1) period — reverted a second
+time) with the 2026-09-03 body integrals and (A.9) pasted in. Before touching a professor
+copy: back up the last harness PDF, diff the copy against it, list what it reverted and
+what it cut, report before editing, and re-apply the objective fixes as a list — never
+assume the copy is a superset. The professor edits the prose that carries the argument —
+openers, derivation, spectrum, flavor, flow, $n=1$, closers — and leaves displays, tables
+and series untouched; read the diff with that expectation.
