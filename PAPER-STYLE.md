@@ -151,3 +151,87 @@ is a candidate finding, not an automatic error.
   form is $b_0=(\cdots)N+O(1)$, never write $b_0/N=\cdots+O(1/N)$ elsewhere — and never
   mix the two inside one display (user, 2026-08-13; eq:multipair-b0 in susu-quiver had
   $b_0^{(\widetilde1)}$ exact next to $b_0^{(2)\rm mag}/N$).
+
+## Observed: the professor's correction pass (ad-chains v3, 2026-09-05)
+
+Source: a word-level diff of the professor's `main.tex` (2026-09-05, §4 cut) against the
+last harness-written version (the `main.pdf` of 2026-09-03). Recorded as observations of
+what the professor changed, kept, and cut. Where an observation conflicts with a rule above,
+the conflict is marked and left for the user; nothing here overrides a rule yet.
+
+1. **Cuts go by flow, not by content.** §4 (the negative-result scan, "other superpotential
+   terms") was removed because it does not serve the flow — four theories, evidence for each
+   — although it was true, verified, and mapped. A section is not justified by having a
+   punchline; it is justified by a spine claim the reader needs. (Also gone: the appendix's
+   closing orders sentence and the Discussion's 5d-construction paragraph — deliberate or
+   stale-base, for the user.)
+2. **Guided narrative in the first person plural.** "Consider a quiver gauge theory…", "Let
+   us look at the spectrum", "We do this by splitting the two fundamentals…", "We choose the
+   superpotential as", "Repeating the same procedure as in Section 2.1, we obtain", "We fix
+   the $R$-charges from 1) …, 2) …, and 3) …", "Interestingly, we find…", "Notice that…". The
+   harness wrote impersonal result sentences ("Performing $a$-maximization as in Section 2.1
+   gives the $R$-charges of Table 3 for every $n\ge2$"). The professor walks the reader
+   through the steps and names the agent.
+3. **Orientation is repeated at the point of use, not factored out.** Each subsection
+   restates what $M_i$ and $X_k$ flip ("once again $M_i$ are the flip fields for the
+   `mesonic' operators, and $X_k$ … `Coulomb branch' operators"; "As before, we have cubic
+   interactions for the fundamentals at both ends, quartic interactions for the
+   bifundamentals, and flip fields for…"), and "theory" follows every label ("the
+   $(A_1,A_{2n})$ theory"; subsection titles "… theory"). The cut-don't-gloss and
+   colon-restatement rules above were written against invented glosses; a one-line reminder
+   of a definition where it is used is not their target.
+4. **Short physics remarks are wanted where the harness cut them.** "Notice that unlike
+   usual quivers, we only have exactly one, not a pair, of bifundamentals for each edge";
+   "The length of the quiver equals the rank of the Argyres-Douglas theory"; "This agrees
+   with the expectation since $(A_1,A_{2n})$ theory does not have any flavor symmetry";
+   "which is the only other gauge-invariant operator that has $R=4/3$, $f=-2$"; "which is a
+   Drinfeld-Sokolov reduction … via subregular orbit". CONFLICT with "No glosses on formulas,
+   no interpretive closers". The difference: each remark is a checkable fact the reader would
+   otherwise have to work out, not a paraphrase of the display it follows. User to decide
+   how the rule is reworded.
+5. **Claim and evidence are separated, in the standard hedged register.** "We claim that
+   these two gauge theories … are infrared dual", "Our claim implies having identical
+   superconformal indices", "The duality implies that the RHS of (2.9) equals the RHS of
+   (2.10). An analytic proof of this identity would be desirable. Instead, we explicitly
+   compute…", "This is consistent with the conjecture that…", "They should be identical to
+   the vacuum characters…". The harness asserted ("The duality asserts that (2.9) equals
+   (2.10)"; "which are, at every computed order, the vacuum characters…"). Cost riding on
+   this: every quantifier went too — "at every computed order", the $\ft^9$/$\ft^6$ orders,
+   "with the flavor fugacities set to one" — and the intro now says "agree to leading order",
+   which understates. Hedging the claim is style; losing the statement of how far it was
+   checked is a defect to restore.
+6. **Citations are sparser and placed once.** The AD central charges are cited in §2.1 and in
+   Table 1's caption, then stated bare in §3.1/§3.2; the $k_F$ citations, the
+   VOA-identification citations and the Virasoro-conjecture citation were dropped. The
+   harness's cite-on-every-claim habit (the /cite-check regime) is not the professor's; a
+   citation for a conjecture attributed to others must stay regardless.
+7. **Literature jargon is used freely.** "Casimir operators", "mesonic operators",
+   "(generalized) mesons", "flipper", "nilpotent Higgsing", "dual frame", "Coulomb branch
+   operators" (unhyphenated), "verbatim". Several are on the ad-chains banned list, but the
+   professor's complaint of 2026-08-27 was about INVENTED terms ("Claude's weird terms").
+   The ban targets coinages, not standard jargon; user to decide whether "Casimir",
+   "verbatim", "frame" stay banned for the harness's own prose.
+8. **Parenthetical qualifiers as the aside device.** "(and their respective
+   superpotential)", "(flip) deformations", "(triplet)", "(generalized)", "(unflipped)",
+   "(baryonic)", "(subregular)", "(see Appendix A for the precise definitions of symbols)".
+   Colons and semicolons also return. The punctuation-restraint rule was about the harness's
+   overuse of colons and em-dashes; the professor's parentheses are a different device.
+9. **Compact index ranges in subscripts, enumerations in-line, derivations narrated between
+   displays.** "$M_{i=0,1,\cdots,\lfloor n/2\rfloor}$",
+   "$\tr\phi^2_{k=1,\cdots,\lceil n/2\rceil-1}$", "$\Delta(M_{i\ge1})$" instead of "the $M_i$
+   with $1\le i\le\lfloor n/2\rfloor$"; "1) …, 2) …, and 3) …"; "Then, we compute … to
+   obtain [display]. Now, using the relations … we get [display]."
+10. **Grammar is looser than the harness's — not a style to copy.** Dropped articles ("gives
+    $n$-dimensional Coulomb branch", "flows to $(A_1,D_{2n+1})$ theory"), number agreement
+    ("They indeed agrees", "This indices", "The cross … denote", "each fields"), a missing
+    "In" before "Sections …". These the harness fixes silently on the next pass.
+11. **What was left untouched:** the displays, the tables, the index series, Discussion
+    ¶2–¶4, the appendix body. The professor edits the prose that carries the argument —
+    openers, derivation, spectrum, flavor, flow, $n=1$, closers — and leaves the data.
+12. **Process: the professor works in their own copy, and every copy is a partial merge.**
+    The 2026-09-05 file has §2.1, the Discussion and the appendix prose from the professor's
+    2026-09-02 file (the harness's same-night objective fixes — "Coulomm", "denote", the
+    $k$-citations, the caption AD labels, $\xi^F\to\xi^f$, the (1.1) period — reverted again)
+    with the 2026-09-03 body integrals and (A.9) pasted in. Before touching a professor copy:
+    diff it against the last harness PDF, list what it reverted, and re-apply the objective
+    fixes as a list — never assume the copy is a superset.
