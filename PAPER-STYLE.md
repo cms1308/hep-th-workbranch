@@ -270,12 +270,3 @@ what it cut, report before editing, and re-apply the objective fixes as a list �
 assume the copy is a superset. The professor edits the prose that carries the argument —
 openers, derivation, spectrum, flavor, flow, $n=1$, closers — and leaves displays, tables
 and series untouched; read the diff with that expectation.
-
-A professor's copy also brings citation keys typed from memory. A key that resolves on
-INSPIRE is not yet the right paper: ad-chains 2026-09-06 cited `Kutasov:1995ve`
-(hep-th/9503086, the adjoint-SQCD duality) for the unitarity-bound decoupling procedure,
-which is Kutasov–Parnachev–Sahakyan hep-th/0308071 (`Kutasov:2003iy`). Before fetching a
-new entry, check that the paper the key names is the one the sentence needs; a wrong key
-compiles cleanly and reads plausibly in the bibliography. The same copy dropped a clause
-that defined a symbol still used in the next display ($a^w$ in the single-letter index),
-so the symbol-hygiene check runs on every professor copy, not only on new prose.
