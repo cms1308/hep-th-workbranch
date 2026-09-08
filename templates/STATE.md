@@ -2,23 +2,34 @@
 
 ## Status
 
-<one line: phase (formulated / solving step N of M / paper drafting / revising) — last updated YYYY-MM-DD>
+<phase> — last updated <YYYY-MM-DD>. <One current status, no session log.>
 
 ## Plan
 
-- [ ] 1. <step> — verify: <criterion>
-- [ ] 2. <step> — verify: <criterion> (→ notes/02-<slug>.md when done)
+See [PLAN.md](PLAN.md). <Identify the next relevant open step.>
 
 ## Established results
 
-- **(R1)** <key formula or statement, inline LaTeX> — verified by <check> [notes/01-<slug>.md]
+<A few results relevant now, with existing R/N IDs and links to RESULTS.md.>
 
 ## Current step
 
 Exactly where work stopped and what the very next action is. Written so a session with
 zero conversation memory can continue from here alone.
 
+## Required reading
+
+- [Problem and conventions](PROJECT.md)
+- [Standing decisions](DECISIONS.md)
+- [Full plan](PLAN.md)
+- [Detailed results](RESULTS.md)
+- [Open questions and gotchas](OPEN-QUESTIONS.md)
+- [Past decisions](HISTORY.md) — only when the task needs their history.
+
+## Paper
+
+<Current draft and review status, if applicable. Standing rules live in DECISIONS.md.>
+
 ## Open questions / gotchas
 
-- Unresolved issues, failed checks under investigation, approaches already tried that
-  did not work, subtle sign/convention traps, missing references awaiting ingest.
+<Current blockers and links; the detailed list is in OPEN-QUESTIONS.md.>

@@ -4,7 +4,8 @@ What separates a draft that reads like a paper from one that reads like uploaded
 notes. Read before writing or revising any `paper/*.tex`. Every rule here traces to a
 defect found in a real draft, or to a correction the professor made to one; extend it the
 same way, not with adjectives. Project-specific decisions (banned words, notation, section
-shapes) live in the project's `STATE.md` Paper section, not here.
+shapes) live in the project's `DECISIONS.md`, not here (legacy STATE Paper blocks are
+preserved there during the memory migration).
 
 Reorganized 2026-09-05 (user: 'paper style 정리') from the rule list that had grown since
 2026-08-10 plus the observations of the professor's 2026-09-05 correction pass; every
@@ -105,8 +106,8 @@ corpus of papers in the subfield" extension was meant to supply).
 - **Literature jargon yes, coinages no (RESOLVED).** "Casimir operators", "mesonic
   operators", "(generalized) mesons", "nilpotent Higgsing", "dual frame", "verbatim" are
   the professor's words and stay when the professor writes them. The never-invent-
-  terminology rule (CLAUDE.md) targets coined labels, metaphors for operations and rare
-  synonyms, not standard jargon; a project's banned list in `STATE.md` records the user's
+  terminology rule (harness/PROTOCOL.md) targets coined labels, metaphors for operations and rare
+  synonyms, not standard jargon; a project's banned list in `DECISIONS.md` records the user's
   own reactions to specific drafts and governs the harness's own prose there.
 - **Compact index ranges, in-line enumerations, narrated derivations.**
   "$M_{i=0,1,\cdots,\lfloor n/2\rfloor}$", "$\Delta(M_{i\ge1})$" instead of "the $M_i$

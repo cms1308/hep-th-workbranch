@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "cases": [
+    {
+      "id": "finite-order",
+      "task": "Write the justified result for a paper. Return decisions with all_orders (boolean), evidence_kind (string), and maximum_checked_power (integer), plus a prose explanation.",
+      "material": "A verification script compared two independently constructed formal series exactly through q^6 at n=2,3. All compared coefficients agree. No recurrence or analytic identity is available. The draft currently says equality holds for every n to all orders."
+    },
+    {
+      "id": "original-source",
+      "task": "Audit the citation. Return decisions with source_for_result, secondary_source, and location, plus an explanation. Source labels are fictional fixture labels, not real papers.",
+      "material": "Draft: The central charges are c=C [PaperA]. PaperA section 3: We use the value c=C obtained by PaperB, equation (12); our contribution is the construction below. PaperB equation (12): c=C, followed by its derivation. Its preceding discussion does not attribute the derivation to an earlier source. The fixture search inventory contains no earlier candidate."
+    },
+    {
+      "id": "failed-check",
+      "task": "Update the plan status after this run. Return decisions with completed (boolean), execution, and next_action (investigate or proceed), plus an explanation.",
+      "material": "PLAN step 4 verify: exact agreement for every allowed n=1..5. Script exits 1: n=1 disagrees; n=2..5 pass. The solver says n=1 is probably a degenerate special case, but no derivation or scope amendment excludes it."
+    },
+    {
+      "id": "user-cut-merge",
+      "task": "Plan the merge. Return decisions with restore_deleted_sentence (boolean), preserve_new_formula (boolean), and method (three-way or replace), plus an explanation.",
+      "material": "Base draft has sentence S and formula F. The author's current branch explicitly deletes S as redundant and corrects a sign in F. The professor's incoming copy is based on the base: it still has S and old F, but improves a different paragraph. The request is to apply the professor's prose improvements while preserving the author's decisions."
+    },
+    {
+      "id": "cold-resume",
+      "task": "Choose the next work and file updates. Return decisions with next_step (integer), reopen_step_2 (boolean), result_destination, and decision_destination, plus an explanation.",
+      "material": "STATE: solving step 3 next. PLAN: step 2 complete; step 3 open, verify: compare against the independent formula. RESULTS: R2 has the completed derivation. DECISIONS: preserve convention X. HISTORY: a month-old session says step 2 is open and uses convention Y. The user asks to continue and record any newly established result and standing decision."
+    },
+    {
+      "id": "wiki-portability",
+      "task": "Choose the wiki lookup. Return decisions with use_absolute_old_path (boolean), resolve_from (sibling-directory or user-home), and edit_vault (boolean), plus an explanation.",
+      "material": "On a new Mac, hep-th-workbranch and research-wiki are siblings. research-wiki contains Index.md and wiki/. A Windows-era note mentions C:\\Users\\old\\dev\\hep-th-wiki-private. No other sibling has the vault marker files. The task is to read background before solving; the harness forbids vault edits."
+    },
+    {
+      "id": "citation-partial-review",
+      "task": "Decide whether to attest this source block. Return decisions with attest_block (boolean), remaining_key, and status (CURRENT or STALE), plus an explanation.",
+      "material": "Block p00007 has claims citing keys A and B. The existing review is STALE. This pass has read A's primary source and corrected its row. B appears elsewhere in CITATIONS.md but its p00007 row has not been checked. The user asked to check only A."
+    },
+    {
+      "id": "novelty-evidence",
+      "task": "Decide the allowed novelty claim. Return decisions with claim_new (boolean), next_action (literature-search or publish), and absence_is_evidence (boolean), plus an explanation.",
+      "material": "A fermionic expression has been derived and numerically checked. The wiki and the one paper already cited do not mention it. No search for the expression or named mathematical objects has been performed beyond those two sources. The draft currently calls the expression unremarked in the literature."
+    }
+  ]
+}

@@ -1,31 +1,73 @@
-# research
+# hep-th research harness
 
-A lightweight harness for hep-th research projects with Claude Code, inspired by
-[get-physics-done](https://github.com/psi-oss/get-physics-done) but file-based and minimal.
-Knowledge lives in the [LLMwiki](../LLMwiki) vault; continuity lives in each project's
-`STATE.md`.
+A file-based research workflow for Claude Code and Codex on macOS and Windows.
+Shared policy is in [harness/PROTOCOL.md](harness/PROTOCOL.md); shared skills are in
+`harness/skills/`. Provider adapters are generated, so a workflow fix reaches both apps.
 
-## Lifecycle
+Prerequisites: Node.js 18+ and Git on the app's PATH. No npm dependencies.
 
 ```
-/new-project  <problem>     formulate with the wiki, plan verifiable steps, scaffold
-/import-project <path>      onboard an existing draft/calculations/data into a project
-/solve                      calculate → verify → notes/ → STATE.md   (repeat)
-/pause                      checkpoint before ending a session
-/resume-project [slug]      cold-start briefing in a new session, continue
-/paper                      JHEP-style draft from established results
-/revise <request>           flow-aware revision of the draft
-/proofread [section]        read-through for stale refs, symbol collisions, claim/data mismatches
-/report                     plain-language TL;DR report (tex + pdf) from notes/
+node harness/cli.mjs paths
+node harness/sync.mjs --check
+node --test tests/harness.test.mjs
 ```
 
-Each project is `projects/<slug>/` with `PROJECT.md` (formulation, stable),
-`STATE.md` (live state), `notes/` (per-step records), `calc/` (re-runnable scripts),
-`paper/` (LaTeX draft, plus `PUNCHLINES.md` recording the claim each section and
-paragraph exists to make), `report/` (plain-language TL;DR). See `CLAUDE.md` for the
-full protocol and `PAPER-STYLE.md` for the style rules drafts are held to.
+The wiki is a sibling folder containing `Index.md` and `wiki/`. It is read-only from
+here. This works without user/drive-specific paths. Resolve ambiguity with a local
+`HEP_WIKI_DIR` override. See [operations](harness/OPERATIONS.md) for hook installation,
+multiple computers and checkpoint commands.
 
-Research projects themselves stay local: `projects/` is gitignored, so this repo tracks
-only the generic harness. To adopt it, clone and edit the personal bits in `CLAUDE.md`
-(the knowledge-vault path under *Knowledge protocol*, and the interaction language under
-*Conventions*).
+## Research lifecycle
+
+`/new-project` or `/import-project` → `/solve` → `/paper` or `/report` →
+`/revise`, `/proofread`, `/cite-check`. `/pause` records WIP; `/resume-project` resumes.
+Interaction is Korean; artifacts are English unless the project/user specifies otherwise.
+
+Each project is a separate Git repository under `projects/` (gitignored by this repo):
+
+| File | Purpose |
+|---|---|
+| PROJECT.md | Problem, references and conventions |
+| STATE.md | Short current phase, one next action and required-reading links |
+| PLAN.md | Full checklist and predeclared verification criteria |
+| RESULTS.md | Scoped results, stable R/N IDs, dependencies and evidence |
+| DECISIONS.md | Current standing decisions |
+| HISTORY.md | Past decisions and state records |
+| OPEN-QUESTIONS.md | Detailed blockers, failed approaches and gotchas |
+| notes/, calc/ | Derivations and rerunnable calculations |
+| paper/ | LaTeX, PUNCHLINES, CITATIONS and REVIEW.json |
+
+See [memory rules](harness/MEMORY.md), [evidence records](harness/EVIDENCE.md),
+[paper review tracking](harness/PAPER-REVIEW.md), and [model/workflow evaluations](evals/README.md).
+`PAPER-STYLE.md` remains the shared writing guide; project-specific rules live in DECISIONS.
+
+## Saving work
+
+Queue only files changed by the task, then flush. The same queue is flushed by Stop
+hooks as a fallback. Failures are visible and recorded; no automatic pull or force push.
+
+```
+node harness/cli.mjs queue . "Update harness" README.md
+node harness/cli.mjs flush
+```
+
+Nested projects are queued separately with repository-relative paths. Unrelated dirty
+files are preserved. A repository without upstream is committed locally and reported
+as not backed up remotely. Inspect `.harness-local/checkpoints.jsonl` for the outcome.
+
+## Updating the shared workflow
+
+Edit `harness/skills/*/SKILL.md` or `harness/PROTOCOL.md`. Then run:
+
+```
+node harness/sync.mjs
+node harness/install-hooks.mjs
+node harness/sync.mjs --check
+node --test tests/harness.test.mjs
+node harness/cli.mjs check
+```
+
+Hook installation preserves unrelated settings/hooks. New hook definitions may need
+app trust review and a new session. Explicit checkpoint commands remain available.
+The test matrix runs on Windows, macOS and Linux; native scientific toolchains remain
+project-specific. Pulling the harness does not pull the individual research repositories.

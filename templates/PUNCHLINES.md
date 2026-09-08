@@ -7,9 +7,9 @@ It is not a topic label: "discusses the conformal window" names a subject, "the 
 bounded below by unitarity rather than by asymptotic freedom" is a punchline. Write it in
 the draft's own words — the terminology rule in `CLAUDE.md` applies here too.
 
-An anchor identifies a paragraph: its first ~6 words, verbatim, so the entry can be
-re-found by grep after the text moves. Line numbers are a convenience, the anchor is the
-identity.
+The stable source ID from paper/REVIEW.json identifies a source block. Keep its first
+~6 words verbatim as a search aid. Line numbers are a convenience. Follow
+harness/PAPER-REVIEW.md for changed, moved and ambiguous blocks and actual review attestations.
 
 ## Thesis
 
@@ -26,9 +26,9 @@ The claims the thesis rests on, in the order the paper establishes them.
 
 **Punchline:** <what this section adds to the spine, one sentence>
 
-- **¶1** [S1] "<first ~6 words of the paragraph>"
+- **¶1** [p00001] [S1] "<first ~6 words of the paragraph>"
   → <the claim this paragraph makes>
-- **¶2** "<anchor>"
+- **¶2** [p00002] "<anchor>"
   → <claim>
 
 <One block per section and appendix, in document order.>

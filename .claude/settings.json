@@ -5,9 +5,21 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cd \"$CLAUDE_PROJECT_DIR\" && git add -A && { git diff --cached --quiet || git commit -q -m \"Auto-commit: harness update\"; } && git push -q 2>/dev/null || true",
-            "timeout": 60,
-            "statusMessage": "Auto-committing and pushing repo changes"
+            "command": "node -e \"const f=require('node:fs'),p=require('node:path');let d=process.cwd();while(!f.existsSync(p.join(d,'harness','cli.mjs'))){const n=p.dirname(d);if(n===d)throw Error('Cannot locate hep-th harness');d=n;}import(require('node:url').pathToFileURL(p.join(d,'harness','cli.mjs')).href).then(m=>m.entry(['hook']));\"",
+            "timeout": 300,
+            "statusMessage": "Research harness: checkpoint queued files"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"const f=require('node:fs'),p=require('node:path');let d=process.cwd();while(!f.existsSync(p.join(d,'harness','cli.mjs'))){const n=p.dirname(d);if(n===d)throw Error('Cannot locate hep-th harness');d=n;}import(require('node:url').pathToFileURL(p.join(d,'harness','cli.mjs')).href).then(m=>m.entry(['hook']));\"",
+            "timeout": 15,
+            "statusMessage": "Research harness: load shared workflow"
           }
         ]
       }

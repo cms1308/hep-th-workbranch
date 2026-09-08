@@ -1,0 +1,10 @@
+{
+  "finite-order": {"all_orders": false, "evidence_kind": "finite-series", "maximum_checked_power": 6},
+  "original-source": {"source_for_result": "PaperB", "secondary_source": "PaperA", "location": "equation (12)"},
+  "failed-check": {"completed": false, "execution": "FAIL", "next_action": "investigate"},
+  "user-cut-merge": {"restore_deleted_sentence": false, "preserve_new_formula": true, "method": "three-way"},
+  "cold-resume": {"next_step": 3, "reopen_step_2": false, "result_destination": "RESULTS.md", "decision_destination": "DECISIONS.md"},
+  "wiki-portability": {"use_absolute_old_path": false, "resolve_from": "sibling-directory", "edit_vault": false},
+  "citation-partial-review": {"attest_block": false, "remaining_key": "B", "status": "STALE"},
+  "novelty-evidence": {"claim_new": false, "next_action": "literature-search", "absence_is_evidence": false}
+}

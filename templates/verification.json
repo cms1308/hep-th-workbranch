@@ -1,0 +1,14 @@
+{
+  "id": "R1",
+  "claim": "REPLACE with the exact claim being checked",
+  "scope": "REPLACE with parameter range, series order, precision and tolerance",
+  "assumptions": ["REPLACE with the assumptions used"],
+  "evidence_kind": "finite-series",
+  "criterion": "REPLACE with the predeclared check that makes the command exit nonzero on failure",
+  "dependencies": [],
+  "inputs": ["calc/checks/R1.py", "calc/requirements.txt"],
+  "command": ["python3", "calc/checks/R1.py"],
+  "environment": {"python": "REPLACE with actual version", "packages": "calc/requirements.txt", "seed": "not applicable"},
+  "independent_check": "REPLACE with an alternative derivation/comparison or an explicit limitation",
+  "timeout_ms": 60000
+}

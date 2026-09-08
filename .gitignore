@@ -11,6 +11,8 @@
 
 .DS_Store
 __pycache__/
+.harness-local/
+node_modules/
 
 # research projects stay local — only the generic harness is tracked
 projects/*
