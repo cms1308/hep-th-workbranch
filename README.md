@@ -23,6 +23,12 @@ multiple computers and checkpoint commands.
 `/revise`, `/proofread`, `/cite-check`. `/pause` records WIP; `/resume-project` resumes.
 Interaction is Korean; artifacts are English unless the project/user specifies otherwise.
 
+For Claude-led calculations with GPT review, use `/gpt-review <slug> plan` after
+formulation, `/gpt-review <slug> step N` after each solve step, and
+`/gpt-review <slug> recheck step N` after corrections. The review records findings
+and independent checks; it does not switch models or dispatch tasks. Open the
+review in the intended model's session, and avoid simultaneous project edits.
+
 Each project is a separate Git repository under `projects/` (gitignored by this repo):
 
 | File | Purpose |
