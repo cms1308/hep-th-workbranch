@@ -1,18 +1,18 @@
 ---
-name: gpt-review
-description: Review a research project's plan or a completed calculation step, including re-review after corrections. Use for GPT review in the Claude solve / GPT review workflow. Records findings and independent checks without rewriting the author's calculation. Paper editing and whole-draft citation audits use their existing skills.
+name: research-review
+description: Review a research project's plan or a completed calculation step, including re-review after corrections. Use to review a research plan or completed solve step in either Codex or Claude. Records findings and independent checks without rewriting the author's calculation. Paper editing and whole-draft citation audits use their existing skills.
 ---
 
 # Plan and calculation review
 
-Input examples: `/gpt-review <slug> plan`, `/gpt-review <slug> step 3`,
-`/gpt-review <slug> recheck step 3`. Infer the project from the user's context.
+Input examples: `/research-review <slug> plan`, `/research-review <slug> step 3`,
+`/research-review <slug> recheck step 3`. Infer the project from the user's context.
 Without a target, review the plan if no calculation exists; otherwise review the
 latest completed step awaiting review. Ask only if the target remains ambiguous.
 
 This skill runs in the current session; it does not switch models, dispatch another
 task, or start the next solve step. Record the actual reviewer identity when known;
-never claim GPT or independent review merely because of the skill's name. Another
+Do not infer independent verification from the reviewer model alone. Another
 model reviewing shared work is not a blind comparison.
 
 ## Shared contract and scope

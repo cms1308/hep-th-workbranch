@@ -54,7 +54,7 @@ projects/<slug>/
 /new-project   formulate & plan → scaffold projects/<slug>/
 /import-project onboard pre-existing material (draft, calculations, data) into a project
 /solve         execute next step(s): calculate → verify → notes/ → STATE.md
-/gpt-review    review a plan or completed step → findings and independent checks → STATE.md
+/research-review    review a plan or completed step → findings and independent checks → STATE.md
 /pause         checkpoint before ending a session
 /resume-project cold-start briefing in a new session, then continue
 /paper         JHEP-style draft from established results
