@@ -1,8 +1,9 @@
 # Evaluating harness changes and models
 
-These eight sanitized cases cover failures recorded during research: finite-order
+These ten sanitized cases cover failures recorded during research: finite-order
 overclaiming, secondary attribution, failed-check rationalization, stale-copy merges,
-cold starts, machine-specific paths, partial citation review and unsupported novelty.
+cold starts, machine-specific paths, partial citation review, unsupported novelty,
+global bounds inferred from local maxima, and optimization inputs missing constraints.
 PaperA/PaperB are deliberately fictional fixtures. No private manuscript or real
 source text is sent to a model by these scripts.
 

@@ -6,5 +6,7 @@
   "cold-resume": {"next_step": 3, "reopen_step_2": false, "result_destination": "RESULTS.md", "decision_destination": "DECISIONS.md"},
   "wiki-portability": {"use_absolute_old_path": false, "resolve_from": "sibling-directory", "edit_vault": false},
   "citation-partial-review": {"attest_block": false, "remaining_key": "B", "status": "STALE"},
-  "novelty-evidence": {"claim_new": false, "next_action": "literature-search", "absence_is_evidence": false}
+  "novelty-evidence": {"claim_new": false, "next_action": "literature-search", "absence_is_evidence": false},
+  "local-maximum-bound": {"bound_proved": false, "empirical_result_preserved": true, "next_action": "supply-assumptions-or-qualify"},
+  "objective-without-constraints": {"sufficiency_established": false, "prediction_result_preserved": true, "missing_input": "constraint-space"}
 }

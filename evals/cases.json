@@ -40,6 +40,16 @@
       "id": "novelty-evidence",
       "task": "Decide the allowed novelty claim. Return decisions with claim_new (boolean), next_action (literature-search or publish), and absence_is_evidence (boolean), plus an explanation.",
       "material": "A fermionic expression has been derived and numerically checked. The wiki and the one paper already cited do not mention it. No search for the expression or named mathematical objects has been performed beyond those two sources. The draft currently calls the expression unremarked in the literature."
+    },
+    {
+      "id": "local-maximum-bound",
+      "task": "Review the claimed bound. Return decisions with bound_proved (boolean), empirical_result_preserved (boolean), and next_action (supply-assumptions-or-qualify or endorse), plus an explanation. Do not claim a physical counterexample from a generic polynomial.",
+      "material": "A source theorem selects a local maximum of a cubic trial function. A note evaluates that function at a different feasible point, then asserts that the physical value must be at least that evaluation because it is a maximum over the same space. There is no concavity, basin, or global comparison argument. A finite numerical sample mostly respects the proposed inequality, with its scope recorded."
+    },
+    {
+      "id": "objective-without-constraints",
+      "task": "Review the input-sufficiency claim. Return decisions with sufficiency_established (boolean), prediction_result_preserved (boolean), and missing_input (constraint-space or polynomial-coefficients), plus an explanation.",
+      "material": "A predictor encodes the coefficients of a trial polynomial and its value at an accepted parent point, and predicts the optimum after a new constraint with held-out R2=0.8. The optimization must also preserve a set of existing linear constraints. Neither those constraints nor a basis for their null space is supplied, and no reconstruction theorem is available. A check reproduces stored function values but does not test stationarity. The note concludes that the encoding determines the entire constrained optimization problem."
     }
   ]
 }
