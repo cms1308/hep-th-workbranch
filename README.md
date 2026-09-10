@@ -23,11 +23,11 @@ multiple computers and checkpoint commands.
 `/revise`, `/proofread`, `/cite-check`. `/pause` records WIP; `/resume-project` resumes.
 Interaction is Korean; artifacts are English unless the project/user specifies otherwise.
 
-For Claude-led calculations with GPT review, use `/research-review <slug> plan` after
-formulation, `/research-review <slug> step N` after each solve step, and
-`/research-review <slug> recheck step N` after corrections. The review records findings
-and independent checks; it does not switch models or dispatch tasks. Open the
-review in the intended model's session, and avoid simultaneous project edits.
+For automatic calls, use `/auto-calculate <slug>` in Claude, then `/auto-paper <slug>`
+in GPT/Codex after calculation handoff. The lead conversation invokes the other CLI
+for report-only reviews and handles corrections. See [automatic calls](harness/AUTOMATION.md)
+for configuration, status, recovery and limitations. The standalone `/research-review`
+skill still reviews in the current session without switching or dispatching models.
 
 Each project is a separate Git repository under `projects/` (gitignored by this repo):
 

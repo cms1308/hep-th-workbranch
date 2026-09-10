@@ -55,6 +55,8 @@ projects/<slug>/
 /import-project onboard pre-existing material (draft, calculations, data) into a project
 /solve         execute next step(s): calculate → verify → notes/ → STATE.md
 /research-review    review a plan or completed step → findings and independent checks → STATE.md
+/auto-calculate Claude-led solve → Codex review → corrections → calculation handoff
+/auto-paper     GPT-led paper → Claude review → corrections → final draft
 /pause         checkpoint before ending a session
 /resume-project cold-start briefing in a new session, then continue
 /paper         JHEP-style draft from established results
@@ -70,6 +72,11 @@ projects/<slug>/
 
 If the user says they are about to clear/end the session, run the `/pause` protocol
 without being asked.
+
+Conversation-led automatic CLI calls follow [AUTOMATION.md](AUTOMATION.md).
+Delegated review children are report-only: they return the report instead of editing
+state or checkpointing; the lead records it and performs the normal state updates.
+They never dispatch another reviewer. Existing research scope approvals still apply.
 
 ## Knowledge protocol (LLMwiki)
 

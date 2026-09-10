@@ -5,6 +5,7 @@ import { ROOT, read, json, wiki, git, safePath, writeJSON } from './core.mjs';
 import { queue, flush } from './checkpoint.mjs';
 import { scanPaper, attest } from './paper.mjs';
 import { runEvidence } from './evidence.mjs';
+import { request, status } from './dispatch.mjs';
 
 export function checkProject(project) {
   const findings = [];
@@ -28,6 +29,18 @@ export function checkProject(project) {
 }
 export async function main(args = process.argv.slice(2), root = ROOT) {
   const [cmd, ...rest] = args;
+  if (cmd === 'review-status' || cmd === 'review-resume') return status(root, rest[0], rest[1]);
+  if (cmd === 'review-request') {
+    const [slug, ...options] = rest;
+    const values = {};
+    for (let i = 0; i < options.length; i += 2) {
+      if (!['--target', '--reviewer', '--model'].includes(options[i]) || !options[i + 1] || values[options[i]]) throw Error('Expected --target, --reviewer and optional --model, each once');
+      values[options[i]] = options[i + 1];
+    }
+    const result = await request(root, slug, values['--target'], values['--reviewer'], { model: values['--model'] });
+    if (result.state !== 'completed') process.exitCode = 1;
+    return result;
+  }
   if (cmd === 'paths') return { harness: root, wiki: wiki(root), node: process.execPath, platform: process.platform };
   if (cmd === 'check') {
     const names = rest.length ? rest : fs.readdirSync(path.join(root, 'projects')).filter(n => fs.existsSync(path.join(root, 'projects', n, 'STATE.md')));
@@ -67,7 +80,7 @@ export async function main(args = process.argv.slice(2), root = ROOT) {
     if (fs.existsSync(pending) && fs.readdirSync(pending).length) warning += ' Pending checkpoint jobs exist; inspect them before queueing overlapping files.';
     return { hookSpecificOutput: { hookEventName: input.hook_event_name || 'SessionStart', additionalContext: `Read harness/PROTOCOL.md. At turn end queue only files this task changed and flush; Stop is a fallback. ${warning}` } };
   }
-  throw Error('Commands: paths | check [slug...] | queue <repo> <message> <files...> | flush [--local-only] | paper-scan <slug> | attest <slug> <map|citations> <reviewer> <note> <ids...> | run <slug> <spec.json> | hook');
+  throw Error('Commands: review-request <slug> --target <plan|step-N|paper> --reviewer <codex|claude> [--model <model>] | review-status <slug> [id] | review-resume <slug> <id> | paths | check [slug...] | queue <repo> <message> <files...> | flush [--local-only] | paper-scan <slug> | attest <slug> <map|citations> <reviewer> <note> <ids...> | run <slug> <spec.json> | hook');
 }
 function jsonInput() {
   const input = fs.readFileSync(0, 'utf8').trim();
