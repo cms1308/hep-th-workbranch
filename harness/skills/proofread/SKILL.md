@@ -76,6 +76,12 @@ sections not yet proofread this session, in order.
      as a grep, and read each setup or method paragraph against the question of
      whether a referee would see a paper or uploaded project notes.
    - **Imported-text grammar**: legacy sentences with missing articles/verbs.
+   - **Punctuation register**: grep the target sections' prose for `---`, `;` and a
+     colon inside a sentence. Each is a candidate finding under PAPER-STYLE's aside rule
+     (parentheses are the aside device; user, 2026-09-02): rewrite as a parenthesis, a
+     comma clause or two sentences. A colon introducing a display or a caption's column
+     list is fine. Origin: the 2026-09-16 susu-quiver pass left 81 `---` untouched because
+     the checklist had no such item, and the user asked why a proofread had not fixed them.
 
 3. **Physics changes are out of scope.** If a candidate fix would alter a
    physical claim, stop and check the notes; if the text and the notes
