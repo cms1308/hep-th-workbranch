@@ -62,6 +62,9 @@ projects/<slug>/
 /paper         JHEP-style draft from established results
 /report        plain-language TL;DR report (tex+pdf) from notes/ — English by default, Korean on request
 /revise        flow-aware revision of the draft
+/line-edit     sentence-level register and readability pass over one section: per-sentence
+               proposals (current → proposed → rule) against PAPER-STYLE's voice rules,
+               approved item by item, never changing a claim
 /proofread     systematic read-through of the draft: stale refs, symbol collisions,
                claim/data mismatches vs notes/calc, terminology drift, paragraphs that
                no longer make the claim PUNCHLINES.md records for them
