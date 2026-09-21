@@ -49,4 +49,4 @@ If a step reveals the plan itself is wrong, propose the revised plan to the user
 continuing — do not silently reroute.
 
 End of turn: summarize in Korean what was established, how it was verified, and what
-comes next.
+comes next. Append the one-line session recommendation from harness/PROTOCOL.md.

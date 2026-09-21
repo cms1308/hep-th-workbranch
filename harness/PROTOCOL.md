@@ -132,6 +132,20 @@ The sibling containing `Index.md` and `wiki/` is the primary knowledge source
   replace STATE's current status, next action and its required-reading dependencies
   at every completed step. Keep current decisions separate from historical records.
 
+## Session recommendation
+
+When reporting a completed step to the user, append one Korean line:
+`세션: 유지 권장 — <reason>.` or `세션: 새 세션 권장 — <reason>.`
+Use only context already available; do not reread files, inspect session logs or
+query usage merely to make this recommendation. Prefer continuing for closely
+connected next steps and ongoing corrections/debugging. Prefer a new session after
+verification and checkpointing when the next task changes topic or method, or much
+irrelevant trial-and-error/tool output has accumulated. For an independent review,
+recommend a separate reviewer session; this alone does not establish independence.
+Do not invent remaining-context percentages, cache costs or fixed step-count limits.
+The recommendation is advisory: do not open a session, request confirmation or stop
+authorized multi-step work solely because of it. Include it in the normal report.
+
 ## Paper discipline
 
 - `PAPER-STYLE.md` holds the notes → paper filter and the style rules the drafts here are
