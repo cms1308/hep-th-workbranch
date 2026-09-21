@@ -40,6 +40,9 @@ For each step:
    and replace STATE's current phase and next action. New standing decisions go to
    DECISIONS; superseded decisions go to HISTORY with their replacement. Detailed
    unresolved issues belong in OPEN-QUESTIONS, with current blockers linked from STATE.
+   Replace STATE's required reading with the next action's PLAN step, RESULTS IDs,
+   note sections and relevant issues, each with a link and reason; follow MEMORY's
+   dependency and decision rules rather than accumulating completed-step notes.
    Run `node harness/cli.mjs check <slug>`; report remaining findings honestly.
 
 If a step reveals the plan itself is wrong, propose the revised plan to the user before

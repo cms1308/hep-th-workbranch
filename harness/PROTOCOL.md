@@ -129,7 +129,8 @@ The sibling containing `Index.md` and `wiki/` is the primary knowledge source
 - Update `STATE.md` at the end of **every completed step**, not only at `/pause`.
 - `notes/` is the permanent derivation record; `RESULTS.md` holds the detailed catalog.
 - Follow [MEMORY.md](MEMORY.md): update PLAN, RESULTS and DECISIONS as appropriate, and
-  replace STATE's current status and next action at every completed step.
+  replace STATE's current status, next action and its required-reading dependencies
+  at every completed step. Keep current decisions separate from historical records.
 
 ## Paper discipline
 

@@ -21,10 +21,16 @@ zero conversation memory can continue from here alone.
 
 - [Problem and conventions](PROJECT.md)
 - [Standing decisions](DECISIONS.md)
-- [Full plan](PLAN.md)
-- [Detailed results](RESULTS.md)
-- [Open questions and gotchas](OPEN-QUESTIONS.md)
-- [Past decisions](HISTORY.md) — only when the task needs their history.
+- [Plan](PLAN.md) — <next step ID/title and its verification criterion>.
+- [Results](RESULTS.md) — <required R/N IDs and why the next action needs them; omit if none>.
+- <Links to the needed note sections, with heading anchors or exact titles and a reason
+  for each. Include assumptions, relevant failed approaches and unresolved review findings.
+  Select by dependency, not by recency; replace this list when the next action changes.>
+- [Open questions and gotchas](OPEN-QUESTIONS.md) — <issue IDs constraining the next action; omit if none>.
+
+<Add the selected draft's PUNCHLINES for paper work, a requested manuscript briefing,
+or an explicit task dependency. Link HISTORY only for a needed historical record.
+Do not list the entire note archive or read the whole plan/result catalog by default.>
 
 ## Paper
 

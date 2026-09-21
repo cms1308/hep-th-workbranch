@@ -24,6 +24,10 @@ flush only the files changed by this task as described in `harness/OPERATIONS.md
    current stopping point and next action; PLAN contains the checklist; RESULTS contains
    scoped results and their evidence; DECISIONS contains the current rules. Preserve
    superseded decisions in HISTORY and detailed unresolved issues in OPEN-QUESTIONS.
+   Replace STATE's required reading with the exact dependencies of the next action
+   (PLAN step, RESULTS IDs, note sections and issues, with links and reasons),
+   including unfinished work and unresolved review findings. Follow MEMORY's rules
+   for current decisions; do not carry the entire note archive into this list.
 3. **Check the checkpoint** with `node harness/cli.mjs check <slug>`. Read the resulting
    STATE and its required-reading links as a cold session would. Keep it within the
    advisory 200-line / 16-KB budget without hiding blockers or moving active rules to history.
