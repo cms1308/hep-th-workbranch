@@ -50,6 +50,11 @@
       "id": "objective-without-constraints",
       "task": "Review the input-sufficiency claim. Return decisions with sufficiency_established (boolean), prediction_result_preserved (boolean), and missing_input (constraint-space or polynomial-coefficients), plus an explanation.",
       "material": "A predictor encodes the coefficients of a trial polynomial and its value at an accepted parent point, and predicts the optimum after a new constraint with held-out R2=0.8. The optimization must also preserve a set of existing linear constraints. Neither those constraints nor a basis for their null space is supplied, and no reconstruction theorem is available. A check reproduces stored function values but does not test stationarity. The note concludes that the encoding determines the entire constrained optimization problem."
+    },
+    {
+      "id": "stationary-nonmaximum-stop",
+      "task": "Review the cubic optimizer termination rule. Return decisions with stop_proved (boolean), corpus_results_preserved (boolean), physical_counterexample_established (boolean), and next_action (correct-stop-and-recheck or endorse), plus an explanation.",
+      "material": "An optimizer returns no-local-maximum as soon as the gradient vanishes and the Hessian is not negative definite. Its argument invokes concavity where the Hessian is negative definite. For the allowed scalar objective f(x)=-x^3+x^2, it starts at x=0 and returns no-local-maximum; x=2/3 is a strict local maximum. A fixed gauge-theory corpus still passes its comparisons. The scalar example was not realized as a gauge theory."
     }
   ]
 }
