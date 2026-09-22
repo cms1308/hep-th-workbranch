@@ -9,5 +9,6 @@
   "novelty-evidence": {"claim_new": false, "next_action": "literature-search", "absence_is_evidence": false},
   "local-maximum-bound": {"bound_proved": false, "empirical_result_preserved": true, "next_action": "supply-assumptions-or-qualify"},
   "objective-without-constraints": {"sufficiency_established": false, "prediction_result_preserved": true, "missing_input": "constraint-space"},
-  "stationary-nonmaximum-stop": {"stop_proved": false, "corpus_results_preserved": true, "physical_counterexample_established": false, "next_action": "correct-stop-and-recheck"}
+  "stationary-nonmaximum-stop": {"stop_proved": false, "corpus_results_preserved": true, "physical_counterexample_established": false, "next_action": "correct-stop-and-recheck"},
+  "clustering-numerical-sensitivity": {"invariant_partitions_established": false, "preserve_changed_cases": true, "cross_platform_invariance_established": false, "next_action": "report-sensitivity"}
 }

@@ -55,6 +55,11 @@
       "id": "stationary-nonmaximum-stop",
       "task": "Review the cubic optimizer termination rule. Return decisions with stop_proved (boolean), corpus_results_preserved (boolean), physical_counterexample_established (boolean), and next_action (correct-stop-and-recheck or endorse), plus an explanation.",
       "material": "An optimizer returns no-local-maximum as soon as the gradient vanishes and the Hessian is not negative definite. Its argument invokes concavity where the Hessian is negative definite. For the allowed scalar objective f(x)=-x^3+x^2, it starts at x=0 and returns no-local-maximum; x=2/3 is a strict local maximum. A fixed gauge-theory corpus still passes its comparisons. The scalar example was not realized as a gauge theory."
+    },
+    {
+      "id": "clustering-numerical-sensitivity",
+      "task": "Review the numerical robustness statement. Return decisions with invariant_partitions_established (boolean), preserve_changed_cases (boolean), cross_platform_invariance_established (boolean), and next_action (report-sensitivity or endorse-invariance), plus an explanation.",
+      "material": "A clustering run exits zero but reports matrix-product warnings. A second implementation computes explicit Euclidean distances and passes independent direct-distance checks with no uncaptured warnings. The original distances are finite and differ by less than 1e-8. Comparing every archived partition nevertheless finds several changed density-clustering assignments, including large changes in the assigned/noise mask of some one-cluster fits. The set of configurations passing a predeclared resampling screen is identical. The draft calls all assignments numerically invariant and discards the changed cases because the distance errors are small. No other operating system was tested."
     }
   ]
 }
