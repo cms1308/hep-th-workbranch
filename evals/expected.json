@@ -1,14 +1,72 @@
 {
-  "finite-order": {"all_orders": false, "evidence_kind": "finite-series", "maximum_checked_power": 6},
-  "original-source": {"source_for_result": "PaperB", "secondary_source": "PaperA", "location": "equation (12)"},
-  "failed-check": {"completed": false, "execution": "FAIL", "next_action": "investigate"},
-  "user-cut-merge": {"restore_deleted_sentence": false, "preserve_new_formula": true, "method": "three-way"},
-  "cold-resume": {"next_step": 3, "reopen_step_2": false, "result_destination": "RESULTS.md", "decision_destination": "DECISIONS.md"},
-  "wiki-portability": {"use_absolute_old_path": false, "resolve_from": "sibling-directory", "edit_vault": false},
-  "citation-partial-review": {"attest_block": false, "remaining_key": "B", "status": "STALE"},
-  "novelty-evidence": {"claim_new": false, "next_action": "literature-search", "absence_is_evidence": false},
-  "local-maximum-bound": {"bound_proved": false, "empirical_result_preserved": true, "next_action": "supply-assumptions-or-qualify"},
-  "objective-without-constraints": {"sufficiency_established": false, "prediction_result_preserved": true, "missing_input": "constraint-space"},
-  "stationary-nonmaximum-stop": {"stop_proved": false, "corpus_results_preserved": true, "physical_counterexample_established": false, "next_action": "correct-stop-and-recheck"},
-  "clustering-numerical-sensitivity": {"invariant_partitions_established": false, "preserve_changed_cases": true, "cross_platform_invariance_established": false, "next_action": "report-sensitivity"}
+  "finite-order": {
+    "all_orders": false,
+    "evidence_kind": "finite-series",
+    "maximum_checked_power": 6
+  },
+  "original-source": {
+    "source_for_result": "PaperB",
+    "secondary_source": "PaperA",
+    "location": "equation (12)"
+  },
+  "failed-check": {
+    "completed": false,
+    "execution": "FAIL",
+    "next_action": "investigate"
+  },
+  "user-cut-merge": {
+    "restore_deleted_sentence": false,
+    "preserve_new_formula": true,
+    "method": "three-way"
+  },
+  "cold-resume": {
+    "next_step": 3,
+    "reopen_step_2": false,
+    "result_destination": "RESULTS.md",
+    "decision_destination": "DECISIONS.md"
+  },
+  "wiki-portability": {
+    "use_absolute_old_path": false,
+    "resolve_from": "sibling-directory",
+    "edit_vault": false
+  },
+  "citation-partial-review": {
+    "attest_block": false,
+    "remaining_key": "B",
+    "status": "STALE"
+  },
+  "novelty-evidence": {
+    "claim_new": false,
+    "next_action": "literature-search",
+    "absence_is_evidence": false
+  },
+  "local-maximum-bound": {
+    "bound_proved": false,
+    "empirical_result_preserved": true,
+    "next_action": "supply-assumptions-or-qualify"
+  },
+  "objective-without-constraints": {
+    "sufficiency_established": false,
+    "prediction_result_preserved": true,
+    "missing_input": "constraint-space"
+  },
+  "stationary-nonmaximum-stop": {
+    "stop_proved": false,
+    "corpus_results_preserved": true,
+    "physical_counterexample_established": false,
+    "next_action": "correct-stop-and-recheck"
+  },
+  "clustering-numerical-sensitivity": {
+    "invariant_partitions_established": false,
+    "preserve_changed_cases": true,
+    "cross_platform_invariance_established": false,
+    "next_action": "report-sensitivity"
+  },
+  "report-structure": {
+    "lead_section": "aim_result",
+    "show_whole_grouping": true,
+    "include_figure": true,
+    "purpose_before_method": true,
+    "numbers_need_scale": true
+  }
 }

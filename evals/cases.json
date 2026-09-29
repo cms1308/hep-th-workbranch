@@ -60,6 +60,11 @@
       "id": "clustering-numerical-sensitivity",
       "task": "Review the numerical robustness statement. Return decisions with invariant_partitions_established (boolean), preserve_changed_cases (boolean), cross_platform_invariance_established (boolean), and next_action (report-sensitivity or endorse-invariance), plus an explanation.",
       "material": "A clustering run exits zero but reports matrix-product warnings. A second implementation computes explicit Euclidean distances and passes independent direct-distance checks with no uncaptured warnings. The original distances are finite and differ by less than 1e-8. Comparing every archived partition nevertheless finds several changed density-clustering assignments, including large changes in the assigned/noise mask of some one-cluster fits. The set of configurations passing a predeclared resampling screen is identical. The draft calls all assignments numerically invariant and discards the changed cases because the distance errors are small. No other operating system was tested."
+    },
+    {
+      "id": "report-structure",
+      "task": "Plan the structure of a plain-language report for a reader outside the project. Return decisions with lead_section (aim_result or confirmatory_experiments), show_whole_grouping (boolean), include_figure (boolean), purpose_before_method (boolean) and numbers_need_scale (boolean), plus an explanation.",
+      "material": "The user's stated aim is a clustering of a database. The project's confirmatory results are four prediction experiments that were used to decide which representation the clustering distance should use and what its groups read off. The recorded clustering outputs contain full group tables for every setting and the data to draw the objects. A first draft led with the four prediction experiments in the order they were run, showed one example group of 476 members, contained no figure, and quoted errors of 0.8 and 6.6 without saying what range the predicted quantity has. The user asked why the prediction experiments were done and what the members of a group share."
     }
   ]
 }

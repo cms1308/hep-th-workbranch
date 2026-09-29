@@ -43,55 +43,132 @@ how this repo works, rewrite it in terms of the physics.
 - **Traceable — but invisibly.** Every claim comes from a specific note or `RESULTS.md`
   result. Record the source as a LaTeX comment (`% src: notes/03-anomaly-matching.md`)
   above the claim, never in the rendered text.
-- **Short.** Target 2–4 pages. If a section is growing past that, it is summarizing
-  too little and quoting too much.
+- **Short by density, not by omission.** Target 2–4 pages for a results summary; a
+  report the user asks to be pedagogical may run to 6–10 pages. The limit that matters
+  is one idea per paragraph: a paragraph that mixes setup, numbers and caveats is
+  summarizing too little and quoting too much.
 
 All repo conventions apply: no invented terminology, notation as fixed in
 `PROJECT.md`, no hard-wrapped `.tex` prose.
+
+## Readability contract
+
+Origin: the 2026-09-29 landscapeML-schur report. It was correct, sourced and free of
+harness vocabulary, and the user could not read it: every section raised a question
+the report should have answered ("why predict central charges?", "how many clusters
+and what do they share?", "what is a sample?", "why was this experiment done?"). The
+report had been organized by the project's chronology and by the harness's evidence
+hierarchy (confirmatory endpoint first) instead of by the reader's questions, it showed
+one example cluster instead of the result, it had no figure, and it used terms and
+numbers without saying what they mean or what scale they live on. These rules prevent
+that report.
+
+1. **Lead with the user's aim, not the project's machinery.** If the aim is X (for
+   example a clustering) and the confirmatory experiments were Y (for example
+   prediction tests), the report's main section is X's result. Y appears afterwards,
+   introduced by the sentence that links them ("the prediction tests are how we checked
+   what the clustering distance measures") and by what each Y result changed in the
+   reading of X. If Y cannot be linked to X in one sentence, the report is not ready.
+2. **Every section title is a question the reader has, and the section answers it.**
+   Order by the reader's questions (what was asked → what came out → how we know →
+   what it means and does not mean → what is next), never by the order the work
+   happened or by result IDs. A section that cannot be titled by a question is
+   bookkeeping and is cut.
+3. **Purpose before method.** Every experiment, model, transform or statistic is
+   preceded by one sentence saying why it exists in this project. A method whose
+   purpose cannot be stated in the physics is left out.
+4. **The whole result, not an example.** A clustering result is the full table of
+   groups (size, the physical range of each, what its members share) plus the
+   statistic over every setting that was run; one displayed partition is never the
+   result. A prediction result is the comparison table with every declared row that
+   bears on the question. Say what was not found with the same prominence as what was.
+5. **Numbers carry their scale.** Before the first error, difference or score, state
+   what a good and a bad value look like in this problem (for example "rank runs from
+   5 to 40; guessing the mean gives an error of about 6; one unit is a correct integer
+   guess"). Intervals are explained once, in words, where they first appear.
+6. **A figure for anything spatial.** A report about clusters, neighborhoods,
+   embeddings or distributions contains at least one picture of the objects, produced
+   by a recorded script from recorded data (a run manifest, a note), never drawn by
+   hand and never from numbers that exist only in the session.
+7. **One worked example carried through.** Pick one concrete object (one theory, one
+   operator, one configuration) with its actual recorded numbers and follow it through
+   every definition the reader must hold; abstract definitions alone do not survive a
+   first reading.
+8. **Say what the members of a group share, and what is not known.** For every
+   grouping, ranking or classification the report shows, one paragraph answers "so
+   what do the members have in common?" in two lists: what is established and what is
+   not. If the annotations used to judge a grouping are themselves functions of the
+   inputs, say so, because it bounds what the grouping can ever show.
+9. **A glossary at the end** with one line per technical term the reader must hold
+   (representations, error measures, intervals, samples and resamples, information
+   measures, algorithms). Terms are defined the first time in the text as well.
+10. **Numbers only from records.** Anything computed during the session to answer a
+    question goes into a re-runnable script, a spec, a run and a note before it goes
+    into the report. A number without a `% src:` is a defect.
 
 ## Structure
 
 ```
 report/report.tex        English (default)
 report/report-ko.tex     Korean, only when requested
+report/figures/*.png     figures, produced by a recorded script
 ```
 
 Plain `article` class (11pt, sensible margins via `geometry`), `amsmath`,
-`hyperref` — deliberately not the JHEP class. For Korean use `kotex` and compile
-with `latexmk -cd -xelatex projects/<slug>/report/report-ko.tex`; English compiles with `latexmk -cd -pdf projects/<slug>/report/report.tex`.
+`hyperref`, `graphicx` — deliberately not the JHEP class. For Korean use `kotex` and
+compile with `latexmk -cd -xelatex projects/<slug>/report/report-ko.tex`; English compiles
+with `latexmk -cd -pdf projects/<slug>/report/report.tex`. Set a Korean main font that
+exists on the machine (check `fc-list :lang=ko`), and use curly quotation marks; straight
+quotes render wrongly with CJK fonts.
 
 In a Korean report, technical terms stay in English: physics terminology
 (superpotential, anomaly matching, moduli space, ...), group/symmetry names, and
 mathematical objects are written in English as-is, with Korean carrying the
 surrounding prose. Do not translate or transliterate them into Korean.
 
-Sections, in order:
+Sections, in this order, each titled by the question it answers:
 
-1. **TL;DR** — a boxed paragraph of 3–5 sentences at the top: question, answer,
-   confidence. A reader who stops here should still leave with the punchline.
-2. **The problem** — what was asked and why it is interesting, a short paragraph.
-3. **What we found** — one subsection or bold-led paragraph per established result,
-   in logical (not chronological) order: plain statement, the key formula or number
-   if essential, and how it was checked in one clause.
-4. **What remains** — what is done, what is in progress, and what has not been
-   started, distilled from `STATE.md` but written as research goals ("the magnetic
-   dual for $Sp$ groups has not yet been worked out"), never as plan bookkeeping.
-5. **Open questions** — from `OPEN-QUESTIONS.md` and STATE's current blockers,
-   stated as questions, not spun as results.
+1. **TL;DR** — a boxed paragraph at the top: the aim, what was built, the main result
+   in the aim's own terms, what it means and does not mean, confidence. A reader who
+   stops here still leaves with the punchline. Written last.
+2. **What was asked** — the aim and the operational question, a short paragraph each.
+3. **Background** — only the definitions the reader must hold to read the result, with
+   the worked example (rule 7). For a results summary this is one page at most; for a
+   pedagogical report, as long as the definitions need.
+4. **The data** — what objects, how many, how they were checked, what was merged.
+5. **The main result** — the section that answers the aim (rule 1), with the whole
+   result (rule 4), a figure (rule 6), the scale of its numbers (rule 5) and the
+   established/not-established lists (rule 8).
+6. **How we know what the result measures** — the confirmatory experiments, each
+   introduced by its purpose (rule 3) and closed by what it changed in the reading of
+   the main result.
+7. **What remains** — done, in progress, not started, as research goals, never as plan
+   bookkeeping.
+8. **Open questions** — from `OPEN-QUESTIONS.md` and STATE's current blockers, as
+   questions, not spun as results.
+9. **Glossary** (rule 9).
 
 ## Procedure
 
 1. Read the precondition files; inventory the established results and their
-   verification status.
-2. Write the report. The TL;DR is written **last**, after the body exists — it
-   compresses the body, not the plan.
-3. Re-read every sentence against the notes (self-review rules apply): no claim the
+   verification status. Write down the reader's questions the report must answer, in
+   the reader's words; when the report is being regenerated after the user asked
+   questions about an earlier version, those questions are the specification.
+2. Make the figures and any grouping tables from recorded outputs with a script under
+   `calc/` and a spec; run it; record it in a note if the numbers are new (rule 10).
+3. Write the report in the section order above. The TL;DR is written **last**, after
+   the body exists — it compresses the body, not the plan.
+4. Re-read every sentence against the notes (self-review rules apply): no claim the
    notes do not support, no coined labels, no number you have not checked against
-   `calc/` output or a note's Verification block. Then check the rendered text (not
-   comments) for harness vocabulary — grep for phase, step, note, plan, STATE,
-   session, verify — and rewrite any hit in terms of the physics.
-4. Compile with `latexmk` until 0 errors and 0 undefined references. The report is a
-   derived artifact: regenerate it from the notes when it goes stale rather than
-   hand-patching it.
-5. Report back in Korean: where the files are, what the TL;DR says, and anything that
-   could not be included because its verification is incomplete.
+   `calc/` output or a note's Verification block. Then read the draft as the reader:
+   for each section, state the question it answers; for each paragraph, state its one
+   idea; for each method, find the sentence that says why. Fix what fails. Then check
+   the rendered text (not comments) for harness vocabulary — grep for phase, step,
+   note, plan, STATE, session, verify (and their Korean equivalents) — and rewrite any
+   hit in terms of the physics.
+5. Compile with `latexmk` until 0 errors and 0 undefined references; render the first
+   pages to an image and look at them. The report is a derived artifact: regenerate it
+   from the notes when it goes stale rather than hand-patching it.
+6. Report back in Korean: where the files are, what the TL;DR says, the list of reader
+   questions the report answers, and anything that could not be included because its
+   verification is incomplete.
