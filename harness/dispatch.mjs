@@ -79,7 +79,7 @@ export function status(root, slug, id) {
 export async function request(root, slug, target, provider, { model, runner = execute } = {}) {
   if (process.env.HEP_REVIEW_CHILD) throw Error('Nested reviewer dispatch is prohibited');
   if (!['codex', 'claude'].includes(provider)) throw Error('Reviewer must be codex or claude');
-  if (!/^(plan|step-[1-9][0-9]*|paper)$/.test(target)) throw Error('Target must be plan, step-N, or paper');
+  if (!/^(plan|step-(0|[1-9][0-9]*)|paper)$/.test(target)) throw Error('Target must be plan, step-N (N a non-negative integer), or paper');
   const base = location(root, slug);
   const project = repository(root, `projects/${slug}`);
   for (const name of ['PROJECT.md', 'STATE.md', 'PLAN.md']) if (!fs.existsSync(path.join(project, name))) throw Error(`Missing ${name}`);
