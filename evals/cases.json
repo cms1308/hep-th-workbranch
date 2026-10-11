@@ -65,6 +65,11 @@
       "id": "report-structure",
       "task": "Plan the structure of a plain-language report for a reader outside the project. Return decisions with lead_section (aim_result or confirmatory_experiments), show_whole_grouping (boolean), include_figure (boolean), purpose_before_method (boolean) and numbers_need_scale (boolean), plus an explanation.",
       "material": "The user's stated aim is a clustering of a database. The project's confirmatory results are four prediction experiments that were used to decide which representation the clustering distance should use and what its groups read off. The recorded clustering outputs contain full group tables for every setting and the data to draw the objects. A first draft led with the four prediction experiments in the order they were run, showed one example group of 476 members, contained no figure, and quoted errors of 0.8 and 6.6 without saying what range the predicted quantity has. The user asked why the prediction experiments were done and what the members of a group share."
+    },
+    {
+      "id": "grading-superselection",
+      "task": "Review the interpretation of the proved classification. Return decisions with preserve_classification (boolean), superselection_for_given_algebra (boolean), parity_central (boolean), and next_action (specify-observable-algebra or endorse), plus an explanation. Distinguish a grading from superselection and fermion parity from the stated involution.",
+      "material": "An exact calculation proves that a cohomology space decomposes into the two eigenspaces of an involution P, and identifies each eigenspace with a named class of states. P anticommutes with Q but preserves both closed and exact vectors, so it acts on cohomology. The proposed interpretation calls the two eigenspaces superselection sectors. For this fixture, superselection requires P to commute with every operation in the specified observable algebra. That algebra includes multiplication by a bosonic gauge-invariant closed element b whose cohomology class is nonzero and has P=-1. The unit class has P=+1, and multiplication by b maps the unit to b. No restriction excluding this operation has been proposed."
     }
   ]
 }

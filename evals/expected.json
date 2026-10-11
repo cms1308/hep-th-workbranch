@@ -68,5 +68,11 @@
     "include_figure": true,
     "purpose_before_method": true,
     "numbers_need_scale": true
+  },
+  "grading-superselection": {
+    "preserve_classification": true,
+    "superselection_for_given_algebra": false,
+    "parity_central": false,
+    "next_action": "specify-observable-algebra"
   }
 }
