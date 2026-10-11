@@ -74,5 +74,10 @@
     "superselection_for_given_algebra": false,
     "parity_central": false,
     "next_action": "specify-observable-algebra"
+  },
+  "printed-check-not-enforced": {
+    "exit_status_enforces_all_criteria": false,
+    "preserve_independently_checked_result": true,
+    "next_action": "add-failing-assertions"
   }
 }

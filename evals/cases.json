@@ -70,6 +70,11 @@
       "id": "grading-superselection",
       "task": "Review the interpretation of the proved classification. Return decisions with preserve_classification (boolean), superselection_for_given_algebra (boolean), parity_central (boolean), and next_action (specify-observable-algebra or endorse), plus an explanation. Distinguish a grading from superselection and fermion parity from the stated involution.",
       "material": "An exact calculation proves that a cohomology space decomposes into the two eigenspaces of an involution P, and identifies each eigenspace with a named class of states. P anticommutes with Q but preserves both closed and exact vectors, so it acts on cohomology. The proposed interpretation calls the two eigenspaces superselection sectors. For this fixture, superselection requires P to commute with every operation in the specified observable algebra. That algebra includes multiplication by a bosonic gauge-invariant closed element b whose cohomology class is nonzero and has P=-1. The unit class has P=+1, and multiplication by b maps the unit to b. No restriction excluding this operation has been proposed."
+    },
+    {
+      "id": "printed-check-not-enforced",
+      "task": "Review the evidence and automation. Return decisions with exit_status_enforces_all_criteria (boolean), preserve_independently_checked_result (boolean), and next_action (add-failing-assertions or accept-exit-status), plus an explanation.",
+      "material": "A verification specification requires two exact identities A and B. The script asserts A, prints the Boolean value of B, and exits zero without testing B in its failure path. In this run B prints True. A separately constructed exact check also asserts B and passes for the reviewed inputs. The author says that exit zero itself guarantees every specified identity for future runs."
     }
   ]
 }
