@@ -79,5 +79,11 @@
     "exit_status_enforces_all_criteria": false,
     "preserve_independently_checked_result": true,
     "next_action": "add-failing-assertions"
+  },
+  "exact-certificate-float-coercion": {
+    "original_run_sufficient_as_exact_certificate": false,
+    "theorem_disproved": false,
+    "retain_original_run": true,
+    "next_action": "rerun-with-exact-coefficients"
   }
 }

@@ -75,6 +75,11 @@
       "id": "printed-check-not-enforced",
       "task": "Review the evidence and automation. Return decisions with exit_status_enforces_all_criteria (boolean), preserve_independently_checked_result (boolean), and next_action (add-failing-assertions or accept-exit-status), plus an explanation.",
       "material": "A verification specification requires two exact identities A and B. The script asserts A, prints the Boolean value of B, and exits zero without testing B in its failure path. In this run B prints True. A separately constructed exact check also asserts B and passes for the reviewed inputs. The author says that exit zero itself guarantees every specified identity for future runs."
+    },
+    {
+      "id": "exact-certificate-float-coercion",
+      "task": "Review the exact-arithmetic certificate. Return decisions with original_run_sufficient_as_exact_certificate (boolean), theorem_disproved (boolean), retain_original_run (boolean), and next_action (rerun-with-exact-coefficients or accept-pass), plus an explanation.",
+      "material": "A symbolic rational-function check is intended to certify an identity over Q. It exits zero, but code inspection finds that the Python expression (-1)**(-1) introduced a floating coefficient -1.0 into a symbolic expression. No floating-atom or exact-domain assertion was made. All displayed comparisons agree, and there is no mathematical counterexample. The proposed fix uses integer signs and asserts that the checked expressions contain no floating-point atoms. The exact rerun has not happened yet."
     }
   ]
 }
