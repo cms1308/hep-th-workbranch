@@ -53,7 +53,8 @@ they cannot lock another computer. A rejected push is the signal to reconcile ch
 
 `node --test tests/*.test.mjs` runs local integration tests using temporary repositories
 and bare remotes, without sending research files anywhere. `node harness/cli.mjs check`
-checks state structure, links, open verification criteria and paper-review coverage.
+checks state structure, links, open verification criteria and any existing paper-review
+tracking. Paper tracking findings are advisory; an ordinary draft needs no review tracker.
 The cross-platform CI matrix runs the same tests on macOS and Windows (also Linux).
 Scientific truth and paper style still need the workflow's human/model review.
 

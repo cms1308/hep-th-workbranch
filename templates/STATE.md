@@ -28,8 +28,9 @@ zero conversation memory can continue from here alone.
   Select by dependency, not by recency; replace this list when the next action changes.>
 - [Open questions and gotchas](OPEN-QUESTIONS.md) — <issue IDs constraining the next action; omit if none>.
 
-<Add the selected draft's PUNCHLINES for paper work, a requested manuscript briefing,
-or an explicit task dependency. Link HISTORY only for a needed historical record.
+<Link an existing outline for substantial paper work, a manuscript briefing,
+or an explicit task dependency; no map is required for a local edit.
+Link HISTORY only for a needed historical record.
 Do not list the entire note archive or read the whole plan/result catalog by default.>
 
 ## Paper

@@ -85,5 +85,17 @@
     "theorem_disproved": false,
     "retain_original_run": true,
     "next_action": "rerun-with-exact-coefficients"
+  },
+  "local-paper-edit": {
+    "corrected_sentence": "We compute the partition function using the conventions defined in Section 2.",
+    "require_whole_paper_read": false,
+    "create_paragraph_map": false,
+    "request_item_approval": false,
+    "require_full_citation_audit": false
+  },
+  "paper-definition-paragraph": {
+    "keep_definition": true,
+    "require_new_result_claim": false,
+    "missing_paragraph_map_blocks_review": false
   }
 }

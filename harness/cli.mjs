@@ -17,13 +17,19 @@ export function checkProject(project) {
   }
   const plan = fs.existsSync(path.join(project, 'PLAN.md')) ? read(path.join(project, 'PLAN.md')) : state;
   for (const m of plan.matchAll(/^[-*] \[ \][\s\S]*?(?=^[-*] \[[ xX]\]|^## |$(?![\s\S]))/gm)) if (!/verify\s*:/i.test(m[0])) findings.push(`Unchecked step lacks verify criterion: ${m[0].split('\n')[0].slice(0, 140)}`);
-  if (fs.existsSync(path.join(project, 'paper', 'main.tex'))) {
+  if (fs.existsSync(path.join(project, 'paper', 'main.tex')) && fs.existsSync(path.join(project, 'paper', 'REVIEW.json'))) {
     let paper;
     try { paper = scanPaper(project, { persist: false }); }
     catch (e) { findings.push(`Paper scan failed: ${e.message}`); return findings; }
     const counts = {};
-    for (const u of paper.units) for (const [kind, status] of Object.entries(u.status)) counts[`${kind}:${status}`] = (counts[`${kind}:${status}`] || 0) + 1;
-    findings.push(`Paper review coverage (source blocks, including displays): ${JSON.stringify(counts)}`);
+    for (const u of paper.units) {
+      for (const kind of ['map', 'citations']) {
+        if (kind === 'map' ? !u.reviews.map : !u.citations.length) continue;
+        const key = `${kind}:${u.status[kind]}`;
+        counts[key] = (counts[key] || 0) + 1;
+      }
+    }
+    if (Object.keys(counts).length) findings.push(`Paper review tracking (advisory; cited blocks and existing map attestations): ${JSON.stringify(counts)}`);
   }
   return findings;
 }

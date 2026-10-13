@@ -3,84 +3,43 @@ name: paper
 description: Write a JHEP-style LaTeX paper draft in paper/ from the project's established results. Use when the user asks for a draft, write-up, or paper.
 ---
 
-## Shared memory and execution contract
+Read `harness/PAPER-REVIEW.md` for shared context, authorization, validation and saving,
+and `PAPER-STYLE.md` for prose. This workflow writes from recorded results and primary
+sources, not from memory of the conversation.
 
-Read `harness/MEMORY.md` and the project's PROJECT, STATE and DECISIONS before edits.
-Detailed results live in RESULTS, the complete plan in PLAN, past decisions in HISTORY,
-and detailed unresolved issues in OPEN-QUESTIONS. Follow the relevant linked notes.
-For legacy projects without these files, use the corresponding STATE sections until migrated.
-Commands below run from the harness root. Resolve the wiki with `node harness/cli.mjs paths`;
-never assume an absolute path or a provider-specific tool name. At the end, queue and
-flush only the files changed by this task as described in `harness/OPERATIONS.md`.
+## Establish the scope
 
+Read the relevant RESULTS entries and supporting notes, including assumptions and
+verification limits. Identify the main contribution and what evidence supports it.
+Keep conjectures and preliminary results explicitly qualified; resolve a material
+uncertainty about including them before treating them as an established result.
 
-Precondition: read `PROJECT.md`, `STATE.md`, `DECISIONS.md`, `RESULTS.md`, and
-all notes supporting the planned claims (follow dependencies) — the paper is
-written from the notes, not from memory of the session.
+For a substantial draft, make a short section outline using `templates/PUNCHLINES.md`
+when a separate outline helps continuity. Do not plan every paragraph in advance.
+If the user has already supplied or authorized the scope, proceed with drafting.
+Ask about an unresolved scientific or scope choice, not for routine outline approval.
 
-## 1. Result inventory
+## Draft
 
-List which results are paper-worthy, confirm each is verified (its note records the
-checks), and map how they connect into a narrative: motivation → setup → calculation →
-results → discussion. Flag any result whose verification is incomplete — it does not go
-in the paper without a caveat the user approves.
+- Use the project's JHEP setup. Look for `jheppub.sty` locally or in a sibling LaTeX
+  directory; otherwise obtain it from the JHEP author site.
+- Use `paper/main.tex` and the existing included sources. Preserve any separately
+  requested manuscript directory or author version.
+- Obtain bibliography metadata from recorded references or INSPIRE. Check new citation
+  claims against the primary paper, including attribution to original sources.
+- Organize the argument for the reader. Include definitions, derivations and checks
+  where needed, and move lengthy supporting material to appendices when appropriate.
+- Write original prose, keeping notation, assumptions and test ranges intact. Search
+  the literature before describing a result as new. The abstract and conclusion must
+  match what the body actually establishes.
+- Revise the section outline when the argument changes. No per-paragraph anchors or
+  full map coverage are required for ordinary drafting.
 
-## 2. Outline — get sign-off
+## Deliver
 
-Propose, in Korean: the thesis (the one sentence the paper argues), the spine of claims
-that thesis rests on in the order they are established, the section structure, and which
-result goes where. Wait for the user's OK before writing.
-
-## 3. Scaffold
-
-- `paper/main.tex` using the JHEP class. Find `jheppub.sty`: check
-  the project and a sibling `LaTeX/` directory first; otherwise download from the JHEP author site; if neither works,
-  ask the user.
-- `paper/refs.bib`: pull entries from the wiki's `papers/` pages and
-  `sources/arxiv/*/inspire.json` (INSPIRE texkeys preferred). Every literature claim in
-  the draft must carry a citation already recorded in the notes or PROJECT.md.
-- `paper/PUNCHLINES.md` from `templates/PUNCHLINES.md`, filled in with the signed-off
-  thesis and spine. It is written before the prose, not after.
-
-## 4. Map first, then write
-
-**The full punchline map precedes all prose** (user rule, 2026-08-26: fix what the paper
-claims, structure the steps that establish it — those steps ARE the punchlines — and
-only then write text to match; never write first and extract punchlines after). Before
-any prose, extend `paper/PUNCHLINES.md` to the complete argument: every planned
-section's punchline, and under it one punchline per planned paragraph — each the single
-claim a unit of text will exist to make, ordered by what the reader needs next to accept
-the thesis, not by the order the steps were done in. This is structuring the argument,
-not summarizing text: a paragraph is planned because the spine needs its claim, never
-because material exists for it. Anchors stay empty at this stage — they are filled with
-the paragraph's first ~6 words once the prose exists.
-
-Then write to the map: each paragraph is written to make exactly its pre-declared
-punchline. If writing reveals the map is wrong — a step missing, a claim that splits,
-a planned paragraph not needed — change the map first, deliberately, then write;
-never let the prose drift and re-derive its punchline afterwards.
-
-Read `PAPER-STYLE.md` before writing and apply its notes → paper filter to every
-section: the notes are written for the next session, the paper for a referee, and most
-of what a note records deliberately does not cross. Notation exactly as fixed in
-`PROJECT.md`. Abstract and introduction state precisely what is new.
-
-As each section is finished, run the "Before leaving a section" checks in
-`PAPER-STYLE.md` on it — coined terminology, symbol hygiene, self-containedness, claims
-traceable — fix what they find while the section is still open (leaving them to
-`/proofread` means rewriting text that should not have been written that way), fill in
-the anchors, and confirm each paragraph still makes its mapped claim.
-
-## 5. Compile and record
-
-Compile with `latexmk -cd -pdf projects/<slug>/paper/main.tex`, fix all errors and undefined references, report the result.
-Update the `sync:` line of `paper/PUNCHLINES.md` and `STATE.md` (phase → paper drafting,
-plus a short Paper section tracking draft/review status; standing decisions go to DECISIONS).
-
-## Mechanical review coverage
-
-Follow `harness/PAPER-REVIEW.md`. Run paper-scan before and after edits. Keep stable
-source IDs in PUNCHLINES and CITATIONS alongside readable anchors. Changes to claims
-leave their citation rows STALE until primary-source rechecking; proofread performs
-this marking explicitly. Attest only entries actually reviewed, never an entire
-legacy ledger merely because the files compile. Report UNREVIEWED/STALE coverage in STATE.
+Read the draft for scientific consistency and flow; compile and inspect affected layout.
+Check the citations added in this pass. Use cite-check for the full audit before
+submission or when requested. Detailed scan/attestation tracking is optional under
+PAPER-REVIEW; do not represent drafting or compilation as a completed independent review.
+Update STATE with the draft's scope, remaining issues and review status, checkpoint the
+changed files, and report the manuscript location and validation outcome in Korean.

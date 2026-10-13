@@ -80,6 +80,16 @@
       "id": "exact-certificate-float-coercion",
       "task": "Review the exact-arithmetic certificate. Return decisions with original_run_sufficient_as_exact_certificate (boolean), theorem_disproved (boolean), retain_original_run (boolean), and next_action (rerun-with-exact-coefficients or accept-pass), plus an explanation.",
       "material": "A symbolic rational-function check is intended to certify an identity over Q. It exits zero, but code inspection finds that the Python expression (-1)**(-1) introduced a floating coefficient -1.0 into a symbolic expression. No floating-atom or exact-domain assertion was made. All displayed comparisons agree, and there is no mathematical counterexample. The proposed fix uses integer signs and asserts that the checked expressions contain no floating-point atoms. The exact rerun has not happened yet."
+    },
+    {
+      "id": "local-paper-edit",
+      "task": "Carry out the authorized manuscript correction. Return decisions with corrected_sentence (string), require_whole_paper_read (boolean), create_paragraph_map (boolean), request_item_approval (boolean), and require_full_citation_audit (boolean), plus an explanation of the context and checks needed.",
+      "material": "The user asks: Fix the duplicated word in this paragraph. The complete paragraph is: We compute the the partition function using the conventions defined in Section 2. The preceding paragraph introduces the calculation and the following paragraph contains its result. No scientific claim, equation, reference or assumption is changing. There is no PUNCHLINES.md or REVIEW.json, and the project has no extra approval requirement."
+    },
+    {
+      "id": "paper-definition-paragraph",
+      "task": "Review whether to keep the paragraph. Return decisions with keep_definition (boolean), require_new_result_claim (boolean), and missing_paragraph_map_blocks_review (boolean), plus an explanation.",
+      "material": "A manuscript section opens by defining notation used in its next derivation. The paragraph is accurate, concise, and its notation is used in the following equations; the definition is not duplicated elsewhere. The section contributes to the paper main argument. An editorial checklist flags the paragraph because it states no new scientific result and has no separate PUNCHLINES.md entry. The user asked for a readability and consistency review, not a full paragraph map."
     }
   ]
 }

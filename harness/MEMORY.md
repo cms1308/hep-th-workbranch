@@ -21,7 +21,8 @@ entry point, not the complete result archive. A project uses these files:
 - Solve: choose the next relevant open PLAN step, fix its verification criterion before
   calculation, record evidence, update RESULTS and PLAN, replace STATE's stopping point
   and required reading for the next action.
-- Paper/revision: read DECISIONS and the relevant RESULTS as well as the paper map.
+- Paper/revision: read DECISIONS and the relevant draft context and RESULTS; use an
+  existing section outline when helpful. Follow PAPER-REVIEW.md for proportional scope.
   Record a new standing decision in DECISIONS in the same edit, history in HISTORY.
 - Pause: flush WIP into notes; update the current files and run `node harness/cli.mjs check
   <slug>`. Do not move unresolved constraints to history merely to meet a size target.
@@ -46,9 +47,10 @@ its result/note references using headings and search, then read the relevant sec
 Preserve explicit project-specific prerequisites; narrow broad links only after checking
 their scope. Record the resulting list when updating STATE.
 
-Read the selected draft's PUNCHLINES for paper work, a requested manuscript briefing,
-or an explicit dependency of the current task. A draft's existence alone does not
-require reading its map when resuming calculations. Paper-editing prerequisites remain.
+Read the selected draft's outline for substantial paper work, a manuscript briefing,
+or an explicit dependency when one exists. Do not create or fully maintain a paragraph
+map for a local edit. A draft's existence does not require reading it or its outline
+when resuming calculations.
 
 ## Keeping decisions current
 

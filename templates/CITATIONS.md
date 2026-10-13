@@ -1,7 +1,9 @@
 # CITATIONS — <slug>
 
-One row per (claim, key), with source IDs from REVIEW.json. Review status must be
-checked with paper-scan; a sync date is not an attestation. Follow harness/PAPER-REVIEW.md.
+One row per (claim, key), identified by section and a short readable claim anchor.
+For optional tracked attestations, also include the source ID from REVIEW.json and
+run paper-scan at the audit boundary. A sync date is not an attestation. Follow
+harness/PAPER-REVIEW.md. Preserve recorded primary-source checks for unchanged claims.
 
 | source ID / anchor | key | type | source version | location | excerpt | support | originality | bib | date |
 |---|---|---|---|---|---|---|---|---|---|

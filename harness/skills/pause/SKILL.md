@@ -17,9 +17,9 @@ flush only the files changed by this task as described in `harness/OPERATIONS.md
 1. **Flush in-progress work.** An unfinished derivation goes into the current step's note
    as a `## WIP` section stating exactly where it stopped, what has been checked so far,
    and what remains. Scratch computations go into `calc/` with a one-line header comment.
-   If the draft was edited this session, bring `paper/PUNCHLINES.md` back in sync before
-   checkpointing; if that cannot be finished now, record in `STATE.md` exactly which
-   sections' entries are stale.
+   If the draft's argument or section roles changed, update its existing outline or
+   record the unresolved structural change in STATE. Do not create a map or refresh
+   every paragraph anchor merely to checkpoint a local wording edit.
 2. **Update the current files** following `harness/MEMORY.md`: STATE contains one
    current stopping point and next action; PLAN contains the checklist; RESULTS contains
    scoped results and their evidence; DECISIONS contains the current rules. Preserve

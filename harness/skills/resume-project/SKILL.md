@@ -24,11 +24,11 @@ Input: optional project slug in $ARGUMENTS.
    sections and open issues, including their necessary dependencies. Do not load
    recent notes by default. For a missing or archive-wide list, use the fallback
    in `harness/MEMORY.md`; if the requested task differs from STATE, select its
-   dependencies instead. Read the selected draft's `PUNCHLINES.md` only for paper
-   work, a requested manuscript briefing or an explicit task dependency.
+   dependencies instead. Read an existing outline for substantial paper work, a
+   manuscript briefing or an explicit task dependency; use the draft itself if absent.
 3. Brief the user in Korean, concretely:
    - 이 프로젝트가 무엇인지 (문제 한 문장)
-   - 논문 작업이나 원고 브리핑이면 thesis 한 문장과 현재 spine의 진행 상태
+   - 논문 작업이나 원고 브리핑이면 핵심 결과와 원고의 구성·진행 상태
    - 어디까지 했는지 — established results를 수식 포함해서
    - 지금 어느 단계이고 정확히 어디서 멈췄는지
    - 다음 할 일과 open questions

@@ -120,6 +120,35 @@ function paper(root) {
   put(root, 'paper/refs.bib', '@article{A,title={A}}\n@article{B,title={B}}');
   put(root, 'paper/PUNCHLINES.md', '# Map'); put(root, 'paper/CITATIONS.md', '# Ledger');
 }
+
+test('ordinary manuscript checks require no outline or review tracker and create no files', t => {
+  const root = temp(t);
+  put(root, 'STATE.md', '## Status\nDrafting\n\n## Current step\nCorrect wording.\n');
+  put(root, 'paper/main.tex', '\\begin{document}\nA useful definition.\n\\end{document}\n');
+  assert.deepEqual(checkProject(root), []);
+  assert.deepEqual(fs.readdirSync(path.join(root, 'paper')), ['main.tex']);
+});
+
+test('existing review tracking counts cited blocks and chosen map reviews without writing', t => {
+  const root = temp(t); paper(root);
+  put(root, 'STATE.md', '## Status\nDrafting\n\n## Current step\nReview citations.\n');
+  const state = scanPaper(root), unit = state.units.find(u => u.citations.length);
+  const file = path.join(root, 'paper/REVIEW.json');
+  const counts = () => {
+    const before = fs.readFileSync(file, 'utf8');
+    const findings = checkProject(root);
+    assert.equal(fs.readFileSync(file, 'utf8'), before);
+    assert.equal(findings.length, 1);
+    return JSON.parse(findings[0].slice(findings[0].indexOf('{')));
+  };
+  assert.deepEqual(counts(), { 'citations:UNREVIEWED': 1 });
+  put(root, 'paper/PUNCHLINES.md', `# Map\n[${unit.id}] chosen claim`);
+  attest(root, 'map', [unit.id], 'reviewer', 'checked this claim');
+  assert.deepEqual(counts(), { 'map:CURRENT': 1, 'citations:UNREVIEWED': 1 });
+  put(root, 'paper/parts/tail.tex', 'Changed a definition elsewhere.');
+  assert.deepEqual(counts(), { 'map:STALE': 1, 'citations:UNREVIEWED': 1 });
+});
+
 test('paper scanner includes nested TeX, preserves IDs on moves and invalidates edited claims', t => {
   const root = temp(t); paper(root);
   const s = scanPaper(root); assert.equal(sourceFiles(root).length, 3);

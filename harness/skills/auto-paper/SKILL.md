@@ -13,9 +13,10 @@ a handoff alone is not evidence that calculations passed review.
 
 1. Establish the agreed paper scope and ensure the required calculations have review
    support for that scope. Stop on missing prerequisites or unresolved blocking findings.
-2. Use paper for first drafting and revise for corrections. Follow PAPER-STYLE,
-   PUNCHLINES and PAPER-REVIEW, building the claim map before prose. Perform the
-   required citation checks, scan and compile, then checkpoint before dispatch.
+2. Use paper for first drafting and revise for corrections. Follow PAPER-STYLE and
+   PAPER-REVIEW with a short section outline, not a required paragraph map. Perform
+   citation checks for the agreed review scope, compile, and checkpoint before dispatch.
+   Use detailed scan/attestation tracking when useful; it is not a coverage quota.
 3. Call review-request with target paper and reviewer claude. Wait with progress
    updates; do not edit the project concurrently. The reviewer returns findings only.
 4. Accept only a completed, current report. Preserve the full report and version
@@ -23,7 +24,7 @@ a handoff alone is not evidence that calculations passed review.
    unresolved issues. Record exact reviewer identity when known, otherwise unknown.
    Never use a general ready verdict as an attestation of unexamined citation rows
    or paragraph IDs. Apply attestations only for explicitly documented checks.
-5. Resolve blocking findings with revise, update the map and citation ledger as needed,
+5. Resolve blocking findings with revise, update the outline and citation ledger as needed,
    compile and checkpoint, then request Claude re-review. Retain earlier reports and
    stable finding IDs. Stop after three correction rounds unless the user set another
    limit; reconstruct the count across resumed conversations.

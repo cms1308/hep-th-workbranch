@@ -29,7 +29,7 @@ and `DECISIONS.md` (when present), plus the linked records relevant to the task.
 ```
 harness/PROTOCOL.md  this shared protocol
 PAPER-STYLE.md       what keeps a draft from reading like project notes — read before writing paper/
-templates/           project memory, note, verification and paper-map templates — start new files from these
+templates/           project memory, note, verification and paper-outline templates — start new files from these
 projects/<slug>/
   PROJECT.md         problem formulation, background, references, conventions (stable)
   STATE.md           short current status, next action and required-reading links
@@ -42,7 +42,7 @@ projects/<slug>/
   calc/              re-runnable scripts (sympy etc.), one per calculation
   paper/             JHEP LaTeX draft (created by /paper)
     main.tex         the draft
-    PUNCHLINES.md    thesis, spine, and one punchline per section and per paragraph
+    PUNCHLINES.md    short section outline when useful; paragraph mapping is optional
     CITATIONS.md     per-citation ledger: where in the cited paper the claim sits, and
                      whether that paper is the original source (maintained by /cite-check)
   report/            plain-language TL;DR report (created by /report)
@@ -62,12 +62,11 @@ projects/<slug>/
 /paper         JHEP-style draft from established results
 /report        plain-language TL;DR report (tex+pdf) from notes/ — English by default, Korean on request
 /revise        flow-aware revision of the draft
-/line-edit     sentence-level register and readability pass over one section: per-sentence
-               proposals (current → proposed → rule) against PAPER-STYLE's voice rules,
-               approved item by item, never changing a claim
+/line-edit     improve wording and flow while preserving claims; propose or apply edits
+               according to the user's requested mode and project decisions
 /proofread     systematic read-through of the draft: stale refs, symbol collisions,
                claim/data mismatches vs notes/calc, terminology drift, paragraphs that
-               no longer make the claim PUNCHLINES.md records for them
+               leave gaps or contradictions in the argument
 /cite-check    every \cite against the cited paper itself: exact location of the claim
                (equation/section/table), whether the paper is the ORIGINAL source or a
                restatement, bib entry vs INSPIRE; maintains paper/CITATIONS.md
@@ -148,41 +147,29 @@ authorized multi-step work solely because of it. Include it in the normal report
 
 ## Paper discipline
 
-- `PAPER-STYLE.md` holds the notes → paper filter and the style rules the drafts here are
-  held to. Read it before writing or revising `paper/*.tex`. It grows by recording defects
-  found in real drafts.
-- Every draft carries `paper/PUNCHLINES.md` (from `templates/PUNCHLINES.md`): the paper's
-  thesis in one sentence, the spine of claims it rests on, and one punchline — the single
-  claim the text exists to make — for every section and every paragraph. Paragraphs are
-  identified by stable source IDs in `paper/REVIEW.json`, with their first ~6 words
-  retained as search anchors. Follow PAPER-REVIEW.md for changed or ambiguous blocks.
-- The map precedes the prose: `/paper` fixes the thesis, structures the claims that
-  establish it — the punchlines — and only then writes text to match (user rule,
-  2026-08-26). Read the map before touching the draft, and update it in the edit that
-  changes what a paragraph claims — never as a later sweep. A map that disagrees with the draft is worse
-  than no map, so `/proofread` treats a mismatch as a finding and resolves it against the
-  notes.
-- Never invent a punchline for a paragraph that makes no claim, and never adjust the
-  spine to accommodate a section that no spine claim needs. Both are findings for the
-  user, and both are the point of keeping the map.
-- The terminology rule below applies to the map as well: punchlines are written in the
-  draft's own words.
+- Use `PAPER-STYLE.md` for drafting and substantive prose edits. Shared context,
+  authorization, validation and optional review tracking are in [PAPER-REVIEW.md](PAPER-REVIEW.md).
+- Plan the main argument and section roles for substantial drafting. A short outline
+  normally suffices; `PUNCHLINES.md` retains its name for compatibility. No per-paragraph
+  claim map, fixed claim/evidence order or separate map for a local edit is required.
+  Definitions, motivation and transitions are valid parts of a paper.
+- Match review to the change. Preserve claims, evidence, qualifications, citations and
+  author cuts. Check new or changed attributions; audit the full paper before submission.
+  Formal scans and attestations are available when useful, not routine editing gates.
+- The 2026-10-13 user-requested simplification replaces the earlier global paragraph-map
+  requirement; [rationale and historical examples](style/history-2026-10-13.md) are archived.
+  Explicit project decisions still apply. Do not add a new universal rule for each edit.
 
 ## Conventions
 
 - Interact with the user in Korean; write all artifacts (STATE, notes, paper) in English.
-- **Never invent terminology.** Do not coin a term, a label, or a compressed noun phrase
-  to name an idea. Two allowed moves: use the word the literature or the draft already
-  uses, or write the description out in full every time — including when no standard
-  term exists. Banned: notation-derived labels ("½-tensor" for a node with
-  $N_{\rm rank\text{-}2}=\tfrac12$), metaphors for technical operations ("its anomaly
-  filled by bifundamentals"), coined contrasts standing in for an argument, and rare
-  synonyms for something the draft already names. Test before writing any noun phrase
-  as a name: grep the draft — if it is not already there, it is not a term. A phrase
-  occurring exactly once is itself the smell.
-- **When a phrase is unclear, cut it, don't gloss it.** These readers do not need the
-  background restated; the surrounding equations and worked examples usually already
-  carry the content. Propose an expansion only if the information appears nowhere else.
+- **Use established terminology.** Avoid invented labels, compressed noun phrases,
+  metaphors for technical operations and unnecessary synonyms. Use the literature's
+  or project's name, or describe the object clearly. Check uncertain terminology;
+  absence from the current draft or a single occurrence does not disqualify a standard
+  term. Define necessary notation without using definitions to justify needless jargon.
+- Remove redundant explanation. When the argument needs missing information, provide
+  the definition or intermediate step; when an unclear phrase adds nothing, cut it.
 - Papers use the JHEP class (`jheppub.sty`).
 - **Never hard-wrap `.tex` prose.** Each paragraph is a single source line; newlines only
   between paragraphs and around environments and comments. Environment internals
@@ -194,7 +181,7 @@ authorized multi-step work solely because of it. Include it in the normal report
 
 ## Executable checks
 
-Before nontrivial calculations follow [EVIDENCE.md](EVIDENCE.md); before/after paper edits
+Before nontrivial calculations follow [EVIDENCE.md](EVIDENCE.md); for manuscript work
 follow [PAPER-REVIEW.md](PAPER-REVIEW.md). Check structure with `node harness/cli.mjs check`.
 Evidence and review findings do not automatically rewrite physical claims. New failure
 classes get a sanitized evaluation case under `evals/`; see `evals/README.md`.

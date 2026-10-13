@@ -41,11 +41,14 @@ Each project is a separate Git repository under `projects/` (gitignored by this 
 | HISTORY.md | Past decisions and state records |
 | OPEN-QUESTIONS.md | Detailed blockers, failed approaches and gotchas |
 | notes/, calc/ | Derivations and rerunnable calculations |
-| paper/ | LaTeX, PUNCHLINES, CITATIONS and REVIEW.json |
+| paper/ | LaTeX, an optional section outline, citation records and optional review tracking |
 
 See [memory rules](harness/MEMORY.md), [evidence records](harness/EVIDENCE.md),
 [paper review tracking](harness/PAPER-REVIEW.md), and [model/workflow evaluations](evals/README.md).
 `PAPER-STYLE.md` remains the shared writing guide; project-specific rules live in DECISIONS.
+For papers, use a short section outline when useful and review in proportion to the edit.
+PUNCHLINES.md retains its legacy name; a claim ledger for every paragraph is not required.
+Detailed scan/attestation records support audits rather than acting as routine editing gates.
 
 ## Saving work
 

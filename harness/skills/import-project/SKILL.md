@@ -53,11 +53,10 @@ Present the reconstruction (in Korean) and ask what the files cannot tell:
 Create `projects/<slug>/` from `templates/`:
 - `PROJECT.md`: reconstructed formulation, conventions, references (ingest status marked).
 - Existing draft → `paper/`; calculations/data → `calc/` (with a one-line header noting
-  provenance and date of import). Write `paper/PUNCHLINES.md` from
-  `templates/PUNCHLINES.md` for the imported draft — reading it closely enough to state
-  its thesis, spine, and per-paragraph claims is what turns someone else's text into
-  something this harness can revise; sections that resist a punchline go into the import
-  audit as open questions.
+  provenance and date of import). Reuse an existing outline or, when useful, write a
+  short main-result and section outline using `templates/PUNCHLINES.md`. Record real
+  gaps in the argument in the import audit; do not require a claim for every paragraph
+  or treat background and definitions as defects. Follow `harness/PAPER-REVIEW.md`.
 - `notes/00-import.md`: the import audit — inventory, result-by-result support status,
   discrepancies noticed, what was NOT verified.
 - `PLAN.md`: plan with already-done steps checked off; each imported result listed in
