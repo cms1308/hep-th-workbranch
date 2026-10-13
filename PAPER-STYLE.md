@@ -13,6 +13,11 @@ earlier rule is kept, grouped by theme, with its origin. Two conflicts between t
 rules and the professor's practice were resolved in the professor's direction and are
 marked RESOLVED below; the user can reverse either.
 
+For a source-based prose reference, see the [analysis of papers by Jaewon Song](harness/style/jaewon-song.md)
+(2026-10-13). It separates observations from two solo papers and three coauthored papers,
+with passage links and drafting recommendations. Consult it when using Song's prose as a
+reference; it does not override the user rules below or project-specific decisions.
+
 ## The notes → paper filter
 
 `notes/` is written for the next session: it records what was checked, in the order the
