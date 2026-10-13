@@ -1,14 +1,14 @@
 # Paper style
 
-Write a research paper that a reader in the field can follow and assess. Use established
-results, organize the argument for that reader, and preserve the strength and scope of
-the evidence. Follow the user's current request and the project's explicit decisions.
-These guidelines support editorial judgment; they are not sentence templates.
+The default is clear, explanatory research prose. Guide the reader through the question,
+construction or calculation, and what the result establishes. Use concrete operations,
+representative examples and explicit qualifications. Preserve the strength and scope of
+the evidence. The user's current request and the project's explicit decisions take
+precedence. These guidelines support editorial judgment; they are not sentence templates.
 
 Read this guide for drafting or substantive prose work. Shared workflow and review scope
-are in [PAPER-REVIEW](harness/PAPER-REVIEW.md). The [Jaewon Song analysis](harness/style/jaewon-song.md)
-provides optional examples from published papers. The [earlier guide and revision rationale](harness/style/history-2026-10-13.md)
-preserve provenance and past cases; they are not required reading for ordinary edits.
+are in [PAPER-REVIEW](harness/PAPER-REVIEW.md). The [earlier guide and revision rationale](harness/style/history-2026-10-13.md)
+preserve past editorial decisions; they are not required reading for ordinary edits.
 
 ## Scientific content
 
@@ -32,18 +32,21 @@ preserve provenance and past cases; they are not required reading for ordinary e
   legitimate parts of an argument.
 - Explain enough for the reader to reconstruct the reasoning. Keep necessary
   intermediate steps, conventions and evidence in the paper; move lengthy algebra or
-  technical detail to an appendix when it interrupts the main argument.
+  technical detail to an appendix when it interrupts the main argument. Before a long
+  calculation, state its purpose and identify any difficult step the reader needs to follow.
 - Include consistency checks when they support a scientific claim. Omit internal
   verification logs, pass counts, session chronology and repository paths. Describe a
   computational method when it is scientifically needed, not as a work diary.
 - Introduce an equation by its purpose and explain consequences that the reader needs.
   Cut paraphrases that merely repeat the display. Keep a short physical observation or
   reminder when it supplies useful information.
-- In comparable cases, explain the shared method once, refer back, and state what
-  changes. Use a consistent order where it helps comparison, without forcing different
-  cases into identical paragraphs or rephrasing a method just for variety.
+- In comparable cases, explain the method in one representative example, then refer back
+  and state what changes. Use a consistent order where it helps comparison, without forcing
+  different cases into identical paragraphs or rephrasing a method just for variety.
 - Remove redundant text after moving or merging an argument. Judge each paragraph by
   its contribution to the reader, not by whether it states a new result.
+- In the discussion, name concrete open questions arising from the results and their
+  limitations. Let the scope of the argument determine how much explanation is needed.
 
 ## Voice and register
 
@@ -59,8 +62,8 @@ preserve provenance and past cases; they are not required reading for ordinary e
 - The user's preference is restrained colons, semicolons and em-dashes, with parentheses
   for brief asides. This is not a character ban. Keep punctuation that clarifies the
   sentence, including colons introducing equations or lists.
-- Correct grammar without reproducing mistakes from a reference author. Use a reference
-  corpus to understand exposition, not to copy passages or insert stock expressions.
+- Write original, grammatical sentences suited to the argument. Avoid inserting stock
+  expressions mechanically.
 
 ## LaTeX and final reading
 

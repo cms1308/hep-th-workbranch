@@ -45,7 +45,7 @@ Each project is a separate Git repository under `projects/` (gitignored by this 
 
 See [memory rules](harness/MEMORY.md), [evidence records](harness/EVIDENCE.md),
 [paper review tracking](harness/PAPER-REVIEW.md), and [model/workflow evaluations](evals/README.md).
-`PAPER-STYLE.md` remains the shared writing guide; project-specific rules live in DECISIONS.
+`PAPER-STYLE.md` defines the default explanatory research prose; project-specific rules live in DECISIONS.
 For papers, use a short section outline when useful and review in proportion to the edit.
 PUNCHLINES.md retains its legacy name; a claim ledger for every paragraph is not required.
 Detailed scan/attestation records support audits rather than acting as routine editing gates.

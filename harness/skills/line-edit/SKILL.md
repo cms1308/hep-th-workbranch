@@ -7,10 +7,9 @@ Read `harness/PAPER-REVIEW.md` for shared scope, authorization, validation and s
 and `PAPER-STYLE.md` for prose. Use the requested passage or section; a whole-draft
 request may be handled section by section without new approval at each boundary.
 
-Read enough surrounding text to understand the argument. Check project-specific style
-choices and any requested reference author. The optional Song analysis in
-`harness/style/jaewon-song.md` offers examples; it is not a required vocabulary or
-sentence pattern. An existing outline may help, but no paragraph map is needed.
+Read enough surrounding text to understand the argument. Use the default explanatory
+prose in PAPER-STYLE, subject to the user's request and project-specific style choices.
+An existing outline may help, but no paragraph map is needed.
 
 ## Edit for the reader
 

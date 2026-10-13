@@ -147,8 +147,9 @@ authorized multi-step work solely because of it. Include it in the normal report
 
 ## Paper discipline
 
-- Use `PAPER-STYLE.md` for drafting and substantive prose edits. Shared context,
-  authorization, validation and optional review tracking are in [PAPER-REVIEW.md](PAPER-REVIEW.md).
+- Use the default explanatory prose in `PAPER-STYLE.md` for drafting and substantive prose
+  edits. Shared context, authorization, validation and optional review tracking are in
+  [PAPER-REVIEW.md](PAPER-REVIEW.md).
 - Plan the main argument and section roles for substantial drafting. A short outline
   normally suffices; `PUNCHLINES.md` retains its name for compatibility. No per-paragraph
   claim map, fixed claim/evidence order or separate map for a local edit is required.
