@@ -97,5 +97,11 @@
     "keep_definition": true,
     "require_new_result_claim": false,
     "missing_paragraph_map_blocks_review": false
+  },
+  "zero-parameter-family-exclusion": {
+    "whole_family_excluded": false,
+    "zero_parameter_obstruction_preserved": true,
+    "strict_extremum_proves_ir_endpoint": false,
+    "next_action": "restore-with-parameter-condition"
   }
 }
