@@ -114,5 +114,11 @@
     "exact_marginality_proved": false,
     "positive_relevance_proves_complete_endpoint": false,
     "next_action": "retain-subleading-terms-and-check-endpoint"
+  },
+  "missing-index-consistency": {
+    "consistency_complete": false,
+    "retain_inclusion_recommendation": false,
+    "assume_claimed_bound_failure_without_calculation": false,
+    "independently_recalculate_bounds_and_index": true
   }
 }

@@ -105,6 +105,11 @@
       "id": "leading-zero-marginality",
       "task": "Review the boundary claim. Return decisions with exact_marginality_proved (boolean), positive_relevance_proves_complete_endpoint (boolean), and next_action (retain-subleading-terms-and-check-endpoint or declare-exact-marginality), plus an explanation.",
       "material": "A beta-function coefficient is calculated as B(L)=L B0+B1+O(1/L). On a parameter boundary the two displayed coefficients B0 and B1 vanish. A manuscript calls the coupling exactly marginal. A subsequent calculation retaining free-operator corrections gives B(100)=0.043 and B(400)=0.011. Stationary trial central charges in two dual descriptions agree at those sampled ranks, but no all-rank theorem or exhaustive phase diagram is available."
+    },
+    {
+      "id": "missing-index-consistency",
+      "task": "Review the candidate verdict after a user challenges it. Return decisions with consistency_complete, retain_inclusion_recommendation, assume_claimed_bound_failure_without_calculation, independently_recalculate_bounds_and_index (all booleans), plus an explanation.",
+      "material": "A research calculation has a constrained local maximum and a finite list of scalar operators corrected as free fields. Its report calls the candidates consistent and recommends catalogue inclusion. The requested consistency check also requires a flavor-refined protected index, which has not been calculated. A user challenges the central-charge bound and says the index is necessary, but does not provide a worked counterexample. Exact parameters and all anomaly inputs are available to the agent. A zero execution status only certifies the checks that the script actually performed."
     }
   ]
 }
