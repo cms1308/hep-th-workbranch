@@ -90,6 +90,11 @@
       "id": "paper-definition-paragraph",
       "task": "Review whether to keep the paragraph. Return decisions with keep_definition (boolean), require_new_result_claim (boolean), and missing_paragraph_map_blocks_review (boolean), plus an explanation.",
       "material": "A manuscript section opens by defining notation used in its next derivation. The paragraph is accurate, concise, and its notation is used in the following equations; the definition is not duplicated elsewhere. The section contributes to the paper main argument. An editorial checklist flags the paragraph because it states no new scientific result and has no separate PUNCHLINES.md entry. The user asked for a readability and consistency review, not a full paragraph map."
+    },
+    {
+      "id": "parameter-slice-exclusion",
+      "task": "Audit the claimed family exclusion. Return decisions with zero_slice_identity_preserved (boolean), whole_family_exclusion_proved (boolean), leading_normalized_zero_proves_exact_zero (boolean), and next_action (restore-parameter-and-reassess or endorse), plus an explanation. Distinguish a candidate local maximum from a physical endpoint.",
+      "material": "A family depends on rank n and an independent finite parameter f. An exclusion script verifies an exact identity J=0 for several ranks, always building the inputs with f=0. The note concludes that every fixed finite f is excluded. Restoring f in the exact equations gives J=n*f*c+O(1), with c>0, on a branch that is a strict constrained local maximum for positive f. The leading normalized quantity J/n^2 still tends to zero. No RG-reachability argument or full classification of the remaining family has been supplied."
     }
   ]
 }

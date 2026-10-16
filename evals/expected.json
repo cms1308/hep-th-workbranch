@@ -97,5 +97,11 @@
     "keep_definition": true,
     "require_new_result_claim": false,
     "missing_paragraph_map_blocks_review": false
+  },
+  "parameter-slice-exclusion": {
+    "zero_slice_identity_preserved": true,
+    "whole_family_exclusion_proved": false,
+    "leading_normalized_zero_proves_exact_zero": false,
+    "next_action": "restore-parameter-and-reassess"
   }
 }
