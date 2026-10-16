@@ -109,5 +109,10 @@
     "restore_only_selected_example": false,
     "formal_maximum_proves_physical_endpoint": false,
     "next_action": "apply-one-criterion-to-all-families"
+  },
+  "leading-zero-marginality": {
+    "exact_marginality_proved": false,
+    "positive_relevance_proves_complete_endpoint": false,
+    "next_action": "retain-subleading-terms-and-check-endpoint"
   }
 }
