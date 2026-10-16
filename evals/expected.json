@@ -103,5 +103,11 @@
     "zero_parameter_obstruction_preserved": true,
     "strict_extremum_proves_ir_endpoint": false,
     "next_action": "restore-with-parameter-condition"
+  },
+  "formal-extremum-physical-filter": {
+    "blanket_exclusion_justified": false,
+    "restore_only_selected_example": false,
+    "formal_maximum_proves_physical_endpoint": false,
+    "next_action": "apply-one-criterion-to-all-families"
   }
 }

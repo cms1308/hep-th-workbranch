@@ -1,9 +1,9 @@
 # Evaluating harness changes and models
 
-These nineteen sanitized cases cover failures recorded during research: finite-order
+These twenty sanitized cases cover failures recorded during research: finite-order
 overclaiming, secondary attribution, failed-check rationalization, stale-copy merges,
 cold starts, machine-specific paths, partial citation review, unsupported novelty,
-global bounds inferred from local maxima, optimization inputs missing constraints, premature termination at a stationary nonmaximum, numerical clustering sensitivity hidden by a successful execution status, a plain-language report organized by the project's machinery instead of the reader's questions, a cohomology grading mistaken for superselection despite an allowed parity-changing bosonic operation, printed verification conditions that do not affect the process exit status, floating-point coercion in a purported exact rational certificate, a local wording edit expanded into unnecessary manuscript gates, a useful definition rejected for lacking a paragraph punchline, and a zero-parameter obstruction extrapolated to an entire parameterized family.
+global bounds inferred from local maxima, optimization inputs missing constraints, premature termination at a stationary nonmaximum, numerical clustering sensitivity hidden by a successful execution status, a plain-language report organized by the project's machinery instead of the reader's questions, a cohomology grading mistaken for superselection despite an allowed parity-changing bosonic operation, printed verification conditions that do not affect the process exit status, floating-point coercion in a purported exact rational certificate, a local wording edit expanded into unnecessary manuscript gates, a useful definition rejected for lacking a paragraph punchline, a zero-parameter obstruction extrapolated to an entire parameterized family, and inconsistent physical filters applied to a catalogue of formal extrema.
 PaperA/PaperB are deliberately fictional fixtures. No private manuscript or real
 source text is sent to a model by these scripts.
 
