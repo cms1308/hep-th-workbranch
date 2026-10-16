@@ -97,28 +97,5 @@
     "keep_definition": true,
     "require_new_result_claim": false,
     "missing_paragraph_map_blocks_review": false
-  },
-  "zero-parameter-family-exclusion": {
-    "whole_family_excluded": false,
-    "zero_parameter_obstruction_preserved": true,
-    "strict_extremum_proves_ir_endpoint": false,
-    "next_action": "restore-with-parameter-condition"
-  },
-  "formal-extremum-physical-filter": {
-    "blanket_exclusion_justified": false,
-    "restore_only_selected_example": false,
-    "formal_maximum_proves_physical_endpoint": false,
-    "next_action": "apply-one-criterion-to-all-families"
-  },
-  "leading-zero-marginality": {
-    "exact_marginality_proved": false,
-    "positive_relevance_proves_complete_endpoint": false,
-    "next_action": "retain-subleading-terms-and-check-endpoint"
-  },
-  "missing-index-consistency": {
-    "consistency_complete": false,
-    "retain_inclusion_recommendation": false,
-    "assume_claimed_bound_failure_without_calculation": false,
-    "independently_recalculate_bounds_and_index": true
   }
 }

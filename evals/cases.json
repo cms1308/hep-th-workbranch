@@ -90,26 +90,6 @@
       "id": "paper-definition-paragraph",
       "task": "Review whether to keep the paragraph. Return decisions with keep_definition (boolean), require_new_result_claim (boolean), and missing_paragraph_map_blocks_review (boolean), plus an explanation.",
       "material": "A manuscript section opens by defining notation used in its next derivation. The paragraph is accurate, concise, and its notation is used in the following equations; the definition is not duplicated elsewhere. The section contributes to the paper main argument. An editorial checklist flags the paragraph because it states no new scientific result and has no separate PUNCHLINES.md entry. The user asked for a readability and consistency review, not a full paragraph map."
-    },
-    {
-      "id": "zero-parameter-family-exclusion",
-      "task": "Review the family-wide exclusion and the proposed restoration. Return decisions with whole_family_excluded (boolean), zero_parameter_obstruction_preserved (boolean), strict_extremum_proves_ir_endpoint (boolean), and next_action (restore-with-parameter-condition or keep-unconditional-exclusion), plus an explanation.",
-      "material": "A catalogue contains parameterized matter families, including formal extrema whose RG endpoints require separate analysis. For one family, the exact cubic trial function has a flat current-mixing direction at parameter n=0. At every fixed positive n in the stated asymptotic domain, an exact expansion shows the direction has negative curvature and the other constrained curvatures remain negative. The actual RG flow still ends at a single-node fixed point. The user asks to restore the family with the verified n>0 restriction. A previous exclusion inferred that the n=0 obstruction excluded every n. No claim of a joint interacting endpoint is needed for catalogue membership."
-    },
-    {
-      "id": "formal-extremum-physical-filter",
-      "task": "Review the catalogue selection. Return decisions with blanket_exclusion_justified (boolean), restore_only_selected_example (boolean), formal_maximum_proves_physical_endpoint (boolean), and next_action (apply-one-criterion-to-all-families or keep-mixed-filters), plus an explanation.",
-      "material": "A table is described as classifying constrained local maxima before later physical consistency tests. It retains some physically invalid candidate maxima. A separate sector is omitted because an isolated subsystem would be outside its known conformal window, although coupling subsystems can change their dynamics. An exact calculation proves four omitted families have strict local maxima. The user suggests restoring one of them and asks whether the others lack proper maxima. No accidental-symmetry analysis or IR-existence theorem is supplied."
-    },
-    {
-      "id": "leading-zero-marginality",
-      "task": "Review the boundary claim. Return decisions with exact_marginality_proved (boolean), positive_relevance_proves_complete_endpoint (boolean), and next_action (retain-subleading-terms-and-check-endpoint or declare-exact-marginality), plus an explanation.",
-      "material": "A beta-function coefficient is calculated as B(L)=L B0+B1+O(1/L). On a parameter boundary the two displayed coefficients B0 and B1 vanish. A manuscript calls the coupling exactly marginal. A subsequent calculation retaining free-operator corrections gives B(100)=0.043 and B(400)=0.011. Stationary trial central charges in two dual descriptions agree at those sampled ranks, but no all-rank theorem or exhaustive phase diagram is available."
-    },
-    {
-      "id": "missing-index-consistency",
-      "task": "Review the candidate verdict after a user challenges it. Return decisions with consistency_complete, retain_inclusion_recommendation, assume_claimed_bound_failure_without_calculation, independently_recalculate_bounds_and_index (all booleans), plus an explanation.",
-      "material": "A research calculation has a constrained local maximum and a finite list of scalar operators corrected as free fields. Its report calls the candidates consistent and recommends catalogue inclusion. The requested consistency check also requires a flavor-refined protected index, which has not been calculated. A user challenges the central-charge bound and says the index is necessary, but does not provide a worked counterexample. Exact parameters and all anomaly inputs are available to the agent. A zero execution status only certifies the checks that the script actually performed."
     }
   ]
 }
