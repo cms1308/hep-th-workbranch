@@ -95,6 +95,11 @@
       "id": "parameter-slice-exclusion",
       "task": "Audit the claimed family exclusion. Return decisions with zero_slice_identity_preserved (boolean), whole_family_exclusion_proved (boolean), leading_normalized_zero_proves_exact_zero (boolean), and next_action (restore-parameter-and-reassess or endorse), plus an explanation. Distinguish a candidate local maximum from a physical endpoint.",
       "material": "A family depends on rank n and an independent finite parameter f. An exclusion script verifies an exact identity J=0 for several ranks, always building the inputs with f=0. The note concludes that every fixed finite f is excluded. Restoring f in the exact equations gives J=n*f*c+O(1), with c>0, on a branch that is a strict constrained local maximum for positive f. The leading normalized quantity J/n^2 still tends to zero. No RG-reachability argument or full classification of the remaining family has been supplied."
+    },
+    {
+      "id": "partial-copy-census",
+      "task": "Audit the claim about the database. Return decisions with whole_database_claim_justified (boolean), local_rate_extrapolates (boolean), and next_action (read-the-remaining-records or report-database-clean), plus an explanation.",
+      "material": "A check selects records that a known defect could affect, rebuilds the selected ones, and finds that the defect's visible effects sit in one family only. The selection read a local directory of 1.7 million records. A status note says the released database holds 18 million records and that the local directory keeps, per family, only the first levels that an older run reached. The full records are available on a cluster. The report says the defect's effects are confined to that one family across the database."
     }
   ]
 }

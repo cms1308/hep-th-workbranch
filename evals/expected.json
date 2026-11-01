@@ -103,5 +103,10 @@
     "whole_family_exclusion_proved": false,
     "leading_normalized_zero_proves_exact_zero": false,
     "next_action": "restore-parameter-and-reassess"
+  },
+  "partial-copy-census": {
+    "whole_database_claim_justified": false,
+    "local_rate_extrapolates": false,
+    "next_action": "read-the-remaining-records"
   }
 }
