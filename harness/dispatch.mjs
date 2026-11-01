@@ -20,8 +20,10 @@ export function snapshot(project) {
   const files = git(project, ['ls-files', '-z', '--cached', '--others', '--exclude-standard']).split('\0').filter(Boolean);
   return { head: git(project, ['rev-parse', 'HEAD']).trim(), files: Object.fromEntries([...new Set(files)].sort().map(name => {
     const file = safePath(project, name);
-    if (fs.existsSync(file) && !fs.statSync(file).isFile()) throw Error(`Unsupported review input: ${name}`);
-    return [name, fs.existsSync(file) ? sha(fs.readFileSync(file)) : null];
+    const stat = fs.existsSync(file) || fs.lstatSync(file, { throwIfNoEntry: false }) ? fs.lstatSync(file) : null;
+    if (stat && stat.isSymbolicLink()) return [name, sha(Buffer.from(`symlink:${fs.readlinkSync(file)}`))];
+    if (stat && !stat.isFile()) throw Error(`Unsupported review input: ${name}`);
+    return [name, stat ? sha(fs.readFileSync(file)) : null];
   })) };
 }
 
