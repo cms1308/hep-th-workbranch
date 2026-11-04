@@ -12,6 +12,11 @@ preserve past editorial decisions; they are not required reading for ordinary ed
 
 ## Scientific content
 
+- Judge every sentence without exception, both while writing and in the complete final
+  reading required by [PAPER-REVIEW](harness/PAPER-REVIEW.md#judge-every-sentence). Check
+  its truth, the inference supporting it, its exact subject and scope, its terminology,
+  and its place in the paper's argument. Do not reduce this duty to checking isolated
+  conditions or repairing only the words the user points out.
 - State only what the results and cited sources support. Distinguish proof, conjecture,
   numerical evidence and assumptions. Retain relevant ranges, expansion orders,
   specializations and unresolved limitations; a hedge does not replace them.
@@ -71,7 +76,8 @@ Use the project's JHEP setup and notation. Keep each prose paragraph on one sour
 environments retain their own line structure. Do not box equations for emphasis unless
 the user asks. Preserve author edits and intentional cuts when merging versions.
 
-Before delivering an edited passage, read it in context: is the argument understandable,
-are claims and qualifications intact, and do equations, tables, citations and references
-agree? Check affected dependencies and compile after manuscript edits. A full manuscript
-review is a separate scope, not a prerequisite for correcting one sentence.
+Before delivering a manuscript draft or revision, read the complete manuscript and judge
+every sentence under the shared review rule. Confirm that the argument is understandable,
+the claims and qualifications are correct, and the equations, tables, citations and
+references agree. For an explicitly limited excerpt, read every sentence of that excerpt
+with its necessary context. Check affected dependencies and compile after manuscript edits.

@@ -2,7 +2,37 @@
 
 This is the shared workflow for paper, revise, line-edit, proofread and cite-check.
 Use [PAPER-STYLE](../PAPER-STYLE.md) for prose and [MEMORY](MEMORY.md) for project records.
-The default is to write and improve the manuscript with review proportional to the task.
+Every manuscript-writing and revision task requires sentence-by-sentence judgment under
+the permanent rule below (user instruction, 2026-11-04).
+
+## Judge every sentence
+
+Before delivering a manuscript draft or revision, read the complete manuscript and
+judge every sentence, without exception. This includes the abstract, introduction,
+body, captions, footnotes, conclusions and appendices. When the user explicitly limits
+the task to an excerpt, cover every sentence in that excerpt and its necessary context.
+Apply the same judgment while writing, then read the edited text again as a whole.
+
+For each sentence, determine whether:
+
+- Its physical and mathematical statement is correct, with the right subject, object
+  and meaning of each symbol or technical term.
+- Its conclusion actually follows from the derivation, established result or cited
+  source. Check the content, not merely whether a citation or qualification is present.
+- Its assumptions, matter content, parameter ranges, limits and exceptions apply to
+  that exact claim. State a necessary restriction before or with the claim it limits.
+- Its terminology is established in the relevant literature or describes the operation
+  plainly. Do not invent a technical-sounding label to replace an explanation.
+- Its role and logical connection to the surrounding sentences are clear and consistent
+  with the argument and results of the complete paper.
+
+Resolve a doubtful statement against the supporting record before retaining or rewriting
+it. Report an unresolved scientific issue explicitly. A hedge cannot supply missing
+evidence. The assistant owns this review and must not leave the user to discover defects
+one sentence at a time. Keyword searches, compilation, algebra checks and a paragraph-level
+summary supplement this reading; none establishes that every sentence has been judged.
+Report the scope actually read and the unresolved findings accurately. This rule requires
+judgment, not a mandatory per-sentence ledger or a new approval step.
 
 ## Context and authorization
 
@@ -10,6 +40,7 @@ Read PROJECT, STATE and DECISIONS, then the draft passages and evidence needed f
 request. Reuse context already read in the session. A local edit needs its paragraph,
 relevant definitions and actual dependencies. A structural change or change to the
 central claim needs the whole argument, including abstract, introduction and conclusion.
+These context requirements prepare the edit; the complete final reading above still applies.
 
 Follow the user's requested mode. Apply authorized edits; return proposals when proposals
 or review-only work were requested. Do not introduce a second approval step for an

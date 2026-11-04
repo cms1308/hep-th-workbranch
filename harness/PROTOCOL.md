@@ -147,6 +147,13 @@ authorized multi-step work solely because of it. Include it in the normal report
 
 ## Paper discipline
 
+- **Permanent sentence-by-sentence judgment rule (user, 2026-11-04).** When writing or
+  revising a manuscript, judge every sentence for physical and mathematical correctness,
+  evidential support, exact meaning and scope, terminology and logical role. Before
+  delivery, read the complete manuscript without skipping sentences, including captions,
+  footnotes and appendices. An explicitly scoped excerpt requires the same complete
+  judgment within its scope and dependencies. Follow [PAPER-REVIEW](PAPER-REVIEW.md#judge-every-sentence).
+  Compilation and searches do not replace this responsibility.
 - Use the default explanatory prose in `PAPER-STYLE.md` for drafting and substantive prose
   edits. Shared context, authorization, validation and optional review tracking are in
   [PAPER-REVIEW.md](PAPER-REVIEW.md).
@@ -154,8 +161,10 @@ authorized multi-step work solely because of it. Include it in the normal report
   normally suffices; `PUNCHLINES.md` retains its name for compatibility. No per-paragraph
   claim map, fixed claim/evidence order or separate map for a local edit is required.
   Definitions, motivation and transitions are valid parts of a paper.
-- Match review to the change. Preserve claims, evidence, qualifications, citations and
-  author cuts. Check new or changed attributions; audit the full paper before submission.
+- Match new calculations and primary-source reading to the claims being checked. The
+  complete sentence-by-sentence judgment above remains mandatory. Preserve claims,
+  evidence, qualifications, citations and author cuts. Check new or changed attributions;
+  audit the full paper before submission.
   Formal scans and attestations are available when useful, not routine editing gates.
 - The 2026-10-13 user-requested simplification replaces the earlier global paragraph-map
   requirement; [rationale and historical examples](style/history-2026-10-13.md) are archived.
