@@ -100,6 +100,11 @@
       "id": "partial-copy-census",
       "task": "Audit the claim about the database. Return decisions with whole_database_claim_justified (boolean), local_rate_extrapolates (boolean), and next_action (read-the-remaining-records or report-database-clean), plus an explanation.",
       "material": "A check selects records that a known defect could affect, rebuilds the selected ones, and finds that the defect's visible effects sit in one family only. The selection read a local directory of 1.7 million records. A status note says the released database holds 18 million records and that the local directory keeps, per family, only the first levels that an older run reached. The full records are available on a cluster. The report says the defect's effects are confined to that one family across the database."
+    },
+    {
+      "id": "manuscript-language-evidence",
+      "task": "Review a proposed style correction and its evidence. Return decisions with call_section_review (boolean), remove_useful_content (boolean), evidence_establishes_naturalness (boolean), eligible_source, claim_exhaustive (boolean), and corpus_frequency_scope, plus an explanation.",
+      "material": "The actual Section 2 applies two named methods to derive new restrictions but contains no review of either method. An author objects separately to an unexplained stability label and to the opening Weakly gauging it; the rest of the latter sentence is acceptable. The proposed correction calls Section 2 a review and deletes that entire latter sentence. A phrase occurs once in an unrelated context in PaperA, version dated 2026-03-01, initially submitted in 2004. PaperB version 2018-05-10 is relevant. Review date is 2026-11-05; exclude the preceding two years for language evidence. Counts cover a declared 180-paper corpus and 200 of 210 manuscript sentences, while the report calls all hep-th usage and every sentence checked."
     }
   ]
 }

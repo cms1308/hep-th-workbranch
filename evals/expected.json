@@ -108,5 +108,13 @@
     "whole_database_claim_justified": false,
     "local_rate_extrapolates": false,
     "next_action": "read-the-remaining-records"
+  },
+  "manuscript-language-evidence": {
+    "call_section_review": false,
+    "remove_useful_content": false,
+    "evidence_establishes_naturalness": false,
+    "eligible_source": "PaperB",
+    "claim_exhaustive": false,
+    "corpus_frequency_scope": "180-paper corpus"
   }
 }

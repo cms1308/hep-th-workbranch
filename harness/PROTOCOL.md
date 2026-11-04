@@ -147,6 +147,14 @@ authorized multi-step work solely because of it. Include it in the normal report
 
 ## Paper discipline
 
+- **Permanent language-and-content check (user, 2026-11-05).** Judge every word,
+  technical expression and sentence in context, following
+  [PAPER-REVIEW](PAPER-REVIEW.md#language-and-content-check). A section description
+  must match the section actually written. Do not infer a generic stylistic objection
+  from the user's examples, or treat one literature occurrence as proof that the
+  draft's wording is natural. For language evidence exclude versions published in
+  the preceding two years; record the actual corpus, dates and coverage. A full
+  word-frequency audit must account for every token and every sentence, not a sample.
 - **Permanent sentence-by-sentence judgment rule (user, 2026-11-04).** When writing or
   revising a manuscript, judge every sentence for physical and mathematical correctness,
   evidential support, exact meaning and scope, terminology and logical role. Before

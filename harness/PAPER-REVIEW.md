@@ -34,6 +34,44 @@ summary supplement this reading; none establishes that every sentence has been j
 Report the scope actually read and the unresolved findings accurately. This rule requires
 judgment, not a mandatory per-sentence ledger or a new approval step.
 
+## Language and content check
+
+User instruction, 2026-11-05. Apply this to manuscript writing, revision and review.
+
+1. Read the actual section before describing its purpose or contents. Match every verb
+   in a roadmap sentence (reviews, derives, proves, classifies) to what is present.
+2. Judge every word, compound, technical expression and sentence in its physical and
+   grammatical context. Check the referent, ordinary meaning, collocation, sentence
+   opening and connection to adjacent sentences. Do not substitute a keyword scan.
+3. Separate the author's objections before editing. Preserve a sentence's useful
+   content when the objection concerns only its opening. Do not explain away an
+   unwanted term by finding an unrelated use of the same string.
+4. Language evidence must come from primary hep-th paper versions released strictly
+   before the date two calendar years before the review. Record the cutoff and version
+   or dated source metadata. An old initial submission with a recent inspected revision
+   is not eligible. A narrower user cutoff takes precedence. This is a selection rule,
+   not a claim that older papers are necessarily human-written.
+5. For requested exhaustive frequency audits, save the manuscript hash, complete token
+   inventory with locations, corpus manifest and denominator, normalization rules,
+   occurrence counts and document frequencies, and a disposition for every sentence
+   and non-sentence text unit. Include title, abstract, headings, captions, footnotes,
+   tables, figure labels, appendices and bibliography. Distinguish prose from notation,
+   names, addresses and extraction artifacts; do not silently discard low-frequency
+   words or count TeX command names as English vocabulary.
+6. Report corpus frequency as corpus frequency. Search-result counts are not corpus
+   counts. Zero matches do not prove non-use; one match does not establish naturalness.
+   Compare relevant phrases and grammatical constructions, not just isolated words.
+   Treat mathematical definitions, legitimate project-specific descriptions and names
+   separately from unsupported jargon. Never force every sentence to match a quotation.
+7. Read and judge all sentences after edits, including replacements and their context.
+   Check inventory coverage against the final text. Unread, unclassified or unverified
+   material must remain explicitly open; neither a successful script nor a generic
+   "all sentences checked" statement can close it. Reuse unchanged evidence only when
+   source/text hashes and scope agree.
+
+These checks reduce recurrence; do not promise that any harness can make editorial or
+scientific errors impossible. They add no user-approval step to authorized work.
+
 ## Context and authorization
 
 Read PROJECT, STATE and DECISIONS, then the draft passages and evidence needed for the

@@ -55,6 +55,23 @@ preserve past editorial decisions; they are not required reading for ordinary ed
 
 ## Voice and register
 
+- Evaluate each word in its actual phrase and each phrase in its sentence. Established
+  words can form unnatural or misleading combinations. Frequency and attestation are
+  evidence about usage, not a verdict on scientific truth, readability or suitability.
+- Section summaries must describe the actual text. Calling a section a review requires
+  an actual review; using a named method does not make the section a review of it.
+- Address the author's specific objection. Distinguish wrong content, an unwanted term,
+  an unwanted sentence opening, and repetition. Do not replace these with an inferred
+  blanket ban on first-person prose, explanatory sentences or technical detail.
+- Author preference (2026-11-05): do not begin a sentence with "Weakly gauging it".
+  Preserve the useful beta-function statement and give it an explicit subject.
+- When a term leaves the physical question implicit, state the question directly.
+  For example, if the calculation determines whether another gauge coupling is relevant,
+  name that coupling and relevance rather than relying on an unexplained "stability".
+  This is not a universal claim that stability is absent from the literature.
+- Use primary hep-th papers whose inspected versions predate the preceding two years
+  for language comparisons. Record the cutoff. This language-evidence restriction
+  does not authorize removing necessary scientific references to newer results.
 - Guide the reader with concrete operations and clear connections. First-person plural
   is natural for choices and calculations; definitions and established facts can be
   stated directly. Let the reasoning determine whether a claim precedes its evidence.
