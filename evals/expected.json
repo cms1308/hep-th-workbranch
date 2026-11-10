@@ -116,5 +116,11 @@
     "eligible_source": "PaperB",
     "claim_exhaustive": false,
     "corpus_frequency_scope": "180-paper corpus"
+  },
+  "method-withheld-for-dependency": {
+    "skip_method": false,
+    "defer_to_user": false,
+    "install_and_run": true,
+    "negative_claim_scope": "methods-tried"
   }
 }

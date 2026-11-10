@@ -122,6 +122,16 @@ The sibling containing `Index.md` and `wiki/` is the primary knowledge source
   symmetries, agreement with the literature.
 - A step is done only when its criterion passes. A failed check is never rationalized
   away — investigate, and if stuck, record the discrepancy in OPEN-QUESTIONS and link it from STATE.
+- **Try the methods and report results** (user rule, 2026-11-10). When a question admits
+  several methods (models, algorithms, solvers, symbolic regression, other search
+  procedures), try a broad set and report each outcome. Needing a new package is not a
+  reason to skip a method or to defer it to the user: install it (in a separate project
+  environment if the pinned one must stay unchanged), record its versions in a checked-in
+  requirements file and run it. Prior exposure of the data changes only how a result is
+  labelled (exploratory, post hoc), never whether it is run. A method that cannot be run
+  is reported with its failure. A negative conclusion states the methods actually tried
+  and is not generalized beyond them. Scope approvals for new data, physics ranges,
+  papers and releases still apply.
 
 ## State discipline
 
