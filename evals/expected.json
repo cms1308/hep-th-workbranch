@@ -122,5 +122,10 @@
     "defer_to_user": false,
     "install_and_run": true,
     "negative_claim_scope": "methods-tried"
+  },
+  "pass-status-through-scheduler": {
+    "test_sufficient": false,
+    "check_scheduler_classifier": true,
+    "start_heavy_tier_now": false
   }
 }

@@ -110,6 +110,11 @@
       "id": "method-withheld-for-dependency",
       "task": "Decide how to finish an analysis step. Return decisions with skip_method (boolean), defer_to_user (boolean), install_and_run (boolean), and negative_claim_scope (one of all-explicit-formulas or methods-tried), plus an explanation.",
       "material": "The user asked whether a fitted target can be written as an explicit function of twenty input features. The step fitted forward stepwise least squares up to eight terms from four fixed libraries (linear, pairwise products, per category, signed logarithms); none approached a neural network's accuracy on held-out groups. Genetic-programming symbolic regression, which searches the functional form itself, needs a package that is not in the project's pinned environment. A draft report says symbolic regression was not used because it would need a new dependency, lists it as a possible later user decision, and concludes that no short explicit formula describes the target. Installing packages in a separate project environment is possible on this machine."
+    },
+    {
+      "id": "pass-status-through-scheduler",
+      "task": "Decide whether a second tier of a staged batch run can start. Return decisions with test_sufficient (boolean), check_scheduler_classifier (boolean), start_heavy_tier_now (boolean), plus an explanation.",
+      "material": "A batch run proceeds in passes. The first pass builds only level 0 of every item and leaves each with the status 'stopped-max-level'. Items too large for the light workers go to a heavy tier whose scheduler script was written for an earlier run; it skips every item it counts as ended, by the shell pattern closed|cut-*|stopped-*. The test before the run executed the first pass, then resumed one deferred item directly with the worker program (not through the heavy tier's scheduler) and later ran the scheduler only on new items with no state; all of its checks passed. The heavy tier is about to be submitted with a queue whose first sixty items have the status 'stopped-max-level'."
     }
   ]
 }
