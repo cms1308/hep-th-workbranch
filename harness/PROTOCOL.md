@@ -207,6 +207,14 @@ authorized multi-step work solely because of it. Include it in the normal report
 - Remove redundant explanation. When the argument needs missing information, provide
   the definition or intermediate step; when an unclear phrase adds nothing, cut it.
 - Papers use the JHEP class (`jheppub.sty`).
+- **Capitalize document references (user, 2026-11-17).** Always start reference nouns
+  with a capital letter: `Section`, `Subsection`, `Figure`, `Table`, `Equation`,
+  `Appendix`, `Chapter`, their plurals and abbreviations (`Sec.`, `Fig.`, `Eq.`, etc.).
+  This applies throughout manuscripts and
+  reports, including mid-sentence references, captions and footnotes, and references
+  such as "this Section" or "the following Tables". Preserve lowercase LaTeX command
+  and environment names, label keys and paths. Generic mathematical phrases such as
+  "a differential equation" are not document references. See `PAPER-STYLE.md`.
 - **No LaTeX `\paragraph` headings (user, 2026-11-16).** Do not use `\paragraph` or
   `\paragraph*` in manuscripts or reports. Integrate their content into ordinary
   prose; use a section or subsection only when the argument needs that structure.
