@@ -99,9 +99,9 @@ that report.
    what do the members have in common?" in two lists: what is established and what is
    not. If the annotations used to judge a grouping are themselves functions of the
    inputs, say so, because it bounds what the grouping can ever show.
-9. **A glossary at the end** with one line per technical term the reader must hold
-   (representations, error measures, intervals, samples and resamples, information
-   measures, algorithms). Terms are defined the first time in the text as well.
+9. **Define terms in context.** Explain necessary technical terms where they first
+   appear in the prose. Do not append a glossary or a closing terminology section
+   (user instruction, 2026-11-16).
 10. **Numbers only from records.** Anything computed during the session to answer a
     question goes into a re-runnable script, a spec, a run and a note before it goes
     into the report. A number without a `% src:` is a defect.
@@ -146,7 +146,6 @@ Sections, in this order, each titled by the question it answers:
    bookkeeping.
 8. **Open questions** — from `OPEN-QUESTIONS.md` and STATE's current blockers, as
    questions, not spun as results.
-9. **Glossary** (rule 9).
 
 ## Procedure
 
