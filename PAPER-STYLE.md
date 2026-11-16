@@ -93,6 +93,10 @@ Use the project's JHEP setup and notation. Keep each prose paragraph on one sour
 environments retain their own line structure. Do not box equations for emphasis unless
 the user asks. Preserve author edits and intentional cuts when merging versions.
 
+Do not use `\paragraph` or `\paragraph*` headings (permanent user instruction,
+2026-11-16). Incorporate the transition into ordinary prose. Use a section or subsection
+only when there is a substantive reason to divide the argument.
+
 Before delivering a manuscript draft or revision, read the complete manuscript and judge
 every sentence under the shared review rule. Confirm that the argument is understandable,
 the claims and qualifications are correct, and the equations, tables, citations and

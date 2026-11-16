@@ -191,6 +191,14 @@ authorized multi-step work solely because of it. Include it in the normal report
 ## Conventions
 
 - Interact with the user in Korean; write all artifacts (STATE, notes, paper) in English.
+- **No automatic Codex side panels (user, 2026-11-16).** Do not open or focus a right-side
+  panel, preview, editor, browser tab or other app window unless the user explicitly
+  requests that UI action. Creating, editing, compiling or checking a file is not a
+  request to display it. Avoid artifact-opening hooks and output directives that
+  automatically display deliverables; report completion in text, with an ordinary
+  file link when useful. Headless compilation/rendering and local image inspection
+  for verification are allowed. This preference also applies when a skill normally
+  asks to announce or display an artifact.
 - **Use established terminology.** Avoid invented labels, compressed noun phrases,
   metaphors for technical operations and unnecessary synonyms. Use the literature's
   or project's name, or describe the object clearly. Check uncertain terminology;
@@ -199,6 +207,11 @@ authorized multi-step work solely because of it. Include it in the normal report
 - Remove redundant explanation. When the argument needs missing information, provide
   the definition or intermediate step; when an unclear phrase adds nothing, cut it.
 - Papers use the JHEP class (`jheppub.sty`).
+- **No LaTeX `\paragraph` headings (user, 2026-11-16).** Do not use `\paragraph` or
+  `\paragraph*` in manuscripts or reports. Integrate their content into ordinary
+  prose; use a section or subsection only when the argument needs that structure.
+  Apply this to the material being written or revised, without rewriting unrelated
+  manuscripts or historical sources.
 - **Never hard-wrap `.tex` prose.** Each paragraph is a single source line; newlines only
   between paragraphs and around environments and comments. Environment internals
   (`equation`, `tabular`, `tikzpicture`) and comment lines keep their own line structure.
