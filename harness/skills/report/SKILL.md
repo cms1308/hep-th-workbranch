@@ -69,11 +69,10 @@ that report.
    introduced by the sentence that links them ("the prediction tests are how we checked
    what the clustering distance measures") and by what each Y result changed in the
    reading of X. If Y cannot be linked to X in one sentence, the report is not ready.
-2. **Every section title is a question the reader has, and the section answers it.**
-   Order by the reader's questions (what was asked → what came out → how we know →
-   what it means and does not mean → what is next), never by the order the work
-   happened or by result IDs. A section that cannot be titled by a question is
-   bookkeeping and is cut.
+2. **Use short, descriptive noun phrases for section and appendix titles.**
+   Name the physical subject, calculation, or result. Use the reader's questions
+   to plan the order of the argument and answer them in the prose. Keep the
+   printed headings in noun-phrase form, for example “Instanton zero modes.”
 3. **Purpose before method.** Every experiment, model, transform or statistic is
    preceded by one sentence saying why it exists in this project. A method whose
    purpose cannot be stated in the physics is left out.
@@ -126,7 +125,8 @@ In a Korean report, technical terms stay in English: physics terminology
 mathematical objects are written in English as-is, with Korean carrying the
 surrounding prose. Do not translate or transliterate them into Korean.
 
-Sections, in this order, each titled by the question it answers:
+Use the following section roles in order. Give each section a descriptive title
+specific to the report.
 
 1. **TL;DR** — a boxed paragraph at the top: the aim, what was built, the main result
    in the aim's own terms, what it means and does not mean, confidence. A reader who
@@ -157,7 +157,8 @@ Sections, in this order, each titled by the question it answers:
    `calc/` and a spec; run it; record it in a note if the numbers are new (rule 10).
 3. Write the report in the section order above. The TL;DR is written **last**, after
    the body exists — it compresses the body, not the plan.
-4. Re-read every sentence against the notes (self-review rules apply): no claim the
+4. Check that the section and appendix headings are descriptive noun phrases.
+   Re-read every sentence against the notes (self-review rules apply): no claim the
    notes do not support, no coined labels, no number you have not checked against
    `calc/` output or a note's Verification block. Then read the draft as the reader:
    for each section, state the question it answers; for each paragraph, state its one
