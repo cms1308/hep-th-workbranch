@@ -93,8 +93,10 @@ Use the project's JHEP setup and notation. Keep each prose paragraph on one sour
 environments retain their own line structure. Do not box equations for emphasis unless
 the user asks. Preserve author edits and intentional cuts when merging versions.
 
-Do not use `\paragraph` or `\paragraph*` headings (permanent user instruction,
-2026-11-16). Incorporate the transition into ordinary prose. Use a section or subsection
+Use `\paragraph` or `\paragraph*` headings only where they organize parallel units of
+one argument, such as one paragraph per type or per case (user instruction, 2026-11-16,
+clarified 2026-11-24). Do not use them as decoration, as sentence-length headings or in
+place of a transition; incorporate those into ordinary prose. Use a section or subsection
 only when there is a substantive reason to divide the argument.
 
 Always capitalize document-reference nouns (permanent user instruction, 2026-11-17):

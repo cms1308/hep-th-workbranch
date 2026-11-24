@@ -215,11 +215,13 @@ authorized multi-step work solely because of it. Include it in the normal report
   such as "this Section" or "the following Tables". Preserve lowercase LaTeX command
   and environment names, label keys and paths. Generic mathematical phrases such as
   "a differential equation" are not document references. See `PAPER-STYLE.md`.
-- **No LaTeX `\paragraph` headings (user, 2026-11-16).** Do not use `\paragraph` or
-  `\paragraph*` in manuscripts or reports. Integrate their content into ordinary
-  prose; use a section or subsection only when the argument needs that structure.
-  Apply this to the material being written or revised, without rewriting unrelated
-  manuscripts or historical sources.
+- **LaTeX `\paragraph` headings only where they fit (user, 2026-11-16; clarified
+  2026-11-24).** `\paragraph` is allowed where it organizes parallel units of one
+  argument, for example one paragraph per type or per case. Do not use it as
+  decoration, as a sentence-length heading or in place of a transition; integrate
+  such content into ordinary prose, and use a section or subsection only when the
+  argument needs that structure. Apply this to the material being written or revised,
+  without rewriting unrelated manuscripts or historical sources.
 - **Never hard-wrap `.tex` prose.** Each paragraph is a single source line; newlines only
   between paragraphs and around environments and comments. Environment internals
   (`equation`, `tabular`, `tikzpicture`) and comment lines keep their own line structure.
