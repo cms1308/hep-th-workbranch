@@ -108,6 +108,15 @@ footnotes: `Section~\ref{...}`, `Figures~\ref{...} and~\ref{...}`,
 environment names, label keys and paths unchanged. A generic mathematical expression
 such as "a differential equation" is not a reference label and keeps ordinary casing.
 
+Write titles in sentence case (permanent user instruction, 2026-11-25): the paper title
+and every section, subsection, subsubsection, appendix and `\paragraph` title capitalize
+only the first word, and the word after a colon is lowercase ("Review: dualizing one
+node of an $SU(N_c)\times SU(N_c')$ theory"). Keep every capital the word has in running
+text: proper names and terms named after people (Lagrange, Seiberg, Veneziano,
+Klebanov--Witten), acronyms (SQCD, SCFT, RG), group and algebra names, and labels the
+manuscript capitalizes throughout (Type I, Type II). Do not capitalize other words. Write
+group names in titles as math, as in the text, using `\texorpdfstring` for bookmarks.
+
 Before delivering a manuscript draft or revision, read the complete manuscript and judge
 every sentence under the shared review rule. Confirm that the argument is understandable,
 the claims and qualifications are correct, and the equations, tables, citations and

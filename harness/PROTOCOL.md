@@ -215,6 +215,16 @@ authorized multi-step work solely because of it. Include it in the normal report
   such as "this Section" or "the following Tables". Preserve lowercase LaTeX command
   and environment names, label keys and paths. Generic mathematical phrases such as
   "a differential equation" are not document references. See `PAPER-STYLE.md`.
+- **Sentence-case titles, retained capitals (user, 2026-11-25).** In manuscripts,
+  capitalize only the first word of the paper title and of every section, subsection,
+  subsubsection, appendix and `\paragraph` title. The word after a colon in a title is
+  lowercase as well ("Review: dualizing one node"). A word keeps the capital it has in
+  running text: proper names and terms named after people (Lagrange multiplier, Seiberg
+  duality, Veneziano limit), acronyms (SQCD, SCFT, RG), group and algebra names
+  ($SU(N)$, $\mathcal N=1$), and labels the manuscript capitalizes throughout (Type I,
+  Type II). Never lowercase these for the sake of the rule, and do not capitalize other
+  words in a title. Write group names in titles as math, as in the text, with
+  `\texorpdfstring` for the PDF bookmark. See `PAPER-STYLE.md`.
 - **LaTeX `\paragraph` headings only where they fit (user, 2026-11-16; clarified
   2026-11-24).** `\paragraph` is allowed where it organizes parallel units of one
   argument, for example one paragraph per type or per case. Do not use it as
