@@ -1,9 +1,11 @@
 # Manuscript verification — design
 
-Status: design and its four open choices decided by the user on 2026-11-25. **Not
-implemented.** Until an implementation lands, the active policy remains
-[PAPER-REVIEW](../PAPER-REVIEW.md) and [PAPER-STYLE](../../PAPER-STYLE.md). This file is
-the specification an implementation session starts from.
+Status: design and its four open choices decided by the user on 2026-11-25. **Stage 1 of
+5 implemented on 2026-11-25** ([record](#implementation-record)); stages 2 to 5 are not.
+No manuscript is enrolled yet (the pilot is stage 5). [PAPER-REVIEW](../PAPER-REVIEW.md)
+and [PAPER-STYLE](../../PAPER-STYLE.md) remain the active policy, and the reading duty
+stays in full until the independent verdict exists. This file is the specification the
+next stage starts from.
 
 ## Why
 
@@ -151,3 +153,102 @@ Each stage has its criterion before work starts.
 5. The origin incidents added to `evals/`; pilot on susu-quiver.
    verify: all existing evaluation cases still pass, including the two on unnecessary
    gates, and the pilot report lists zero unverified units.
+
+## Implementation record
+
+### Stage 1 (2026-11-25)
+
+Code: `harness/tex.mjs` (decomposition), `harness/verify.mjs` (rules, checks, verdicts,
+gate), `harness/rules.json` (harness-wide rules), the `paper-verify`, `paper-units` and
+`hook` entries of `harness/cli.mjs`, the commit mark in `harness/checkpoint.mjs`. Use:
+[PAPER-REVIEW](../PAPER-REVIEW.md#verification-gate) and
+[OPERATIONS](../OPERATIONS.md#manuscript-verification-gate).
+
+Criterion and result. `tests/verify.test.mjs`, 11 tests on fixture manuscripts, all
+passing with the 30 earlier tests: every check flags its defect and passes the corrected
+text; a rule whose check misses its failing text is refused and no verdict file is
+written; after an edit only the changed sentence, its paragraph, the build of the document
+and the sentences that depend on a changed definition or calculation output are judged
+again; the hook blocks the session that changed the manuscript and no other session, and
+releases on verification, on a declaration bound to the text, and after three blocks of
+one text. The configured hook command was also run in this repository on a temporary
+enrolled manuscript with simulated events: no output on the tool events, `{}` for the
+Stop of a session whose call merely spanned the edit, the blocking decision for the
+editing session. The two evaluation cases on unnecessary gates are untouched, since a
+manuscript without `VERIFY.json` is not gated and gets no file.
+
+Checked on real drafts, on scratch copies, with no project file written. The susu-quiver
+Claude draft at 2a4d45a: 448 sentences, 100 paragraphs, 28 titles, 470 numerals and 92
+symbols, 2,398 verdicts in 0.06 s. The checks that need no registry found a lowercase
+"this section" (main.tex:1005) and prose wrapped over two source lines (main.tex:492 to
+493), with no finding on its 28 titles and six colons or semicolons left to the
+independent verdict. The default build took 5 s, recorded the four overfull boxes of its
+log as the baseline, and a second run rebuilt nothing. The table-header check was run on
+the PDF of the origin incident, rebuilt from 5f1acb6 (the commit before the Table 1 fix):
+it reports the header of Table 1 on page 13, and nothing on the current draft. Its first
+form also reported a line of superscripts above a caption. The check now requires a word
+in the repeated line, and that case is a test.
+
+Choices made in the implementation, each the lead's and open to the user's correction.
+
+1. Harness-wide rules are registered once in `harness/rules.json` and apply to every
+   enrolled manuscript. `paper/RULES.json` holds the project's own. Registration is the
+   entry itself: all entries are tested against their failing and passing texts at every
+   load, so a hand edit cannot register an untested rule.
+2. A manuscript is enrolled by its first `paper-verify` run (`VERIFY.json` exists).
+   Nothing else is gated.
+3. A verdict is pass, fail, awaiting the independent verdict, or not judged. At stage 1
+   verification is complete when nothing fails and nothing is unjudged. Verdicts awaiting
+   the independent verdict are counted in the table and do not block until stage 3.
+4. Colons and semicolons. The design lists them under code-only checks, and PAPER-STYLE
+   says the preference is not a character ban. Code decides the certain cases (an em-dash
+   fails, a colon before a display or ending its sentence passes). Every other colon or
+   semicolon awaits the independent verdict.
+5. Numerals are digits and number words in the prose and the closed numeric sides of
+   inline formulas. Excluded by rule: digits joined to a word, `one`, ordinals, a
+   comparison with zero, references. A fact is a calculation output (`file`) or a place
+   in the manuscript that states the number (`at`). The second kind is what the design's
+   table lacked for counts and parameters the text itself fixes ("two nodes", $N_c=2$).
+   Its meaning awaits the independent verdict, so a number "without explanation" is one
+   with neither.
+6. Definition sites live in `paper/LEXICON.json` already at stage 1, since use before
+   definition needs them. Symbols are compared by letter, font, accent and roman
+   subscript. Titles are exempt. Notation declared `standard` is listed once as awaiting
+   attestation.
+7. The overfull boxes of the first build are the baseline. The build check also fails on
+   undefined references and citations.
+8. The Stop gate holds a session to account only for a manuscript it changed. The first
+   form compared each manuscript with its state at the start of the session. It was
+   dropped before delivery: several sessions work in this repository at once, and each
+   would have been blocked by an edit made in another. A change is now attributed through
+   `PreToolUse` and `PostToolUse` events of the shell and editing tools: the sources
+   differ across one of the session's own calls, and a tool input of the session has named
+   the manuscript. One text is blocked at most three times. A commit of an unverified
+   enrolled manuscript carries `Manuscript-Verification: incomplete`.
+9. The two tool events are generated by `install-hooks.mjs` and are not installed in this
+   repository. They change the hook configuration of every session, so installing them
+   is the user's decision. Until then the Stop gate blocks no session.
+10. `TOOL` in `verify.mjs` is part of every verdict key. Raising it judges everything
+    again.
+
+Open, for the stages that need them.
+
+- Stage 2 has to supply attestation for `standard` notation and for candidate terms. The
+  term extraction of stage 1 is a list of content-word runs, which includes verbs.
+- Stage 3 has to judge the grounds themselves (a fact with `at`, a `standard`
+  declaration, a colon), not only sentences, and give the run metadata that makes a
+  verdict file impossible to produce by hand.
+- The pilot will show the cost of binding every numeral sentence by sentence (470
+  numerals in 448 sentences on the susu-quiver draft), notation such as $\mathcal N=1$
+  included. A registry of notation that contains a numeral is the likely remedy and is
+  not built.
+- Not judged by any check yet: numerals in display equations and table cells (generated
+  tables should be bound to their generator), indices of symbols, proper names that
+  occur only in a title.
+- The gate has not yet blocked a live session: the tool hooks are not installed, and the
+  provider documentation was read through a summarizing fetch. The first live session
+  after installation is the test. Codex reports an edit as `apply_patch` with the patch
+  text as input, which the same rule covers, and this is unexercised too.
+- A session that has named a manuscript and has a call running while another session
+  edits it is counted as having changed it. With two writers on one project this can
+  happen. The three-block limit ends it, at the cost of three continuations.

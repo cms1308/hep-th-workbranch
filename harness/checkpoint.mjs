@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { ROOT, sha, git, json, writeJSON, repository, safePath, withLock } from './core.mjs';
+import { unverified } from './verify.mjs';
 
 function fingerprint(repo, name) {
   const p = safePath(repo, name);
@@ -23,8 +24,11 @@ export function queue(root, repoName, files, message) {
     if (name.split(/[\\/]/).includes('.harness-local')) throw Error('Runtime files cannot be queued.');
     job.files[name] = fingerprint(repo, name);
   }
-  writeJSON(path.join(root, '.harness-local', 'pending', job.id + '.json'), job);
   const tex = manuscriptFiles(repoName, Object.keys(job.files));
+  // Commits of an enrolled manuscript that is not verified are allowed and marked (design/paper-verification.md).
+  const open = unverified(root, repoName, tex);
+  if (open.length) job.message = `${message || 'Checkpoint research harness work'}\n\nManuscript-Verification: incomplete (${open.join(', ')})`;
+  writeJSON(path.join(root, '.harness-local', 'pending', job.id + '.json'), job);
   if (!tex.length) return job;
   // Written to stderr as well, so the reminder survives a redirected stdout.
   process.stderr.write(`[harness] ${READING_NOTICE} Files: ${tex.join(', ')}\n`);

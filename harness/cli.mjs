@@ -6,6 +6,8 @@ import { queue, flush } from './checkpoint.mjs';
 import { scanPaper, attest } from './paper.mjs';
 import { runEvidence } from './evidence.mjs';
 import { request, status } from './dispatch.mjs';
+import { load } from './tex.mjs';
+import { verify, report, stopGate, toolEvent } from './verify.mjs';
 
 export function checkProject(project) {
   const findings = [];
@@ -62,6 +64,18 @@ export async function main(args = process.argv.slice(2), root = ROOT) {
     return results;
   }
   if (cmd === 'paper-scan') return scanPaper(safePath(root, `projects/${rest[0]}`));
+  if (cmd === 'paper-verify' || cmd === 'paper-units') {
+    const [slug, ...options] = rest, paper = options[0]?.startsWith('paper') ? options.shift() : 'paper', project = safePath(root, `projects/${slug}`);
+    if (cmd === 'paper-units') {
+      const filter = new RegExp(options[0] || '', 'i');
+      return load(project, `${paper}/main.tex`).units.filter(u => u.kind !== 'paragraph' && filter.test(u.prose)).map(u => ({ id: u.id, kind: u.kind, where: u.where, at: `${u.file}:${u.line}`, text: u.prose, numbers: u.numbers.map(n => n.key) }));
+    }
+    const wip = options.includes('--wip') ? options[options.indexOf('--wip') + 1] : undefined;
+    if (options.includes('--wip') && !wip) throw Error('--wip needs the reason the manuscript is unfinished');
+    const result = verify(project, paper, { wip, ...(options.includes('--no-build') ? { build: () => null } : {}) });
+    if (!result.state.complete) process.exitCode = 1;
+    return report(slug, result, { pending: options.includes('--pending') });
+  }
   if (cmd === 'attest') {
     const [slug, kind, reviewer, note, ...ids] = rest;
     return attest(safePath(root, `projects/${slug}`), kind, ids, reviewer, note);
@@ -71,29 +85,32 @@ export async function main(args = process.argv.slice(2), root = ROOT) {
     if (result.execution !== 'PASS') process.exitCode = 1;
     return result;
   }
-  if (cmd === 'hook') {
-    const input = jsonInput();
-    if (input.hook_event_name === 'Stop') {
-      const results = flush(root);
-      const bad = results.filter(r => !r.ok || r.push === 'no-upstream');
-      // Advisory warning: never block Stop and create an agent retry loop.
-      if (bad.length) return { systemMessage: `Checkpoint needs attention: ${JSON.stringify(bad)}. See .harness-local/checkpoints.jsonl. Do not retry unchanged failures in a loop.` };
-      return {};
-    }
-    let warning = '';
-    try { wiki(root); } catch (e) { warning = e.message; }
-    const pending = path.join(root, '.harness-local', 'pending');
-    if (fs.existsSync(pending) && fs.readdirSync(pending).length) warning += ' Pending checkpoint jobs exist; inspect them before queueing overlapping files.';
-    return { hookSpecificOutput: { hookEventName: input.hook_event_name || 'SessionStart', additionalContext: `Read harness/PROTOCOL.md. At turn end queue only files this task changed and flush; Stop is a fallback. ${warning}` } };
+  if (cmd === 'hook') return hook(root, jsonInput());
+  throw Error('Commands: review-request <slug> --target <plan|step-N|paper> --reviewer <codex|claude> [--model <model>] | review-status <slug> [id] | review-resume <slug> <id> | paths | check [slug...] | queue <repo> <message> <files...> | flush [--local-only] | paper-scan <slug> | paper-verify <slug> [paper-dir] [--no-build] [--pending] [--wip <reason>] | paper-units <slug> [paper-dir] [filter] | attest <slug> <map|citations> <reviewer> <note> <ids...> | run <slug> <spec.json> | hook');
+}
+// Never throws: a gate error must not break the provider's hook.
+const guarded = action => { try { return action(); } catch (e) { return { block: '', notes: [`Verification gate error: ${e.message}`] }; } };
+export function hook(root, input) {
+  if (input.hook_event_name === 'Stop') {
+    const bad = flush(root).filter(r => !r.ok || r.push === 'no-upstream'), gate = guarded(() => stopGate(root, input));
+    // A failed checkpoint stays advisory: never an agent retry loop. A manuscript this session changed
+    // and did not verify blocks the end of the turn, at most BLOCK_LIMIT times for one text.
+    const notes = [...(bad.length ? [`Checkpoint needs attention: ${JSON.stringify(bad)}. See .harness-local/checkpoints.jsonl. Do not retry unchanged failures in a loop.`] : []), ...gate.notes];
+    return { ...(gate.block ? { decision: 'block', reason: gate.block } : {}), ...(notes.length ? { systemMessage: notes.join(' ') } : {}) };
   }
-  throw Error('Commands: review-request <slug> --target <plan|step-N|paper> --reviewer <codex|claude> [--model <model>] | review-status <slug> [id] | review-resume <slug> <id> | paths | check [slug...] | queue <repo> <message> <files...> | flush [--local-only] | paper-scan <slug> | attest <slug> <map|citations> <reviewer> <note> <ids...> | run <slug> <spec.json> | hook');
+  if (/^(Pre|Post)ToolUse$/.test(input.hook_event_name)) return void guarded(() => (toolEvent(root, input), { notes: [] }));   // no output: the tool call proceeds
+  let warning = '';
+  try { wiki(root); } catch (e) { warning = e.message; }
+  const pending = path.join(root, '.harness-local', 'pending');
+  if (fs.existsSync(pending) && fs.readdirSync(pending).length) warning += ' Pending checkpoint jobs exist; inspect them before queueing overlapping files.';
+  return { hookSpecificOutput: { hookEventName: input.hook_event_name || 'SessionStart', additionalContext: `Read harness/PROTOCOL.md. At turn end queue only files this task changed and flush; Stop is a fallback. ${warning}` } };
 }
 function jsonInput() {
   const input = fs.readFileSync(0, 'utf8').trim();
   return input ? JSON.parse(input) : {};
 }
 export async function entry(args) {
-  try { const result = await main(args); if (result !== undefined) console.log(JSON.stringify(result, null, 2)); }
+  try { const result = await main(args); if (result !== undefined) console.log(typeof result === 'string' ? result : JSON.stringify(result, null, 2)); }
   catch (e) { console.error(e.message); process.exitCode = 1; }
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) await entry();

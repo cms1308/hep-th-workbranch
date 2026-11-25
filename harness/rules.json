@@ -1,0 +1,97 @@
+{
+  "version": 1,
+  "rules": [
+    {
+      "id": "hard-wrap",
+      "kind": "hard-wrap",
+      "source": "PROTOCOL Conventions: never hard-wrap .tex prose; each paragraph is a single source line",
+      "fail": ["A paragraph whose prose continues\non a second source line."],
+      "pass": ["A paragraph kept on one source line, with\n\\begin{equation}\nx=y\\,,\n\\end{equation}\nwhere the text continues after the display."]
+    },
+    {
+      "id": "reference-capital",
+      "kind": "reference-capital",
+      "source": "PROTOCOL Conventions (user, 2026-11-17): capitalize document references",
+      "fail": [
+        "As shown in section~\\ref{sec:a}, the flow ends there.",
+        "We prove this in the following sections.",
+        "The result is eq.~\\eqref{eq:a}.",
+        "The table below lists the theories."
+      ],
+      "pass": [
+        "As shown in Section~\\ref{sec:a}, the flow ends there.",
+        "This Section solves a differential equation.",
+        "The equations of motion follow from the action."
+      ]
+    },
+    {
+      "id": "sentence-case-title",
+      "kind": "sentence-case-title",
+      "source": "PROTOCOL Conventions (user, 2026-11-25): sentence-case titles, retained capitals",
+      "fail": [
+        "\\section{Conformal Window}\n\nThe conformal window is a range of flavor numbers.",
+        "\\subsection{Review: Dualizing one node}\n\nWe dualize one node."
+      ],
+      "pass": [
+        "\\section{Conformal window and Seiberg duality: a review of SQCD}\n\nWe use Seiberg duality in what follows.",
+        "\\paragraph{Type I $\\times$ Type II:}\n\nThe one theory of Type I and Type II has one adjoint."
+      ]
+    },
+    {
+      "id": "aside-punctuation",
+      "kind": "aside-punctuation",
+      "source": "PAPER-STYLE Voice and register (user, 2026-09-02): restrained colons, semicolons and em-dashes, parentheses for asides",
+      "fail": ["The coupling is irrelevant --- as expected --- at the fixed point."],
+      "pass": [
+        "The coupling is irrelevant (as expected) at the fixed point.",
+        "The one-loop coefficient is:\n\\begin{equation}\nb=x.\n\\end{equation}"
+      ]
+    },
+    {
+      "id": "opening-weakly-gauging-it",
+      "kind": "banned",
+      "pattern": "^Weakly gauging it\\b",
+      "flags": "",
+      "source": "PAPER-STYLE Voice and register (author preference, 2026-11-05): do not begin a sentence with \"Weakly gauging it\"",
+      "fail": ["Weakly gauging it gives a negative one-loop coefficient."],
+      "pass": ["The one-loop coefficient of the weakly gauged group is negative."]
+    },
+    {
+      "id": "defined-before-use",
+      "kind": "defined-before-use",
+      "source": "PAPER-STYLE Scientific content: define needed symbols before use",
+      "fail": [
+        { "tex": "The coefficient $b$ is positive.\n\nWe denote by $b$ the one-loop coefficient.\\label{def-b}", "lexicon": { "symbols": [{ "symbol": "b", "at": "label:def-b" }] } },
+        { "tex": "The coefficient $b$ is positive." }
+      ],
+      "pass": [
+        { "tex": "We denote by $b$ the one-loop coefficient.\\label{def-b}\n\nThe coefficient $b$ is positive.", "lexicon": { "symbols": [{ "symbol": "b", "at": "label:def-b" }] } }
+      ]
+    },
+    {
+      "id": "number-bound",
+      "kind": "number-bound",
+      "source": "design/paper-verification (user, 2026-11-25): every numeral in the prose is bound to a value produced by a calculation",
+      "fail": [
+        { "tex": "We find 204 theories." },
+        { "tex": "We find 204 theories.\\label{s}", "facts": { "facts": { "count": { "file": "calc/count.json", "pointer": "/n" } }, "uses": { "label:s": { "204": "count" } } }, "files": { "calc/count.json": "{\"n\": 208}" } }
+      ],
+      "pass": [
+        { "tex": "We find 208 theories.\\label{s}", "facts": { "facts": { "count": { "file": "calc/count.json", "pointer": "/n" } }, "uses": { "label:s": { "208": "count" } } }, "files": { "calc/count.json": "{\"n\": 208}" } }
+      ]
+    },
+    {
+      "id": "build-defects",
+      "kind": "build",
+      "source": "design/paper-verification (user, 2026-11-25): layout defects in the built PDF; PAPER-REVIEW: no undefined references",
+      "fail": [
+        { "tex": "Text.", "build": { "log": "Overfull \\hbox (46.87863pt too wide) in paragraph at lines 3--4\n", "pages": ["Text."] }, "baseline": { "overfull": [] } },
+        { "tex": "Text.", "build": { "log": "", "pages": ["Type a b\n1 2 3\n4 5 6\n- 1 -", "Type a b\nTable 1. The theories.\n- 2 -"] }, "baseline": { "overfull": [] } },
+        { "tex": "Text.", "build": { "log": "LaTeX Warning: Reference `sec:x' on page 3 undefined on input line 12.\n", "pages": ["Text."] }, "baseline": { "overfull": [] } }
+      ],
+      "pass": [
+        { "tex": "Text.", "build": { "log": "Overfull \\hbox (46.87863pt too wide) in paragraph at lines 3--4\n", "pages": ["Type a b\n1 2 3\n- 1 -", "Type a b\n4 5 6\nTable 1. The theories.\n- 2 -"] }, "baseline": { "overfull": ["46.87863pt in paragraph"] } }
+      ]
+    }
+  ]
+}

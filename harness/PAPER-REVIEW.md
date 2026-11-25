@@ -131,6 +131,70 @@ Preserve the current PDF before rebuilding if it is needed as a comparison artif
 Do not assume an incoming copy contains every intervening correction. Report significant
 conflicts before deciding a scientific change; ordinary authorized merges can proceed.
 
+## Verification gate
+
+Stage 1 of [the design](design/paper-verification.md) is implemented: the checks that
+code decides. It supplements the reading duty above and replaces none of it. Whether a
+sentence is correct, supported and in its place is the independent verdict of stage 3,
+which does not exist yet.
+
+`node harness/cli.mjs paper-verify <slug> [paper-dir]` splits the manuscript (literal
+`input`/`include` followed, preamble macros without arguments expanded) into titles,
+paragraphs and sentences, extracts the numerals, symbols and candidate terms of each
+sentence, applies every registered rule and writes `<paper-dir>/VERIFY.json`. Its first
+run enrolls the manuscript. Only an enrolled manuscript is gated. An ordinary draft or a
+local edit of one needs none of these files, and no user-approval step is added.
+
+| File in the paper directory | Content |
+| --- | --- |
+| `RULES.json` | The project's rules, `{"version": 1, "rules": [...]}`. Harness-wide rules are in `harness/rules.json`. |
+| `LEXICON.json` | `symbols`: `{"symbol", "at"}` or `{"symbol", "standard"}`. `terms`: `{"term", "at"}`. |
+| `FACTS.json` | `facts`: id to `{"file", "pointer"}`, `{"file", "pattern"}` or `{"at"}`. `uses`: sentence to numeral to fact id. |
+| `VERIFY.json` | Written by the CLI only: one verdict for each (unit, rule), bound to content hashes. |
+
+- **Rules.** An entry has `id`, `kind`, `source`, at least one `fail` text and one `pass`
+  text, and the parameters of its kind. It is refused, and no verdict is produced, unless
+  its check flags every `fail` text and passes every `pass` text. A user objection supplies
+  the failing text verbatim. Kinds decided by code: `banned` (`pattern`, optional `flags`,
+  `roles`, `in: "tex"`), `reference-capital`, `sentence-case-title`, `aside-punctuation`,
+  `hard-wrap`, `defined-before-use`, `number-bound`, `build`. A rule that only a reader can
+  judge cannot be registered before stage 3. It stays in DECISIONS under the reading duty.
+- **Units.** `node harness/cli.mjs paper-units <slug> [paper-dir] [filter]` lists unit ids
+  (content hashes), positions and numerals. `at` and the keys of `uses` take a unit id or
+  `label:<LaTeX label>`, which names the sentence or caption containing that label.
+- **Numerals.** Digits and number words in the prose, and every side of a relation in an
+  inline formula that is a closed numeric expression (`27/128`, `-0.146`, `(0,1,4)`). Not
+  counted: digits joined to a word (`rank-2`, `4d`), `one`, ordinals, a comparison with
+  zero, references and citations. A numeral passes when it is bound to a fact with a
+  `file` (a calculation output, read by JSON `pointer` or by the first group of `pattern`)
+  whose value agrees: integers exactly, a decimal to its printed digits, a closed form to
+  a relative 1e-9. A sibling `run.json` of an evidence run must record PASS. A numeral bound to
+  a fact with `at` (the place in the manuscript that states it) awaits the independent
+  verdict.
+- **Symbols.** A letter, a Greek or other command, a font or accent form, with a roman
+  subscript as part of the name (`N_{bif}`). Other subscripts and superscripts are
+  indices. A multi-letter name (`SU`) exists when the lexicon lists it. Every symbol of a
+  sentence needs a lexicon entry whose `at` contains the symbol and does not come after
+  the sentence. Titles are exempt. `standard` declares notation that needs no definition.
+  The declaration is listed once and awaits attestation.
+- **Punctuation.** An em-dash fails. A colon before a display or at the end of its
+  sentence passes. Any other colon or semicolon in running prose awaits the independent
+  verdict, because [PAPER-STYLE](../PAPER-STYLE.md) keeps punctuation that clarifies.
+- **Build.** `paper-verify` runs `latexmk` and reads the pages with `pdftotext`. It fails
+  on an overfull box absent at enrollment, a repeated table header left without a row, an
+  undefined reference or citation, and a failed build. `--no-build`, or a missing tool,
+  leaves the check not judged.
+- **Verdicts.** Pass, fail, awaiting the independent verdict, or not judged. Verification
+  is complete when no verdict fails and none is unjudged. A verdict is judged again only
+  when its unit, its rule or what it depends on changed (a definition site, a bound fact,
+  the calculation output).
+- **Reporting.** State the result of an enrolled manuscript by the table `paper-verify`
+  prints, with its counts of verdicts awaiting the independent verdict and its list of
+  what stage 1 does not judge. A statement that the text was read is not evidence. If the
+  manuscript is unfinished, run `paper-verify <slug> [paper-dir] --wip "<reason>"` and give
+  the user the unverified units it prints. Hook and commit behavior are in
+  [OPERATIONS](OPERATIONS.md#manuscript-verification-gate).
+
 ## Optional detailed review tracking
 
 `node harness/cli.mjs paper-scan <slug>` maintains `paper/REVIEW.json`. Use it for a citation
