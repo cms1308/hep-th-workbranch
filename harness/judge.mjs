@@ -131,8 +131,9 @@ async function run({ project, paper, slug, dir, writer, provider, model, need, l
       // `call` describes the question for an injected judge (tests); the provider process receives the prompt only.
       await runner(call.command, call.args, { cwd: scratch, dir: cdir, prompt: text, timeout, call: { ...entry, provider, text: c.q.text, items: c.q.items, expect: c.expect || null } });
       const got = collect(provider, cdir);
-      Object.assign(entry, { state: 'ok', answers: reading(c.q, got.value), session: got.sessionId, usage: got.usage });
+      Object.assign(entry, { session: got.sessionId, usage: got.usage });        // a refused answer was paid for as well
       for (const m of got.models) if (!record.models.includes(m)) record.models.push(m);
+      Object.assign(entry, { state: 'ok', answers: reading(c.q, got.value) });
     } catch (e) { Object.assign(entry, { state: /^Answer refused/.test(e.message) ? 'refused' : 'error', error: e.message.slice(0, 400) }); }
     entry.ms = Date.now() - started;
     record.calls.push(entry);

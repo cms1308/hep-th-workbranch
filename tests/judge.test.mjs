@@ -158,6 +158,7 @@ test('one unit and one rule family in each call, a schema that requires every qu
   const dir = path.join(ledger(project, 'paper'), out.runs[0].id, '0001');
   assert.deepEqual(fs.readdirSync(dir).sort(), ['prompt.txt', 'response.json', 'schema.json', 'stdout.jsonl']);
   assert.match(summary(out), /VALID: 13 answers on the manuscript recorded, 2 calls without a usable answer\./);
+  assert.deepEqual(out.runs.map(r => [r.calls.length, r.usage.input_tokens]), new Array(JUDGES).fill([29, 2900]), 'the tokens of a refused answer are counted');
   const narrow = invocation('codex', dir, 'm', { narrow: true }), claude = invocation('claude', dir, null, { narrow: true, schema });
   assert.ok(['--skip-git-repo-check', '--ephemeral', 'read-only'].every(a => narrow.args.includes(a)));
   assert.deepEqual([claude.args[claude.args.indexOf('--tools') + 1], JSON.parse(claude.args[claude.args.indexOf('--json-schema') + 1])], ['', schema], 'a narrow call has no tools and carries the schema of its question');

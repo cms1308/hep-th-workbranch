@@ -458,7 +458,9 @@ Measured, on scratch copies with no project file written.
 - Live runs with Codex (CLI 0.171.0-alpha.13.2, provider default model: this computer's
   configuration names gpt-6.2-astra at reasoning effort xhigh, and the provider reports no
   model identity in its events), on a scratch manuscript of four sentences with one ground
-  of each kind. In all 53 calls, 1,095,382 input tokens and 16,018 output tokens.
+  of each kind. In all 53 calls, 1,095,382 input tokens and 16,018 output tokens recorded.
+  The tokens of the one refused answer (about 21 thousand) are missing from these sums: a
+  call whose answer was refused recorded no usage, which is corrected.
   - First run, the better-sentence family only: 4 calls, 107 s of call time, 83,970 input
     and 3,044 output tokens. Both judges improved the seeded wordy sentence, and both
     replaced the sentence then registered as passing ("The gauge coupling is asymptotically
@@ -556,8 +558,10 @@ Open after stage 3.
 - Cost. At 21 thousand input tokens and 20 s of elapsed time for each call, the 1,008
   questions of the pilot draft, put once to each of two judges, would be about 2,000 calls,
   43 million input tokens and 11 hours with four calls at a time, before any round of
-  replacements. This is an extrapolation from 47 calls on a four-sentence text, and the
-  draft's prompts are longer. The fixed 21 thousand tokens are the provider's own
+  replacements. This is an extrapolation from 47 calls on a four-sentence text. A fit to
+  the 46 calls with recorded usage gives 20,758 fixed tokens for each call and 0.28 tokens
+  for each byte of prompt, so the question was 1.8 % of the input there and would be 4 %
+  on the draft (1.7 of the 43 million). The fixed 21 thousand tokens are the provider's own
   instructions and tools, not the question. Proposed: bind the numbers and symbols first
   (402 of the 448 sentences cannot be asked yet), then ask one Section, and before the
   whole draft bring the user the choice among a lower reasoning effort, asking the
