@@ -173,6 +173,11 @@ authorized multi-step work solely because of it. Include it in the normal report
   judgment within its scope and dependencies. Follow [PAPER-REVIEW](PAPER-REVIEW.md#judge-every-sentence).
   Compilation, searches, delegated reviewer reports and scripted edits do not replace
   this responsibility (user, 2026-11-25); `queue` prints a reminder for manuscript TeX.
+- **Verification gate, designed and not yet implemented (user, 2026-11-25).** Rules
+  become registered checks, verdicts come from code or an independent model, and a
+  completion report requires every unit verified. Specification and the user's decisions:
+  [design/paper-verification.md](design/paper-verification.md). Current policy stays in
+  force until it is implemented.
 - Use the default explanatory prose in `PAPER-STYLE.md` for drafting and substantive prose
   edits. Shared context, authorization, validation and optional review tracking are in
   [PAPER-REVIEW.md](PAPER-REVIEW.md).
