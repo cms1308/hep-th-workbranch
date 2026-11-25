@@ -86,17 +86,20 @@ the extraction is not used. Without a corpus the term check is not judged, so th
 verification of an enrolled manuscript is incomplete.
 
 **Judges.** `node harness/cli.mjs paper-judge <slug> [paper-dir] --writer <claude|codex>`
-launches the other vendor's CLI once for each question, through the launcher of
-[AUTOMATION](AUTOMATION.md) (`HEP_CODEX_BIN`, `HEP_CLAUDE_BIN`, no shell, no nested
-dispatch). A call runs in an empty temporary directory outside every repository, so no
-project instruction file or hook is loaded. Codex runs with its read-only sandbox and
-without a stored session, Claude without tools. Each call uses the provider's default
-model and settings unless `--model` names one. Run `--dry-run` first: a whole draft is
-about two calls for each sentence and each of the two judges, and the planted texts of a
-run (14 calls when every family is asked) come before them. Run long jobs in the
-background and keep the computer awake. A run that is cut short keeps the answers it
-recorded, and the next run asks only what is still open. One run at a time for each
-manuscript (`active.lock` in its record directory, released when its process has ended).
+launches the other vendor's CLI through the launcher of [AUTOMATION](AUTOMATION.md)
+(`HEP_CODEX_BIN`, `HEP_CLAUDE_BIN`, no shell, no nested dispatch), once for each call. A
+call holds one rule family, for one paragraph or for up to `--batch` sentences judged
+alone, and runs in an empty temporary directory outside every repository, so no project
+instruction file or hook is loaded. Codex runs with its read-only sandbox and without a
+stored session, Claude without tools. Each call uses the provider's default model and
+settings unless `--model` names one. Measured with Codex on 2026-11-26: a call takes about
+21 thousand input tokens before its question, 23 thousand with a paragraph and the planted
+texts, 3 to 4 thousand output tokens and 70 to 80 s with four at a time. A run over a
+draft of 100 paragraphs is about 106 calls for the rules and 100 for the better sentence,
+and a text that fails nothing needs two runs of each. Run `--dry-run` first (it prints the
+calls of one run), run long jobs in the background and keep the computer awake. A run that is cut short keeps the calls it recorded, and the next run asks only
+what is still open. One run at a time for each manuscript (`active.lock` in its record
+directory, released when its process has ended).
 
 **Run records.** `.harness-local/verdicts/<slug>/<paper-dir>/` holds `seal.json` (the hash
 of the `VERIFY.json` the CLI last wrote, and the declared writer) and one directory for

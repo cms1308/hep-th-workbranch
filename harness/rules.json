@@ -123,10 +123,10 @@
       ],
       "judge": {
         "fail": [
-          {"tex": "The theories fall into nine classes.\\label{seed-number-a}\n\nAll ten classes are listed below.\\label{seed-number-b}", "facts": {"facts": {"seed-number-classes": {"at": "label:seed-number-a"}}, "uses": {"label:seed-number-b": {"ten": "seed-number-classes"}}}, "item": "ten"}
+          {"tex": "The theories fall into nine classes.\\label{count-of-classes}\n\nAll ten classes are listed below.\\label{list-of-classes}", "facts": {"facts": {"classes-counted": {"at": "label:count-of-classes"}}, "uses": {"label:list-of-classes": {"ten": "classes-counted"}}}, "item": "ten"}
         ],
         "pass": [
-          {"tex": "The quivers fall into six families.\\label{seed-number-c}\n\nEach of the six families is treated in turn.\\label{seed-number-d}", "facts": {"facts": {"seed-number-families": {"at": "label:seed-number-c"}}, "uses": {"label:seed-number-d": {"six": "seed-number-families"}}}, "item": "six"}
+          {"tex": "The quivers fall into six families.\\label{count-of-families}\n\nEach of the six families is treated in turn.\\label{each-family}", "facts": {"facts": {"families-counted": {"at": "label:count-of-families"}}, "uses": {"label:each-family": {"six": "families-counted"}}}, "item": "six"}
         ]
       }
     },
@@ -149,10 +149,10 @@
       "question": "Does the sentence state its claim with the restrictions it holds under (assumptions, matter content, parameter ranges, limits, exceptions), in the sentence itself or earlier in its paragraph? Pass if it does, or if it makes no claim that needs one. Fail if it claims more than the restrictions stated in the paragraph allow, for example with \"all\", \"every\" or \"always\" where the paragraph establishes the statement for a range or a case only.",
       "source": "PAPER-REVIEW, Judge every sentence, third item: assumptions, parameter ranges, limits and exceptions apply to the exact claim; design/paper-verification (user, 2026-11-25): a claim without its scope is a seeded defect",
       "fail": [
-        {"tex": "\\section{Conformal window of SQCD}\n\nFor $3N_c/2<N_f<3N_c$ the gauge coupling of SQCD flows to an interacting fixed point. SQCD is therefore an interacting conformal theory in the infrared for every number of flavors.", "at": "for every number of flavors"}
+        {"tex": "\\section{Conformal window of SQCD}\n\nFor $3N_c/2<N_f<3N_c$ the gauge coupling of SQCD flows to an interacting fixed point. In this range of $N_f$ the theory is an interacting conformal theory in the infrared. SQCD is therefore an interacting conformal theory in the infrared for every number of flavors.", "at": "for every number of flavors"}
       ],
       "pass": [
-        {"tex": "\\section{Conformal window of SQCD}\n\nFor $3N_c/2<N_f<3N_c$ the gauge coupling of SQCD flows to an interacting fixed point. In this range of $N_f$ SQCD is therefore an interacting conformal theory in the infrared.", "at": "In this range"}
+        {"tex": "\\section{Conformal window of SQCD}\n\nFor $3N_c/2<N_f<3N_c$ the gauge coupling of SQCD flows to an interacting fixed point. In this range of $N_f$ the theory is an interacting conformal theory in the infrared. SQCD is therefore an interacting conformal theory in the infrared for every number of flavors.", "at": "In this range"}
       ]
     },
     {
@@ -164,7 +164,7 @@
         {"tex": "\\section{Case (5): two asymptotically free nodes}\n\nIn case (5) both gauge couplings are asymptotically free at the free fixed point. Both couplings grow toward the infrared, and the flow ends at the fixed point where both are nonzero. In case (3) the first node has no flavors, so that its one-loop coefficient is fixed by the bifundamental fields alone.", "at": "In case (3)"}
       ],
       "pass": [
-        {"tex": "\\section{Case (5): two asymptotically free nodes}\n\nIn case (5) both gauge couplings are asymptotically free at the free fixed point. Both couplings grow toward the infrared, and the flow ends at the fixed point where both are nonzero.", "at": "Both couplings grow"}
+        {"tex": "\\section{Case (5): two asymptotically free nodes}\n\nIn case (5) both gauge couplings are asymptotically free at the free fixed point. Both couplings grow toward the infrared, and the flow ends at the fixed point where both are nonzero. In case (3) the first node has no flavors, so that its one-loop coefficient is fixed by the bifundamental fields alone.", "at": "Both couplings grow"}
       ]
     },
     {

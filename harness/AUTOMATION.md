@@ -62,12 +62,13 @@ or paper attestations are performed by the launcher.
 launcher for the verification gate ([PAPER-REVIEW](PAPER-REVIEW.md#verification-gate),
 [OPERATIONS](OPERATIONS.md#manuscript-verification-gate)). It differs from a review in
 four ways. The judge is always of the vendor that did not write the manuscript. A call
-judges one unit under one rule family from its prompt alone, in an empty directory outside
-the repository, with no tools (Claude) or the read-only sandbox and no stored session
-(Codex), and returns one object that the generated schema of that call requires in full.
-Every run is tested on planted texts before the manuscript is asked, and a run that gets
-one of them wrong is void. And the answers are not recorded by the lead: `paper-verify`
-reads them from the run records under `.harness-local/verdicts/`.
+puts one rule family to the judge for many units from its prompt alone, in an empty
+directory outside the repository, with no tools (Claude) or the read-only sandbox and no
+stored session (Codex), and returns one object that the generated schema of that call
+requires in full. Every call carries planted texts among the paragraphs of the manuscript,
+and its answers on a rule count only if it answered the planted texts of that rule as
+registered. And the answers are not recorded by the lead: `paper-verify` computes the
+verdicts from the run records under `.harness-local/verdicts/`.
 
 ## Recovery
 

@@ -13,8 +13,10 @@ import { flatten, decompose, symbols, value, expand, numberWord } from './tex.mj
 import { load as storedCorpus, fromTex, attest, key as gram, symbolPapers, ATTESTED } from './corpus.mjs';
 
 export const TOOL = 1;                                   // raise when the decomposition or a check changes meaning: every verdict is judged again
-export const JUDGE = 1;                                  // raise when a question, the prompt, the schema or the reading of an answer changes: every independent verdict is asked again
+export const JUDGE = 2;                                  // raise when a question, the prompt, the schema or the reading of an answer changes: every independent verdict is asked again
 export const JUDGES = 2;                                 // independent runs that must pass a question; one failing run fails it
+export const FIT = [9, 10];                              // share of a rule's planted texts a run must answer as registered for its answers on that rule to count
+export const SHORTER = [4, 5];                           // a replacement that is only shorter counts when it has at most this share of the unit's words
 // Ranked criteria of "better" (user decision 2026-11-25). The eighth: on a tie the existing sentence stays.
 export const CRITERIA = ['physical and mathematical correctness', "the user's decisions", 'harness rules', 'completeness of the information the argument needs', 'no redundancy', 'terminology attested in the literature', 'the shorter text'];
 const AWAIT = 'awaits the independent verdict';
@@ -353,7 +355,8 @@ function assess(doc, ctx, list, prior = () => undefined, run = null) {
       if (ask.length) asked.set(family(rule), [...(asked.get(family(rule)) || []), ...ask.map(a => ({ ...a, rule: rule.id }))]);
     }
     for (const [name, items] of asked) {
-      const q = { unit: u.id, family: name, kind: u.kind, where: u.where, file: u.file ?? null, text: u.text ?? '', context: u.paragraph ? byId.get(u.paragraph).text : '', headings: reading.has(name) ? above : [],
+      // A rule about a sentence is judged in its paragraph, under its headings. A question that code left open is about the sentence alone.
+      const q = { unit: u.id, family: name, kind: u.kind, where: u.where, file: u.file ?? null, text: u.text ?? '', context: reading.has(name) && u.paragraph ? byId.get(u.paragraph).text : '', headings: reading.has(name) ? above : [],
         items: items.map((a, i) => ({ id: a.id ?? `item-${i + 1}`, rule: a.rule, tag: a.tag ?? a.id, q: a.q, ...(a.better ? { better: true } : {}) })) };
       questions.push({ ...q, key: sha(JSON.stringify([JUDGE, q.family, q.kind, q.text, q.context, q.headings, q.items.map(i => [i.id, i.q, !!i.better])])).slice(0, 16) });
     }
@@ -374,34 +377,45 @@ export function examine(project, paper = 'paper', { build: builder = () => null,
   return { print, doc, ctx, list, ...assess(doc, ctx, list, prior, run) };
 }
 
-// The answers of the judges, read from the run records the CLI wrote on this computer. A run counts when it is valid (every
-// seeded defect caught, every passing text passed) and its judge is not of the writer's vendor. A void run supplies nothing.
+// The answers of the judges, read from the run records the CLI wrote on this computer. Every call carries the planted texts of
+// the rules it asks. An answer on a rule counts when its call answered every planted text of that rule as registered (a seeded
+// defect among them), when its run answered FIT of that rule's planted texts as registered, and when its judge is not of the
+// writer's vendor. Everything is computed from the calls of the record, never from a summary stored in it.
 export function recorded(project, paper, writer) {
-  const dir = ledger(project, paper), index = new Map(), runs = new Map(), voided = [], found = [];
+  const dir = ledger(project, paper), index = new Map(), runs = new Map(), found = [];
   for (const name of fs.existsSync(dir) ? fs.readdirSync(dir) : []) {
-    try { const run = json(path.join(dir, name, 'run.json')); if (run.id === name && run.tool === JUDGE) found.push(run); } catch { /* not a run record */ }
+    try { const run = json(path.join(dir, name, 'run.json')); if (run.id === name && run.tool === JUDGE && Array.isArray(run.calls)) found.push(run); } catch { /* not a run record */ }
   }
   for (const run of found.sort((a, b) => `${a.started} ${a.id}` < `${b.started} ${b.id}` ? -1 : 1)) {
-    if (run.state === 'void') voided.push({ id: run.id, time: run.started, provider: run.provider, model: run.requestedModel, missed: run.seeds.filter(s => s.status === 'missed').map(s => s.id) });
-    if (run.state !== 'valid' || !writer || run.writer !== writer || run.provider === writer || !(run.seeded > 0) || run.caught !== run.seeded || run.passed !== run.controls) continue;
-    runs.set(run.id, run);
-    for (const c of run.calls) {
-      if (c.seed || c.state !== 'ok') continue;
-      const key = `${c.unit}|${c.family}|${c.key}`;
-      index.set(key, [...(index.get(key) || []), { run: run.id, n: c.n, answers: c.answers }]);
+    if (!writer || run.writer !== writer || run.provider === writer) continue;
+    const calls = run.calls.filter(c => c.state === 'ok'), tally = {};
+    for (const c of calls) for (const p of c.planted || []) { const t = tally[p.rule] ||= { planted: 0, met: 0 }; t.planted++; if (p.met === true) t.met++; }
+    const fit = rule => !!tally[rule] && tally[rule].met * FIT[1] >= tally[rule].planted * FIT[0];
+    const sound = (c, rule) => { const own = (c.planted || []).filter(p => p.rule === rule); return own.some(p => p.want === 'fail') && own.every(p => p.met === true); };
+    for (const c of calls) for (const a of c.answers || []) {
+      const kept = Object.fromEntries(Object.entries(a.items || {}).filter(([, x]) => fit(x.rule) && sound(c, x.rule)));
+      if (!Object.keys(kept).length) continue;
+      const key = `${a.unit}|${c.family}|${a.key}`;
+      index.set(key, [...(index.get(key) || []), { run: run.id, n: c.n, answers: kept }]);
     }
+    const sum = pick => Object.values(tally).reduce((n, t) => n + t[pick], 0);
+    runs.set(run.id, { id: run.id, time: run.started, provider: run.provider, model: run.requestedModel ?? null, models: run.models || [], calls: run.calls.length, planted: sum('planted'), met: sum('met'),
+      unfit: Object.keys(tally).filter(rule => !fit(rule)).sort(), missed: [...new Set(calls.flatMap(c => (c.planted || []).filter(p => p.met !== true).map(p => p.id)))].sort() });
   }
-  return { index, runs, voided };
+  return { index, runs };
 }
-const judgeName = r => `${r.provider}, ${r.requestedModel ?? r.model ? `model ${r.requestedModel ?? r.model}` : 'provider default model'}${r.models?.length ? ` (reported: ${r.models.join(', ')})` : ''}`;
-// The independent verdicts into the checks: one failing judge fails a (unit, rule), JUDGES passing judges pass it, fewer leave it awaiting.
+const judgeName = r => `${r.provider}, ${r.model ? `model ${r.model}` : 'provider default model'}${r.models?.length ? ` (reported: ${r.models.join(', ')})` : ''}`;
+// The independent verdicts into the checks: one failing judge fails a (unit, rule), JUDGES passing judges pass it, fewer leave it
+// awaiting. A judge is one run, and a run gives a question one vote. q.open: some rule of the question still needs a judge.
 function settle(units, questions, rec) {
   const used = new Map();
   for (const q of questions) {
-    q.votes = (rec.index.get(`${q.unit}|${q.family}|${q.key}`) || []).filter(b => q.items.every(i => b.answers?.[i.id]));
+    const records = rec.index.get(`${q.unit}|${q.family}|${q.key}`) || [];
+    q.open = false;
     for (const rule of new Set(q.items.map(i => i.rule))) {
-      const c = units[q.unit].checks[rule], items = q.items.filter(i => i.rule === rule);
-      const votes = q.votes.map(b => ({ ...b, bad: items.filter(i => b.answers[i.id].v === 'fail') })), failed = votes.filter(b => b.bad.length);
+      const c = units[q.unit].checks[rule], items = q.items.filter(i => i.rule === rule), seen = new Set();
+      const votes = records.filter(b => items.every(i => b.answers[i.id]) && !seen.has(b.run) && seen.add(b.run)).map(b => ({ ...b, bad: items.filter(i => b.answers[i.id].v === 'fail') })), failed = votes.filter(b => b.bad.length);
+      if (!failed.length && votes.length < JUDGES) q.open = true;
       if (!votes.length) continue;
       c.by = { q: q.key, runs: votes.map(b => [b.run, b.n, b.bad.length ? 'fail' : 'pass']) };
       for (const b of votes) used.set(b.run, (used.get(b.run) || 0) + 1);
@@ -429,8 +443,7 @@ export function verify(project, paper = 'paper', { build: builder = () => build(
       numbers: sentences.reduce((n, u) => n + u.numbers.length, 0), symbols: new Set(sentences.flatMap(u => [...ctx.used(u)])).size, terms: new Set(sentences.flatMap(u => u.terms)).size },
     rules: tally, orphans: ctx.orphans, baseline: ctx.baseline, corpus: lit && { hash: lit.hash, cutoff: lit.cutoff, documents: lit.documents, words: lit.words, built: lit.built }, approved: [...ctx.approved].sort(),
     independent: { writer: who, judges: JUDGES, awaiting: awaiting.length, rest: Object.values(units).reduce((n, u) => n + Object.values(u.checks).filter(c => c.by && c.v !== 'pending').length, 0),
-      runs: [...used].map(([run, answers]) => { const r = rec.runs.get(run); return { id: run, time: r.started, provider: r.provider, model: r.requestedModel, models: r.models, seeded: r.seeded, caught: r.caught, controls: r.controls, passed: r.passed, answers }; }),
-      void: rec.voided.length, last_void: rec.voided.at(-1) ?? null },
+      runs: [...rec.runs.values()].map(r => ({ ...r, answers: used.get(r.id) || 0 })) },
     wip: wip ? { hash: print.gate, declared: now.toISOString(), note: wip, units: [...open, ...awaiting].map(({ unit, rule, where }) => ({ unit, rule, where })) } : old?.wip?.hash === print.gate ? old.wip : null, units };
   const text = serialize(state);
   if (dry) return { state, open, awaiting, questions, list };               // a plan: nothing is written, and a manuscript is not enrolled by it
@@ -450,9 +463,9 @@ export function report(slug, { state, open, awaiting = [] }, { pending = false }
     '| rule | pass | fail | awaiting independent verdict | not judged |', '| --- | ---: | ---: | ---: | ---: |', ...rows, '',
     state.corpus ? `Corpus: ${state.corpus.documents} hep-th papers, ${state.corpus.words} words, inspected sources dated before ${state.corpus.cutoff} (${state.corpus.hash.slice(0, 12)}).` : 'Corpus: not built (node harness/cli.mjs corpus-build).',
     ...(state.approved.length ? [`Terms that pass on the user's approval recorded in LEXICON: ${state.approved.join('; ')}.`] : []),
-    ind.runs.length ? `Independent verdicts: writer ${ind.writer}. ${ind.rest} verdicts rest on ${ind.runs.length} valid runs of the judges: ${ind.runs.map(r => `run ${r.id} (${judgeName(r)}) caught ${r.caught} of ${r.seeded} seeded defects and passed ${r.passed} of ${r.controls} passing texts`).join('; ')}. A pass needs ${ind.judges} judges, and one failing judge fails the unit.`
+    ind.runs.length ? `Independent verdicts: writer ${ind.writer}. ${ind.rest} verdicts rest on the runs of the judges recorded on this computer. A pass needs ${ind.judges} judges, and one failing judge fails the unit. The answers of a call on a rule count when the call answered all planted texts of that rule as registered, and those of a run when it answered ${FIT[0]} in ${FIT[1]} of them.`
       : `Independent verdicts: none recorded on this computer${ind.writer ? ` (writer ${ind.writer})` : ''}.`,
-    ...(ind.void ? [`Void runs (a seeded defect missed or a passing text failed; none of their answers is used): ${ind.void}. The latest, run ${ind.last_void.id} (${judgeName(ind.last_void)}), missed ${ind.last_void.missed.join(', ')}.`] : []), LIMITS,
+    ...ind.runs.map(r => `- run ${r.id} (${judgeName(r)}): ${r.calls} calls, ${r.met} of ${r.planted} planted texts answered as registered${r.missed.length ? ` (missed: ${r.missed.join(', ')})` : ''}, ${r.answers} verdicts rest on it${r.unfit.length ? `; below ${FIT[0]} in ${FIT[1]} and not used for: ${r.unfit.join(', ')}` : ''}`), LIMITS,
     ...(state.orphans.length ? [`FACTS uses that match no sentence of the manuscript: ${state.orphans.join(', ')}`] : []),
     state.complete ? 'Status: verification complete: no failure, nothing unjudged, nothing awaiting the independent verdict.'
       : `Status: INCOMPLETE, ${open.filter(f => f.verdict === 'fail').length} failing and ${open.filter(f => f.verdict === 'unjudged').length} not judged.${ind.awaiting ? ` Awaiting the independent verdict: ${ind.awaiting} (node harness/cli.mjs paper-judge ${slug} ${state.paper} --writer <claude|codex>).${open.length ? ' A unit with a failing or unjudged verdict is put to a judge only after that is settled.' : ''}` : ''}`,

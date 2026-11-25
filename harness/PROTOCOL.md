@@ -182,7 +182,7 @@ authorized multi-step work solely because of it. Include it in the normal report
   with a dated literature corpus (`corpus-build`), run by
   `node harness/cli.mjs paper-verify <slug> [paper-dir]`, and the independent verdicts of
   `node harness/cli.mjs paper-judge <slug> [paper-dir] --writer <claude|codex>`: judges of
-  the vendor that did not write the text, tested on seeded defects in every run, two of
+  the vendor that did not write the text, tested on seeded defects in every call, two of
   them for a pass ([PAPER-REVIEW](PAPER-REVIEW.md#verification-gate)). A manuscript is gated once it is
   enrolled (its directory holds `VERIFY.json`). For an enrolled manuscript the table
   printed by `paper-verify` is the only evidence of verification a report may cite, and

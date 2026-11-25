@@ -1,8 +1,8 @@
 # Manuscript verification — design
 
 Status: design and its four open choices decided by the user on 2026-11-25. **Stages 1 to
-3 of 5 implemented on 2026-11-25** ([record](#implementation-record)); stages 4 and 5 are
-not. No manuscript is enrolled yet (the pilot is stage 5). [PAPER-REVIEW](../PAPER-REVIEW.md)
+3 of 5 implemented on 2026-11-25**, stage 3 rebuilt on 2026-11-26 for its cost
+([record](#implementation-record)); stages 4 and 5 are not. No manuscript is enrolled yet (the pilot is stage 5). [PAPER-REVIEW](../PAPER-REVIEW.md)
 and [PAPER-STYLE](../../PAPER-STYLE.md) remain the active policy, and the reading duty
 stays in full: the independent verdict of stage 3 sees a sentence with its paragraph and
 headings, not the notes, the data or the cited sources. This file is the specification the
@@ -87,6 +87,10 @@ The judging model is also a language model, so the verdict itself is tested.
   the manuscript (a coined label, a claim without its scope, a wrong number, a sentence
   placed in the wrong Section, and every defect the user has found before). The run is
   valid only if the judge catches all of them. Otherwise the whole run is void.
+  (Both statements were replaced on the user's go of 2026-11-26, after the cost of the
+  first form was measured: a call now holds one rule family for many units, and the planted
+  texts stand in every call, whose answers on a rule count only if it got that rule's
+  planted texts right. See [the second form](#stage-3-second-form-2026-11-26).)
 - **Search for a better sentence.** The judge is asked to produce a sentence that is
   better under the ranked criteria. If it can, the unit fails and is replaced. A unit
   passes when two independent judges both fail to improve on it.
@@ -589,3 +593,192 @@ Open after stage 3.
 - Single coined words, and the items listed as open after stage 2, are unchanged.
 - The tool hooks are still not installed and no manuscript is enrolled, so the gate has
   not yet held a live session.
+
+### Stage 3, second form (2026-11-26)
+
+Why. The first form cost too much to use. It launched the judge's CLI once for each
+sentence and rule family, every launch carried 20,758 fixed input tokens, and the question
+was 1.8 % of a call. One pass over the pilot draft was estimated at 2,000 calls, 43 million
+input tokens and 11 hours. Asked whether that is reasonable (it is not), the user lifted the
+constraint that had produced it ("기존 스킬 및 하네스 구조 유지할 필요는 없고 아무튼 지금
+제대로 하네스 짜보는거야", 2026-11-25) and gave the go on the three changes proposed in reply
+("그래 해봐", 2026-11-26): calls by paragraph instead of by sentence, the size of a call
+fixed by measurement on planted texts, and a narrower search for a better sentence. The
+principles stand (no rule without a check, the writer cannot pass its own text, verdicts
+bound to content hashes, the judge tested on seeded defects). Two statements of the Section
+"Making the independent verdict real" are replaced, and the record below says by what:
+"one sentence ... per call", and "the whole run is void".
+
+Criterion and plan of checks, written before the code. Tests use an injected judge.
+
+1. A call puts one rule family to the judge for many units at once: whole paragraphs, taken
+   in reading order up to a set number of units, each unit shown in its own paragraph. The
+   schema of a call requires an answer for every unit and question, and the key of a
+   question, which binds its verdict, does not depend on what else is in the call.
+2. Every call carries the planted texts of the rules it asks, placed among the paragraphs
+   of the manuscript at positions the judge cannot tell from the others. The answers of a
+   call on a rule count only if that call answered every planted text of that rule as
+   registered. A judge whose catch list lacks one seeded defect therefore supplies no
+   verdict on that rule, and the report names the rule and the planted text.
+3. Fitness of a run. The answers of a run on a rule count only if the judge answered at
+   least nine in ten of that rule's planted texts in the run as registered. Below that, all
+   of the run's answers on the rule are dropped, also those of the calls that caught theirs.
+   At or above it, only the calls with a miss are dropped.
+4. An answer is read question by question. A missing verdict, or evidence that is not a
+   quotation of the material, loses that unit's answers on that rule and nothing else.
+5. The search for a better sentence is put only to a sentence whose other verdicts have all
+   passed. A replacement counts when the judge names a gain under criteria 1 to 6, or when
+   it has at least a fifth fewer words. A smaller saving in length is recorded and passes.
+6. What held in the first form still holds: the grounds left to a reader are judged, two
+   passing judges pass and one failing judge fails, a defect the user found is planted from
+   then on, an edit asks the sentences of its paragraph again and no others, a verdict file
+   counts only with the run metadata of the CLI, and the hook does not throw.
+7. Live, with Codex, on scratch copies: the share of planted texts answered as registered
+   for calls of about 10, 25 and 50 sentences of real prose, with the counts behind each
+   share, and the tokens and time of each. The default size of a call is the largest at
+   which no planted text was missed. A small manuscript is taken through to the end.
+
+Code: `harness/judge.mjs` rewritten (a call of blocks, its schema and reading question by
+question, planted texts in every call, runs that follow one another), in
+`harness/verify.mjs` the reading of run records by call and rule (`recorded`), votes by
+rule (`settle`), `FIT`, `SHORTER`, `JUDGE` raised to 2, paragraph and headings as context of
+the reader rules only, in `harness/rules.json` one planted paragraph for each of
+`scope-stated` and `in-place` holding its sound and its defective sentence, and neutral
+labels in the planted texts, `--batch` and `--all-units` in `harness/cli.mjs`.
+
+Result. `tests/judge.test.mjs` has eight tests with an injected judge, and all 51 tests of
+the repository pass. By the numbers of the plan above:
+
+1. Changed by the measurement below, then passed. A unit judged in its paragraph (the
+   reader rules, the better sentence) shares a call with no other paragraph of the
+   manuscript. A question that code left open is about the sentence alone, is shown without
+   its paragraph, and such units are put together up to `--batch` (25). The fixture that
+   took 58 calls in the first form takes 20.
+2. Passed. A judge whose catch list lacks the coined label gives no verdict on
+   `term-attested` and judges the other rules. A judge that fails the passing text of
+   `in-place` gives no verdict on `in-place`, and its verdicts on `scope-stated` from the
+   same calls stand.
+3. Passed. With one miss in twelve calls (23 of 24 planted texts right) the eleven other
+   calls count and the one is asked again. With three (21 of 24) not one answer of the run
+   counts for the rule.
+4. Passed. A missing answer and one that quotes nothing each lose one unit's verdict on one
+   rule, and the other answers of the call stand.
+5. Passed. The search is asked after two judges passed everything else. "two" written as
+   "2" is recorded and passes, four words for six fail the sentence, and so does a gain
+   named under criterion 5.
+6. Passed, with the tests of the first form rewritten for the new records. After an edit
+   the questions about the other sentence alone (its number, its colon, its word pair) now
+   keep their verdicts, since they no longer show the paragraph.
+7. Done, below. The share of planted texts answered as registered did not depend on the
+   size of a call, so it could not fix the size. The verdicts on the manuscript did.
+
+Measured, live with Codex (provider default, gpt-6.2-astra at reasoning effort xhigh in
+this computer's configuration), on scratch copies with no project file written.
+
+- Size of a call, on the first 60, 100 and 150 sentences of the pilot draft (2a4d45a) under
+  the two reader rules, two runs each, with `--all-units`:
+
+  | sentences a call (at most) | calls | planted texts as registered | input tokens | output tokens | median time of a call |
+  | ---: | ---: | ---: | ---: | ---: | ---: |
+  | 10 | 18 | 72 of 72 | 422,326 | 63,675 | 70 s |
+  | 25 | 10 | 40 of 40 | 262,846 | 77,570 | 164 s |
+  | 50 | 8 | 32 of 32 | 239,562 | 102,804 | 285 s |
+
+  No answer was refused and no call failed: the provider accepted schemas of up to 110
+  required answers. The planted texts were caught at every size, 144 of 144, so they do not
+  tell the sizes apart.
+- The verdicts on the manuscript do. On the same first 60 sentences (120 verdicts) a run
+  failed 3 at 10 a call, 7 at 25 and 11 or 12 at 50, all under `scope-stated`. The reasons
+  at 25 and 50 name conditions that stand in other paragraphs of the same call: an
+  abstract sentence fails because it "omits the vector-like bifundamental pair used to
+  obtain the stated mechanism", the opening sentence of a paragraph because the restriction
+  "appears only later". A judge that sees several paragraphs judges a sentence against all
+  of them. The verdict then depends on text its key does not cover, which principle 4
+  forbids, and so a call holds one paragraph. What the larger calls found (a claim in the
+  abstract or introduction wider than what the body establishes) is the scope check of
+  stage 4, where the dependence on the whole text belongs in the key.
+- Two runs of one model are one judge. At 10 and at 25 a call the two runs gave the same
+  verdict on all 120, at 50 on 117. The second run doubles the cost and adds almost no
+  independent reading.
+- Sentences judged alone, in calls of 25: the first 50 open questions on word pairs of the
+  pilot draft, 4 calls in 148 s, 113,174 input and 12,457 output tokens, 16 of 16 planted
+  texts as registered, no answer refused. The first run failed 4 of 67 questions, each a
+  phrase used as a name ("NSVZ one-loop coefficient", "numerator coefficient", "ABJ
+  anomaly-free condition", "electric flow"), and the second passed the 59 it was asked.
+- The four-sentence scratch manuscript of the first form, taken to the end: four runs of 7,
+  6, 2 and 1 calls in 226 s, 349,668 input and 17,008 output tokens, 43 of 43 planted texts
+  as registered. The first form took 47 calls, 949 s and about 993 thousand input tokens
+  for the same text. It ends incomplete, as it should: `in-place` fails the sentence on
+  $\mathcal{N}$ under the heading "Two nodes", and the search replaces two sentences (once
+  under criterion 4, once with four words for six). No judge offered "2" for "two" again.
+- The search for a better sentence on real text: the first 15 sentences of the pilot draft
+  (the abstract and two paragraphs of the introduction), `--all-units`, 6 calls in 366 s,
+  133,312 input and 29,898 output tokens. The first judge replaced 12 of the 15: 5 by a text
+  with at least a fifth fewer words, and 7 under criterion 1, each of which changes what
+  the sentence claims (it adds "with one active gauge coupling" to the statement on the
+  Lagrange multiplier, for example). The second judge replaced 1 of the other 3. No smaller
+  saving was offered.
+- In all on 2026-11-26: 62 calls, 1,520,888 input and 303,412 output tokens, and 209 of 209
+  planted texts answered as registered.
+
+Choices made in the second form, each the lead's and open to the user's correction.
+
+1. One paragraph a call for the rules about a sentence, decided by the measurement above
+   and not by the planted texts, which the plan had named as the measure.
+2. A question that code left open shows the sentence and not its paragraph. Its verdict is
+   then bound to the sentence alone, the units can share a call, and an edit elsewhere in
+   the paragraph no longer asks it again.
+3. The planted texts stand in every call instead of before the run. The design's "the run
+   is valid only if the judge catches all of them" becomes two conditions on a rule: the
+   call caught all planted texts of the rule, and the run caught nine in ten of them. The
+   first replaces a test of the configuration by a test of each call. The second keeps a
+   judge that misses often from counting through the calls where it happened to catch one.
+   Nine in ten is the lead's number.
+4. A fifth fewer words, the threshold for a replacement that is only shorter, was proposed
+   to the user on 2026-11-25 and stands on the go of 2026-11-26. The judge is told the
+   threshold. A judge can name criterion 5 for a small cut, and that counts.
+5. The search for a better sentence is its own call for each paragraph and is asked after
+   the rules have passed, as proposed. Asking it in the call of the reader rules would
+   halve the calls for a text that passes and is not built.
+6. Up to four runs follow one another in one invocation, and a run that adds no vote ends
+   the sequence. `--limit` fixes the questions of the whole invocation.
+7. `--all-units` asks units that code fails, for trials on a draft whose registries are
+   incomplete. It is not a verification.
+8. A reader rule's sound and defective sentences stand in one planted paragraph. The first
+   form planted two paragraphs with the same opening, which a judge could notice.
+9. What counts is computed from the calls of a run record at each `paper-verify`. A record
+   of a run that was cut short counts with the calls it has.
+
+Open after the second form.
+
+- The cost of a whole draft. From the calls above (23.5 thousand input tokens, 3.5 thousand
+  output tokens and 78 s for a call of the reader rules, 22 thousand, 7 thousand and about
+  150 s for a call of the better sentence): the pilot draft has 100 paragraphs, so a run is
+  106 calls for the rules or 100 for the better sentence, and two judges that pass
+  everything need 412 calls, about 9.5 million input and 2 million output tokens and three
+  hours with four calls at a time. The first form was estimated at 43 million input tokens
+  and 11 hours. The figure given to the user before the rebuild, 4.7 million, assumed one
+  call for each paragraph in all. It takes two, and half of the cost is the search for a
+  better sentence.
+- Two judges. The decision "two judges in agreement" was made for independence, and two
+  runs of one model agree on 99 to 100 % of verdicts. Proposed: name two models of the
+  vendor with `--model a,b`, or count one run of one model as one judge and require the
+  second from another model. Which models is the user's choice.
+- The planted texts are too easy to grade a judge: 209 of 209 live. They show that a call
+  was read and that a rule is applied at all. Proposed for stage 5: defects made from the
+  manuscript's own sentences (its own number changed, its own sentence moved), which a
+  judge cannot tell from the text around them.
+- The planted paragraphs of a call are foreign text that the judge sees next to the
+  paragraph of the manuscript, and they are not part of the key of a verdict. A changed
+  planted text changes the gate hash but not the keys.
+- Whether the search for a better sentence settles is still unmeasured over more than one
+  round. On real text one round does not settle it: 13 of 15 sentences were
+  replaced, 7 of them with a changed claim, which a judge that sees one paragraph cannot
+  establish. Proposed, for the user: print the replacements as advice and take the search
+  out of the pass and fail of the gate, or admit only criteria 5 to 7, since correctness,
+  the user's decisions, the rules and completeness have checks of their own. Without the
+  search a pass over the pilot draft is 106 calls for each judge.
+- The items open after the first form stand, except the cost and the refused quotation:
+  local run records, the limits of the seal, a Claude judge never launched live, the
+  sentence row of "Units and grounds", replacements unchecked by code before the report,
+  the tool hooks and the enrollment.

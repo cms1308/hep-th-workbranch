@@ -170,7 +170,8 @@ local edit of one needs none of these files, and no user-approval step is added.
   `at` names the sentence the rule is tested on (the last one otherwise). Code cannot test
   such a rule at registration. Instead every run of the judges plants these texts, so a
   defect the user found is registered as a `judge` rule with the failing text verbatim and
-  is seeded from then on. A code rule that leaves questions to a reader carries `judge`
+  is seeded from then on. One text may serve several registrations (a paragraph with a
+  sound sentence and a defective one) and is then planted once. A code rule that leaves questions to a reader carries `judge`
   samples (`{"fail": [...], "pass": [...]}`, each with `tex`, optional `lexicon`, `facts`,
   `corpus` and the `item` it is about), refused unless they reach the independent verdict.
 - **Units.** `node harness/cli.mjs paper-units <slug> [paper-dir] [filter]` lists unit ids
@@ -232,41 +233,54 @@ local edit of one needs none of these files, and no user-approval step is added.
 - **Independent verdicts.** `node harness/cli.mjs paper-judge <slug> [paper-dir] --writer
   <claude|codex>` asks judges of the vendor that did not write the manuscript. The writer is
   a declaration, kept after the first run and printed in every report. Asked are: for every
-  sentence the registered `judge` rules (harness-wide `scope-stated` and `in-place`) and
-  the search for a better sentence under the ranked criteria of the design, and for the
-  units where code left a question, a numeral bound with `at`, a colon or semicolon, a word
-  pair that occurs once, an `ordinary` declaration and the notation declared `standard`.
-  One call holds one unit and one rule family, shows the unit with its paragraph (and, for
-  the rules about a sentence, its headings), and must answer every question with pass or
-  fail, a reason and a quotation of the material shown. An answer that omits a question or
-  quotes nothing is refused and supplies no verdict. A unit that fails a code check is
-  not put to a judge until the failure is fixed.
-- **Seeded defects.** Each run of a judge first plants the registered failing and passing
-  texts of the families it asks in a copy of the manuscript and asks about them in calls of
-  the same form. If the judge misses one seeded defect or fails one passing text, the run
-  is void: the manuscript's questions are not asked and none of its answers is used. A
-  family for which no defect can be planted in this manuscript is not asked.
-- **Two judges.** A (unit, rule) passes when two different valid runs pass it and fails
-  when one fails it. A failed unit is changed, not asked again: the writer cannot overrule
-  a judge, and a disputed verdict goes to the user. A sentence fails `better-sentence`
-  when a judge writes a better one, which the report prints with its criterion. The changed
-  sentence is a new unit, so it and the other sentences of its paragraph are asked again,
-  and nothing else is.
+  sentence the registered `judge` rules (harness-wide `scope-stated` and `in-place`), for
+  the units where code left a question a numeral bound with `at`, a colon or semicolon, a
+  word pair that occurs once, an `ordinary` declaration and the notation declared
+  `standard`, and last the search for a better sentence. A unit that fails a code check
+  is not put to a judge until the failure is fixed.
+- **Calls.** One call puts one rule family to the judge. For the rules about a sentence
+  (the `judge` rules and the better sentence) a call holds the sentences of one paragraph,
+  judged in that paragraph under its headings, and no other paragraph of the manuscript:
+  a judge that sees two uses the one on the other (measured, design record), and the key
+  of a verdict covers its own paragraph only. The questions that code left open are about
+  the sentence alone and are put together, up to `--batch` units a call (25 by default).
+  The schema of a call requires, for every unit and question, pass or fail, a reason and a
+  quotation of the material shown. An answer is read question by question: a missing
+  verdict, or evidence that is not a quotation, loses that unit's verdict on that rule and
+  nothing else. An edit therefore asks the sentences of its paragraph again under the
+  rules about a sentence, and nothing else.
+- **Planted texts.** Every call carries the registered failing and passing texts of the
+  rules it asks, planted in a copy of the manuscript and placed among its paragraphs, where
+  nothing marks them. The answers of a call on a rule count only if the call answered every
+  planted text of that rule as registered, a seeded defect among them. And the answers of a
+  run on a rule count only if the run answered nine in ten of that rule's planted texts as
+  registered. A rule for which no defect can be planted in this manuscript is not asked.
+- **Two judges.** A run is one judge. A (unit, rule) passes when two different runs pass it
+  and fails when one fails it. A failed unit is changed, not asked again: the writer cannot
+  overrule a judge, and a disputed verdict goes to the user. `paper-judge` makes up to four
+  runs in a row, two for the rules and two for the better sentence.
+- **Better sentence.** The search is put only to a sentence whose other verdicts have all
+  passed. The sentence fails when a judge writes a better one, which the report prints with
+  its ranked criterion. A replacement counts when the judge names a gain under criteria 1
+  to 6, or when it has at least a fifth fewer words. A smaller saving in length is kept in
+  the run record and the sentence passes. The changed sentence is a new unit.
 - **Run metadata.** Every run is recorded under
   `.harness-local/verdicts/<slug>/<paper-dir>/<run>/`: `run.json` (judge, requested model,
-  seeded defects and their outcome, every call with its answers, tokens and time) and, for
-  each call, the prompt, the schema and the provider's output. The independent verdicts in
-  `VERIFY.json` are read from these records at each `paper-verify` and never from the file.
-  The CLI also records the hash of the `VERIFY.json` it wrote. A file that was written or
-  changed by other means is not accepted: the manuscript counts as unverified and the next
-  `paper-verify` judges every unit again. The records are local to one computer.
+  the planted texts, every call with its answers, the outcome of its planted texts, tokens
+  and time) and, for each call, the prompt, the schema and the provider's output. The
+  independent verdicts in `VERIFY.json` are computed from the calls of these records at
+  each `paper-verify` and never read from the file. The CLI also records the hash of the
+  `VERIFY.json` it wrote. A file that was written or changed by other means is not
+  accepted: the manuscript counts as unverified and the next `paper-verify` judges every
+  unit again. The records are local to one computer.
   `--dry-run` prints the number of questions without a call and without enrolling.
-  `--model <a[,b]>` names the model of each run, `--family` and `--limit` narrow a run,
-  `--parallel` sets the simultaneous calls (4).
+  `--model <a[,b]>` names the model of each run, `--family` and `--limit` narrow what is
+  asked, `--parallel` sets the simultaneous calls (4), and `--all-units` also asks the
+  units that a code check fails (for a trial, not for a verification).
 - **Reporting.** State the result of an enrolled manuscript by the table `paper-verify`
   prints, with its counts of verdicts awaiting the independent verdict, the corpus it
-  names, the judges, the seeded defects they caught, the void runs and its list of what
-  the implemented stages do not judge. A statement that the text was read is not evidence. If the
+  names, each run of the judges with the planted texts it answered as registered and the
+  rules it is not used for, and its list of what the implemented stages do not judge. A statement that the text was read is not evidence. If the
   manuscript is unfinished, run `paper-verify <slug> [paper-dir] --wip "<reason>"` and give
   the user the unverified units it prints. Hook and commit behavior are in
   [OPERATIONS](OPERATIONS.md#manuscript-verification-gate).
