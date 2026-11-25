@@ -64,6 +64,17 @@ test('changed-after-queue files and unrelated staged user changes are never comm
   assert.equal(git(root, ['diff', '--cached', '--name-only']).trim(), 'user.md');
 });
 
+test('queueing manuscript TeX returns the complete-reading reminder, other files do not', t => {
+  const root = temp(t); init(root);
+  const project = path.join(root, 'projects', 'example'); init(project);
+  put(project, 'paper/main.tex', 'x'); put(project, 'paper/sections/generated/t.tex', 'y'); put(project, 'STATE.md', 's');
+  const job = queue(root, 'projects/example', ['paper/main.tex', 'STATE.md'], 'edit');
+  assert.match(job.notice, /read the complete manuscript yourself/);
+  assert.equal(JSON.parse(fs.readFileSync(path.join(root, '.harness-local/pending', job.id + '.json'), 'utf8')).notice, undefined);
+  assert.equal(queue(root, 'projects/example', ['STATE.md'], 'state').notice, undefined);
+  assert.match(queue(root, '.', ['projects/example/paper/sections/generated/t.tex'], 'nested').notice ?? '', /manuscript/);
+});
+
 test('literal filenames, deletions and missing upstream are handled explicitly', t => {
   const root = temp(t); init(root); put(root, '[data].md', 'old');
   queue(root, '.', ['[data].md'], 'literal'); assert.equal(flush(root)[0].push, 'no-upstream');

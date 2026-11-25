@@ -9,6 +9,12 @@ function fingerprint(repo, name) {
   if (!fs.lstatSync(p).isFile()) throw Error(`Queue files individually, not directories or symlinks: ${name}`);
   return sha(fs.readFileSync(p));
 }
+// Manuscript sources: any .tex under a paper* directory (paper/, paper-gpt/, their sections).
+const MANUSCRIPT = /(^|\/)paper[^/]*\/(.+\/)?[^/]+\.tex$/i;
+export const READING_NOTICE = 'Manuscript source changed: before reporting, read the complete manuscript yourself, sentence by sentence (harness/PAPER-REVIEW.md, "Judge every sentence"). Reviewer reports, scripted edits, searches and compilation do not replace this reading.';
+export function manuscriptFiles(repoName, files) {
+  return files.filter(name => MANUSCRIPT.test(path.join(repoName, name).split(path.sep).join('/')));
+}
 export function queue(root, repoName, files, message) {
   const repo = repository(root, repoName);
   if (!files.length) throw Error('List the files changed by this task. No implicit git add -A.');
@@ -18,7 +24,11 @@ export function queue(root, repoName, files, message) {
     job.files[name] = fingerprint(repo, name);
   }
   writeJSON(path.join(root, '.harness-local', 'pending', job.id + '.json'), job);
-  return job;
+  const tex = manuscriptFiles(repoName, Object.keys(job.files));
+  if (!tex.length) return job;
+  // Written to stderr as well, so the reminder survives a redirected stdout.
+  process.stderr.write(`[harness] ${READING_NOTICE} Files: ${tex.join(', ')}\n`);
+  return { ...job, notice: READING_NOTICE };
 }
 export function checkpoint(root, job, { push = true } = {}) {
   const repo = repository(root, job.repo);

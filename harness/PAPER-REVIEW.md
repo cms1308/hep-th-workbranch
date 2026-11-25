@@ -31,6 +31,9 @@ it. Report an unresolved scientific issue explicitly. A hedge cannot supply miss
 evidence. The assistant owns this review and must not leave the user to discover defects
 one sentence at a time. Keyword searches, compilation, algebra checks and a paragraph-level
 summary supplement this reading; none establishes that every sentence has been judged.
+Findings returned by delegated reviewers and edits applied by script do not replace the
+lead's own reading of the edited manuscript either (user, 2026-11-25); `queue` prints a
+reminder whenever manuscript TeX is checkpointed.
 Report the scope actually read and the unresolved findings accurately. This rule requires
 judgment, not a mandatory per-sentence ledger or a new approval step.
 
@@ -64,6 +67,8 @@ User instruction, 2026-11-05. Apply this to manuscript writing, revision and rev
    Treat mathematical definitions, legitimate project-specific descriptions and names
    separately from unsupported jargon. Never force every sentence to match a quotation.
 7. Read and judge all sentences after edits, including replacements and their context.
+   A sentence changed by script or on a reviewer's report counts as unread until the lead
+   has read it in its paragraph and section.
    Check inventory coverage against the final text. Unread, unclassified or unverified
    material must remain explicitly open; neither a successful script nor a generic
    "all sentences checked" statement can close it. Reuse unchanged evidence only when

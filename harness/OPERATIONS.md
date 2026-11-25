@@ -31,6 +31,9 @@ remove only that job, and requeue the reviewed files. Never delete another sessi
 No recursive staging across `projects/`, no pull/rebase/force push, and no remote guess.
 Existing user changes outside the queued paths are left alone. Missing upstream means
 local commit only, reported as `no-upstream`; it is not successful remote backup.
+Queueing a `.tex` file under a `paper*` directory also prints, on stderr and in the
+returned job, a reminder to read the complete manuscript before reporting
+([PAPER-REVIEW](PAPER-REVIEW.md#judge-every-sentence)); it is a reminder, not a gate.
 
 Stop hooks flush the same queue as a fallback. SessionStart reminds the agent about
 pending jobs. Both providers use the same Node entry point and discover the harness by

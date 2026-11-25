@@ -171,7 +171,8 @@ authorized multi-step work solely because of it. Include it in the normal report
   delivery, read the complete manuscript without skipping sentences, including captions,
   footnotes and appendices. An explicitly scoped excerpt requires the same complete
   judgment within its scope and dependencies. Follow [PAPER-REVIEW](PAPER-REVIEW.md#judge-every-sentence).
-  Compilation and searches do not replace this responsibility.
+  Compilation, searches, delegated reviewer reports and scripted edits do not replace
+  this responsibility (user, 2026-11-25); `queue` prints a reminder for manuscript TeX.
 - Use the default explanatory prose in `PAPER-STYLE.md` for drafting and substantive prose
   edits. Shared context, authorization, validation and optional review tracking are in
   [PAPER-REVIEW.md](PAPER-REVIEW.md).
