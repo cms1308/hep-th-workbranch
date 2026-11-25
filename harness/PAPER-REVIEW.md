@@ -133,8 +133,9 @@ conflicts before deciding a scientific change; ordinary authorized merges can pr
 
 ## Verification gate
 
-Stage 1 of [the design](design/paper-verification.md) is implemented: the checks that
-code decides. It supplements the reading duty above and replaces none of it. Whether a
+Stages 1 and 2 of [the design](design/paper-verification.md) are implemented: the checks
+that code decides, including the comparison of terms with the literature corpus. They
+supplement the reading duty above and replace none of it. Whether a
 sentence is correct, supported and in its place is the independent verdict of stage 3,
 which does not exist yet.
 
@@ -148,7 +149,7 @@ local edit of one needs none of these files, and no user-approval step is added.
 | File in the paper directory | Content |
 | --- | --- |
 | `RULES.json` | The project's rules, `{"version": 1, "rules": [...]}`. Harness-wide rules are in `harness/rules.json`. |
-| `LEXICON.json` | `symbols`: `{"symbol", "at"}` or `{"symbol", "standard"}`. `terms`: `{"term", "at"}`. |
+| `LEXICON.json` | `symbols`: `{"symbol", "at"}` or `{"symbol", "standard"}`. `terms`: `{"term"}` with exactly one of `"at"`, `"approved"`, `"ordinary"`. |
 | `FACTS.json` | `facts`: id to `{"file", "pointer"}`, `{"file", "pattern"}` or `{"at"}`. `uses`: sentence to numeral to fact id. |
 | `VERIFY.json` | Written by the CLI only: one verdict for each (unit, rule), bound to content hashes. |
 
@@ -157,7 +158,7 @@ local edit of one needs none of these files, and no user-approval step is added.
   its check flags every `fail` text and passes every `pass` text. A user objection supplies
   the failing text verbatim. Kinds decided by code: `banned` (`pattern`, optional `flags`,
   `roles`, `in: "tex"`), `reference-capital`, `sentence-case-title`, `aside-punctuation`,
-  `hard-wrap`, `defined-before-use`, `number-bound`, `build`. A rule that only a reader can
+  `hard-wrap`, `defined-before-use`, `term-attested`, `number-bound`, `build`. A rule that only a reader can
   judge cannot be registered before stage 3. It stays in DECISIONS under the reading duty.
 - **Units.** `node harness/cli.mjs paper-units <slug> [paper-dir] [filter]` lists unit ids
   (content hashes), positions and numerals. `at` and the keys of `uses` take a unit id or
@@ -176,7 +177,33 @@ local edit of one needs none of these files, and no user-approval step is added.
   indices. A multi-letter name (`SU`) exists when the lexicon lists it. Every symbol of a
   sentence needs a lexicon entry whose `at` contains the symbol and does not come after
   the sentence. Titles are exempt. `standard` declares notation that needs no definition.
-  The declaration is listed once and awaits attestation.
+  The declared symbol must occur in the mathematics of at least two corpus papers.
+  Otherwise it fails and needs a definition site. Whether the corpus uses the symbol with
+  the declared meaning awaits the independent verdict.
+- **Corpus.** `node harness/cli.mjs corpus-build [--cutoff <YYYY-MM-DD>]` reads the wiki
+  sources (`sources/arxiv/*/meta.json` and `tex/`) and writes `.harness-local/corpus.json`.
+  It holds the papers with category hep-th whose inspected source is dated strictly before
+  the cutoff, two calendar years before the build unless an earlier date is given (the
+  language-evidence rule above). A later cutoff is refused. Mathematics, references,
+  citations, punctuation, paragraph ends, headings, captions and footnotes break a word
+  sequence. Comments, macro definitions, tables and the bibliography are left out. Words
+  are compared in lower case, without a possessive ending, in the singular, and a hyphen
+  counts as a space. The corpus is a selected local set of papers, not all of hep-th, and
+  the wiki is only read. `node harness/cli.mjs corpus-count <phrase...>` prints the papers
+  and occurrences of a phrase, for choosing attested wording.
+- **Terms.** The candidates of a sentence or title are its hyphenated compounds and its
+  pairs of adjacent content words (function words, mathematics and punctuation end a run
+  of content words). No pair starts at a number word, a roman numeral or a possessive. A
+  candidate is attested when it occurs in at least two corpus papers. One paper does not
+  establish a wording. An unattested candidate passes with a ground in `LEXICON.json`, an
+  entry whose `term` contains its words in order: `at` (its definition site, which
+  `defined-before-use` holds to the usual order) or `approved` (the user's words and their
+  date, listed in every report). Without a ground, an unattested compound fails, and an
+  unattested pair fails when it stands in two or more sentences or titles. A pair that
+  occurs once, and a candidate declared `ordinary` (wording that is not a term, for
+  example a subject and its verb, with the reason), await the independent verdict. The
+  lead does not record an approval the user has not given. Without a built corpus the
+  check is not judged.
 - **Punctuation.** An em-dash fails. A colon before a display or at the end of its
   sentence passes. Any other colon or semicolon in running prose awaits the independent
   verdict, because [PAPER-STYLE](../PAPER-STYLE.md) keeps punctuation that clarifies.
@@ -187,10 +214,11 @@ local edit of one needs none of these files, and no user-approval step is added.
 - **Verdicts.** Pass, fail, awaiting the independent verdict, or not judged. Verification
   is complete when no verdict fails and none is unjudged. A verdict is judged again only
   when its unit, its rule or what it depends on changed (a definition site, a bound fact,
-  the calculation output).
+  the calculation output, the attestation of one of its terms). A rebuilt corpus changes
+  only the verdicts whose grounds it changes.
 - **Reporting.** State the result of an enrolled manuscript by the table `paper-verify`
-  prints, with its counts of verdicts awaiting the independent verdict and its list of
-  what stage 1 does not judge. A statement that the text was read is not evidence. If the
+  prints, with its counts of verdicts awaiting the independent verdict, the corpus it
+  names and its list of what the implemented stages do not judge. A statement that the text was read is not evidence. If the
   manuscript is unfinished, run `paper-verify <slug> [paper-dir] --wip "<reason>"` and give
   the user the unverified units it prints. Hook and commit behavior are in
   [OPERATIONS](OPERATIONS.md#manuscript-verification-gate).

@@ -6,7 +6,7 @@ import { read, sha, safePath } from './core.mjs';
 
 const L = '⟦', R = '⟧';                      // mask brackets: inline math M, display D, reference R, citation C
 const squash = s => s.replace(/\s+/g, ' ').trim();
-const uncomment = line => line.replace(/(?<!\\)((?:\\\\)*)%.*$/, '$1');
+export const uncomment = line => line.replace(/(?<!\\)((?:\\\\)*)%.*$/, '$1');
 
 // Index just past the balanced group opening at text[i] ('{' or '['); -1 when it does not close.
 export function group(text, i) {
@@ -196,6 +196,7 @@ export function plain(s) {
 
 const NUM = { two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12, thirteen: 13, fourteen: 14, fifteen: 15, sixteen: 16, seventeen: 17, eighteen: 18, nineteen: 19, twenty: 20, thirty: 30, forty: 40, fifty: 50, sixty: 60, seventy: 70, eighty: 80, ninety: 90, hundred: 100, thousand: 1000, million: 1e6, dozen: 12 };
 const UNIT = 'two|three|four|five|six|seven|eight|nine', WORD = Object.keys(NUM).join('|');
+export const numberWord = w => w.toLowerCase().split('-').every(part => part in NUM);     // two, twenty-two, hundred
 const DIGITS = /(?<![\w.,⟦])(?<![A-Za-z]-)\d+(?:,\d{3})*(?:\.\d+)?(?![\w]|-[A-Za-z]|\.\d|,\d{3})/g;
 const WORDS = new RegExp(`(?<![\\w-])(?:${WORD})(?:-(?:${UNIT}))?(?: (?:hundred|thousand|million))*(?![\\w]|-[A-Za-z])`, 'gi');
 const REL = /^(?:=|<|>|\\(?:neq|ne|leq|le|geq|ge|simeq|approx|sim|equiv|to|rightarrow|in|propto|ll|gg|lesssim|gtrsim|cong)(?![A-Za-z]))/;
@@ -340,13 +341,15 @@ const STOP = new Set(`a an the this that these those it its their our we us they
  and or but nor so yet for if then else than as while whereas because since although though unless until whether when where which who whom whose what how why
  of in on at by to from with without within into onto over under above below between among through during before after about against along across around near via per up down out off
  not no only also both either neither each every all any some such same other another more most less least very much many few several own just even still again further now thus hence therefore however moreover namely respectively one`.split(/\s+/));
+// A prose view cut at marks and punctuation; each segment is its tokens in order, null for a token that is not a word.
+export const segments = prose => prose.split(new RegExp(`${L}[A-Z]${R}|[.,;:!?()\\[\\]"–…]|---`)).map(s => s.split(/\s+/).filter(Boolean).map(w => /^[A-Za-z][A-Za-z'’-]*$/.test(w) ? w : null));
 // Candidate terms: maximal runs of content words (two or more words, or one hyphenated compound).
 export function terms(prose) {
   const out = [];
-  for (const segment of prose.split(new RegExp(`${L}[A-Z]${R}|[.,;:!?()\\[\\]"–…]|---`))) {
+  for (const segment of segments(prose)) {
     let run = [];
     const end = () => { if (run.length > 1 || run[0]?.includes('-')) out.push(run.join(' ').toLowerCase()); run = []; };
-    for (const w of segment.split(/\s+/)) { if (/^[A-Za-z][A-Za-z'’-]*$/.test(w) && !STOP.has(w.toLowerCase())) run.push(w); else end(); }
+    for (const w of segment) { if (w && !STOP.has(w.toLowerCase())) run.push(w); else end(); }
     end();
   }
   return out;

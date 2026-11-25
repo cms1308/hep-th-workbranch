@@ -69,6 +69,22 @@
       ]
     },
     {
+      "id": "term-attested",
+      "kind": "term-attested",
+      "source": "PROTOCOL Conventions: use established terminology; design/paper-verification (user, 2026-11-25): a term is attested in the literature corpus or has a definition site. The failing texts carry the coined labels of the origin (\"saddle scenario\", \"symmetry-quotient method\", \"one-pair theories\").",
+      "fail": [
+        {"tex": "In the saddle scenario both gauge couplings are asymptotically free.\n\nThe saddle scenario is excluded.", "corpus": ["Both gauge couplings are asymptotically free. One pair of bifundamental fields connects the nodes, and a bifundamental pair is charged under both groups. The one-loop coefficient counts the marginal deformations.", "The gauge couplings are asymptotically free here. Each bifundamental pair adds one pair of chiral fields. The one-loop coefficient is negative, and marginal deformations exist."]},
+        {"tex": "We count the marginal deformations with the symmetry-quotient method.", "corpus": ["Both gauge couplings are asymptotically free. One pair of bifundamental fields connects the nodes, and a bifundamental pair is charged under both groups. The one-loop coefficient counts the marginal deformations.", "The gauge couplings are asymptotically free here. Each bifundamental pair adds one pair of chiral fields. The one-loop coefficient is negative, and marginal deformations exist."]},
+        {"tex": "The one-pair theories are consistent.\n\nTwo of the one-pair theories are free.", "corpus": ["Both gauge couplings are asymptotically free. One pair of bifundamental fields connects the nodes, and a bifundamental pair is charged under both groups. The one-loop coefficient counts the marginal deformations.", "The gauge couplings are asymptotically free here. Each bifundamental pair adds one pair of chiral fields. The one-loop coefficient is negative, and marginal deformations exist."]}
+      ],
+      "pass": [
+        {"tex": "In case (5) both gauge couplings are asymptotically free.\n\nCase (5) is excluded.", "corpus": ["Both gauge couplings are asymptotically free. One pair of bifundamental fields connects the nodes, and a bifundamental pair is charged under both groups. The one-loop coefficient counts the marginal deformations.", "The gauge couplings are asymptotically free here. Each bifundamental pair adds one pair of chiral fields. The one-loop coefficient is negative, and marginal deformations exist."]},
+        {"tex": "The theories with one bifundamental pair are consistent.", "corpus": ["Both gauge couplings are asymptotically free. One pair of bifundamental fields connects the nodes, and a bifundamental pair is charged under both groups. The one-loop coefficient counts the marginal deformations.", "The gauge couplings are asymptotically free here. Each bifundamental pair adds one pair of chiral fields. The one-loop coefficient is negative, and marginal deformations exist."]},
+        {"tex": "The number of bifundamental pairs is $N_{\\rm bif}$ and $r_{\\rm bif}$ is their charge.", "corpus": ["Both gauge couplings are asymptotically free. One pair of bifundamental fields connects the nodes, and a bifundamental pair is charged under both groups. The one-loop coefficient counts the marginal deformations.", "The gauge couplings are asymptotically free here. Each bifundamental pair adds one pair of chiral fields. The one-loop coefficient is negative, and marginal deformations exist."]},
+        {"tex": "We call a node whose one-loop coefficient is negative an imbalanced node.\\label{def}\n\nAn imbalanced node is free.", "lexicon": {"terms": [{"term": "imbalanced node", "at": "label:def"}]}, "corpus": ["Both gauge couplings are asymptotically free. One pair of bifundamental fields connects the nodes, and a bifundamental pair is charged under both groups. The one-loop coefficient counts the marginal deformations.", "The gauge couplings are asymptotically free here. Each bifundamental pair adds one pair of chiral fields. The one-loop coefficient is negative, and marginal deformations exist."]}
+      ]
+    },
+    {
       "id": "number-bound",
       "kind": "number-bound",
       "source": "design/paper-verification (user, 2026-11-25): every numeral in the prose is bound to a value produced by a calculation",

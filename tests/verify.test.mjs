@@ -6,6 +6,7 @@ import path from 'node:path';
 import { git } from '../harness/core.mjs';
 import { load, numbers, numericSides, value, symbols, terms, plain } from '../harness/tex.mjs';
 import { verify, rules, report, strandedHeaders, overfull, standing, BLOCK_LIMIT } from '../harness/verify.mjs';
+import { build as buildCorpus, load as loadCorpus, fromTex, attest, key, fold, symbolPapers } from '../harness/corpus.mjs';
 import { installHooks, toolMatcher } from '../harness/install-hooks.mjs';
 import { queue, flush } from '../harness/checkpoint.mjs';
 import { hook, main, checkProject } from '../harness/cli.mjs';
@@ -23,7 +24,8 @@ function make(t, tex, extra = {}) {
   for (const [name, content] of Object.entries(extra)) put(project, name, content);
   return { root, project };
 }
-const built = { build: () => ({ log: '', pages: ['text'] }) };
+// An empty corpus: every word pair of the fixtures below occurs once and awaits the independent verdict.
+const built = { build: () => ({ log: '', pages: ['text'] }), corpus: () => fromTex([]) };
 const failing = (r, rule) => r.open.filter(f => f.rule === rule && f.verdict === 'fail').flatMap(f => f.evidence);
 const verdicts = (r, rule, v) => Object.values(r.state.units).filter(u => u.checks[rule]?.v === v).length;
 const edit = (project, from, to, file = 'paper/main.tex') => { const p = path.join(project, file), s = fs.readFileSync(p, 'utf8'); assert.ok(s.includes(from)); fs.writeFileSync(p, s.replace(from, to)); };
@@ -155,17 +157,23 @@ We denote by $g$ the gauge coupling of the group $SU(N)$ and call $t$ the effect
 `;
   const lexicon = { symbols: [{ symbol: 'g', at: 'label:def' }, { symbol: 'SU', standard: 'special unitary group' }, { symbol: 't', at: 'label:nowhere' }], terms: [{ term: 'effective Type', at: 'label:def' }] };
   const { project } = make(t, tex, { 'paper/LEXICON.json': lexicon });
-  let r = verify(project, 'paper', built);
+  const lit = { ...built, corpus: () => fromTex(['The gauge group is $SU(N)$.', 'We gauge $SU(N)\\times U(1)$.', 'Only this paper writes $N_{\\rm bif}$.']) };
+  let r = verify(project, 'paper', lit);
   assert.deepEqual(failing(r, 'defined-before-use').sort(), ['"effective Type" is used before its definition at front ¶2 s1', 'N has no LEXICON entry (no definition site)', 'b has no LEXICON entry (no definition site)',
     'g is used before its definition at front ¶2 s1', 't has a definition site that is not in the manuscript']);
-  assert.match(r.state.units.document.checks['defined-before-use'].e[0], /declared standard notation.*SU/);
+  assert.match(r.state.units.document.checks['defined-before-use'].e[0], /declared standard notation, present in the corpus.*SU/);
+  assert.equal(r.state.units.document.checks['defined-before-use'].v, 'pending', 'standard notation found in the corpus still awaits the verdict on its meaning');
+  assert.match(verify(project, 'paper', { ...built, corpus: () => null }).state.units.document.checks['defined-before-use'].e[0], /cannot be attested, the corpus is not built.*SU/);
   put(project, 'paper/main.tex', String.raw`We denote by $g$ the gauge coupling of the group $SU(N)$ of rank $N$, by $b$ its one-loop coefficient, and call $t$ the effective Type.\label{def}
 
 The coupling $g$ is relevant when $b>0$, as is the effective Type.
 `);
   put(project, 'paper/LEXICON.json', { ...lexicon, symbols: [...lexicon.symbols.slice(0, 2), ...['t', 'N', 'b'].map(symbol => ({ symbol, at: 'label:def' }))] });
-  r = verify(project, 'paper', built);
+  r = verify(project, 'paper', lit);
   assert.deepEqual(failing(r, 'defined-before-use'), []);
+  put(project, 'paper/LEXICON.json', { ...lexicon, symbols: [{ symbol: 'g', at: 'label:def' }, { symbol: 'SU', standard: 'special unitary group' }, { symbol: 'N', standard: 'rank' }, { symbol: 'b', standard: 'one-loop coefficient' }, { symbol: 't', standard: 'effective Type' }] });
+  assert.deepEqual(failing(verify(project, 'paper', lit), 'defined-before-use'), ['b is declared standard notation (corpus papers with it in their mathematics: 0): it needs a definition site', 't is declared standard notation (corpus papers with it in their mathematics: 0): it needs a definition site'],
+    'notation declared standard must occur in the mathematics of two corpus papers');
   put(project, 'paper/LEXICON.json', { symbols: [{ symbol: 'N_f + g', at: 'label:def' }] });
   assert.throws(() => verify(project, 'paper', built), /must be one symbol/);
 });
@@ -200,6 +208,126 @@ Six cases arise and 17 remain.\label{s3}
   fs.rmSync(path.join(project, 'calc/run.json'));
   put(project, 'paper/FACTS.json', { ...facts, uses: { 'label:s1': { 208: 'later', nine: 'missing' } } });
   assert.deepEqual(failing(verify(project, 'paper', built), 'number-bound').slice(0, 2), ['"208": fact later points to front ¶3 s1, after this sentence', '"nine" is bound to the unknown fact missing']);
+});
+
+// A vault next to the harness root: sources/arxiv/<name>/meta.json and tex/.
+function vault(t, papers) {
+  const base = temp(t), root = path.join(base, 'harness'), dir = path.join(base, 'vault');
+  fs.mkdirSync(root); put(dir, 'Index.md'); put(dir, 'wiki/page.md');
+  for (const [name, meta, files] of papers) { put(dir, `sources/arxiv/${name}/meta.json`, { arxiv_id: name, date: '2010-01-01', categories: ['hep-th'], ...meta }); for (const [f, text] of Object.entries(files)) put(dir, `sources/arxiv/${name}/tex/${f}`, text); }
+  return { root, dir };
+}
+const filler = 'The superpotential preserves the flavor symmetry of the gauge theory. '.repeat(12);
+test('the corpus holds the hep-th sources dated before the cutoff, as word sequences that stop at mathematics, references and punctuation', async t => {
+  const latex = String.raw`\documentclass{article}
+\newcommand{\be}{\begin{equation}}
+\newcommand{\ee}{\end{equation}}
+\def\CN{{\cal N}}
+\newcommand{\spurious}[1]{macro body words}
+\title{Not read}
+\begin{document}
+\section{Conformal Windows}
+The conformal window of the $\CN=1$ gauge theory is wide. % the comment words
+The single-node quivers have a window $x$ boundary and a window \cite{a} edge.
+\be
+a = \mathrm{Tr}\, R^3 \text{ display words} \,,\label{eq:a}
+\ee
+The gauge theory has Seiberg duality for $N_f$$>N_c$ adjacent formulas.
+
+Massless quarks appear here.\footnote{The node's couplings run.}
+\input{sec}
+\bibliography{refs}
+After the bibliography nothing is read.
+\end{document}
+`, harvmac = String.raw`\def\Title#1#2{\centerline{#1 definition words}}
+\def\listrefs{\immediate\closeout}
+\lref\ref{An author, a reference title.}
+\Title{HUTP}{Conformal windows again}
+\newsec{The model}
+The conformal window of single node quivers $SU(N)$ is known.
+\eqn\central{ a = c \,, }
+` + filler + '\n\\listrefs\n\\bye\n';
+  const { root, dir } = vault(t, [
+    ['1001.0001', { updated: '2020-03-01' }, { 'paper.tex': latex, 'sec.tex': filler + filler + filler, 'other.tex': 'An unused file with stray words.', 'main.tex': 'archive\u0000\u0000 \\begin{document} ' + 'Archived junk words. '.repeat(400) }],
+    ['hep-th-0001001', { arxiv_id: 'hep-th/0001001', updated: '2024-11-24' }, { 'paper.tex': harvmac, 'short.tex': 'x' }],
+    ['2411.00001', { updated: '2024-11-25' }, { 'main.tex': filler }],
+    ['1001.0003', { updated: '2020-03-01', categories: ['math.AG'] }, { 'main.tex': filler }],
+    ['1001.0004', { updated: '2020-03-01' }, {}],
+    ['1001.0005', { updated: '2020-03-01' }, { 'main.tex': 'Too short to count.' }],
+  ]);
+  const now = new Date(2026, 10, 25), c = buildCorpus(root, { dir, now }), n = phrase => attest(c, [key(phrase)]).get(key(phrase)).papers;
+  assert.deepEqual([c.cutoff, c.papers.map(p => p.id), c.documents], ['2024-11-25', ['1001.0001', 'hep-th/0001001'], 2], 'the cutoff is two calendar years before the build and is exclusive');
+  assert.deepEqual(c.excluded, [{ id: '1001.0003', reason: 'not hep-th' }, { id: '1001.0004', reason: 'no TeX source' }, { id: '1001.0005', reason: 'fewer than 100 words extracted' }, { id: '2411.00001', reason: 'inspected source not dated before the cutoff' }]);
+  assert.deepEqual(['conformal window', 'conformal windows', 'Conformal Window', 'single-node quivers', 'single node quiver', 'flavor symmetry', 'gauge theory'].map(n), [2, 2, 2, 2, 2, 2, 2], 'case, the plural and the hyphen do not distinguish a wording');
+  assert.deepEqual(['Seiberg duality', "node couplings", 'massless quarks', 'adjacent formulas'].map(n), [1, 1, 1, 1], 'two adjacent inline formulas open no display');
+  assert.deepEqual(['window boundary', 'window edge', 'HUTPConformal', 'HUTP conformal', 'duality massless', 'wide the single', 'comment words', 'display words', 'macro body', 'definition words', 'reference title', 'stray words', 'bibliography nothing', 'not read', 'here the node', 'run the superpotential', 'junk words'].map(n), new Array(17).fill(0),
+    'mathematics, a citation, a sentence end, a paragraph end, a footnote, comments, displays, definitions and the bibliography do not join or supply words');
+  assert.deepEqual(['\\mathcal{N}', 'SU', 'Tr', 'a', 'N_{bif}'].map(k => symbolPapers(c, k)), [1, 1, 1, 2, 0]);
+  assert.deepEqual(['theories', 'classes', 'windows', "node's", 'analysis', 'gauss', 'has'].map(fold), ['theory', 'class', 'window', 'node', 'analysis', 'gauss', 'has']);
+  assert.equal(c.words, c.docs.flat().filter(w => w !== '|').length);
+  const stored = loadCorpus(root);
+  assert.deepEqual([stored.hash, stored.docs, stored.symbols], [c.hash, c.docs, c.symbols]); assert.equal(buildCorpus(root, { dir, now: new Date(2026, 10, 26) }).hash === c.hash, false, 'a later build has a later cutoff');
+  assert.equal(buildCorpus(root, { dir, now, cutoff: '2024-11-25' }).hash, c.hash, 'the same sources and cutoff give the same corpus');
+  assert.deepEqual(buildCorpus(root, { dir, now, cutoff: '2021-01-01' }).papers.map(p => p.id), ['1001.0001'], 'an earlier cutoff narrows the corpus');
+  assert.deepEqual(c.papers.map(p => p.root), ['1001.0001/tex/paper.tex', 'hep-th-0001001/tex/paper.tex'], 'the root file opens the document, even when an input file is larger and an archive is stored as main.tex');
+  assert.throws(() => buildCorpus(root, { dir, now, cutoff: '2025-06-01' }), /not after 2024-11-25/);
+  fs.appendFileSync(path.join(dir, 'sources/arxiv/1001.0001/tex/sec.tex'), ' One more sentence.');
+  assert.notEqual(buildCorpus(root, { dir, now }).hash, c.hash, 'a changed source changes the corpus');
+  const saved = process.env.HEP_WIKI_DIR;
+  try {
+    delete process.env.HEP_WIKI_DIR;
+    const made = await main(['corpus-build', '--cutoff', '2021-01-01'], root);
+    assert.deepEqual([made.documents, made.cutoff, made.excluded['inspected source not dated before the cutoff']], [1, '2021-01-01', 2]);
+    assert.deepEqual(await main(['corpus-count', 'conformal windows', 'saddle scenario'], root), [{ phrase: 'conformal windows', papers: 1, occurrences: 2, examples: ['1001.0001'] }, { phrase: 'saddle scenario', papers: 0, occurrences: 0, examples: [] }]);
+  } finally { if (saved !== undefined) process.env.HEP_WIKI_DIR = saved; }
+  put(root, '.harness-local/corpus.json', { ...JSON.parse(fs.readFileSync(path.join(root, '.harness-local/corpus.json'), 'utf8')), version: 0 });
+  assert.equal(loadCorpus(root), null, 'a corpus of another version is not used');
+  await assert.rejects(main(['corpus-count', 'x'], root), /corpus is not built/);
+});
+
+test('a term needs the corpus, a definition site or the user\'s approval: the coined labels of the origin fail and their replacements pass', t => {
+  const lit = ['Both gauge couplings are asymptotically free, and the conformal window is wide. A bifundamental pair connects the two nodes.',
+    'The gauge couplings are asymptotically free. Conformal windows of each bifundamental pair were found.'];
+  const corpus = { build: built.build, corpus: () => fromTex(lit) };
+  const { project } = make(t, String.raw`\section{The saddle scenario}
+In the saddle scenario both gauge couplings are asymptotically free.\label{s1}
+
+The conformal windows of $N_{\rm bif}$ bifundamental pairs are wide.\label{s2}
+
+The flow-pattern argument uses an imbalanced node.\label{s3}
+
+An imbalanced node decides nothing.\label{s4}
+`);
+  const term = (r, label) => r.state.units[label === 'title' ? Object.keys(r.state.units).find(id => r.state.units[id].kind === 'title') : load(project).labels[label]].checks['term-attested'];
+  const needs = "needs attested wording, a definition site or the user's approval", saddle = `"saddle scenario" (corpus papers: 0, sentences or titles here: 2) ${needs}`, node = `"imbalanced node" (corpus papers: 0, sentences or titles here: 2) ${needs}`;
+  let r = verify(project, 'paper', corpus);
+  assert.deepEqual(['title', 's1', 's2', 's3', 's4'].map(l => term(r, l).v), ['fail', 'fail', 'pass', 'fail', 'fail']);
+  assert.deepEqual([term(r, 'title').e, term(r, 's1').e, term(r, 's4').e], [[saddle], [saddle], [node.replace('" (', '" in "imbalanced node decides nothing" (')]], 'a pair absent from the corpus fails when the manuscript repeats it');
+  assert.deepEqual(term(r, 's3').e, [`"flow-pattern" in "flow-pattern argument uses" (corpus papers with or without the hyphen: 0) ${needs}`, node], 'an unattested compound fails where it stands, and is reported once');
+  assert.match(report('demo', r), /Corpus: 2 hep-th papers, \d+ words, inspected sources dated before sample \([0-9a-f]{12}\)\./);
+  const lexicon = { terms: [{ term: 'imbalanced node', at: 'label:s3' }, { term: 'node decides', ordinary: 'subject and verb' }, { term: 'flow pattern', approved: 'user, 2026-11-25: "flow pattern은 써도 돼"' }] };
+  put(project, 'paper/LEXICON.json', lexicon);
+  r = verify(project, 'paper', corpus);
+  assert.deepEqual(['title', 's1', 's2', 's3', 's4'].map(l => term(r, l).v), ['fail', 'fail', 'pass', 'pending', 'pending'], 'a definition site and an approval are grounds; what only a reader can judge waits');
+  const once = pair => `"${pair}" in "flow-pattern argument uses" (corpus papers: 0) occurs once: whether it is a term needs the independent verdict`;
+  assert.deepEqual(term(r, 's3').e, [once('flow-pattern argument'), once('argument uses')]);
+  assert.deepEqual(term(r, 's4').e, ['"decides nothing" in "imbalanced node decides nothing" (corpus papers: 0) occurs once: whether it is a term needs the independent verdict', '"node decides" in "imbalanced node decides nothing" is declared ordinary wording (LEXICON "node decides"): the declaration needs the independent verdict']);
+  assert.deepEqual(r.state.approved, ['flow pattern']); assert.match(report('demo', r), /Terms that pass on the user's approval recorded in LEXICON: flow pattern\./);
+  edit(project, '\\section{The saddle scenario}', '\\section{Case (5)}'); edit(project, 'In the saddle scenario both', 'In case (5) both');
+  r = verify(project, 'paper', corpus);
+  assert.deepEqual(failing(r, 'term-attested'), [], 'the replacement passes'); assert.equal(term(r, 's1').v, 'pass');
+  const before = r.state.units;
+  r = verify(project, 'paper', { ...corpus, corpus: () => fromTex([...lit, 'The argument uses the anomaly.', 'This argument uses unitarity.']) });
+  assert.equal(r.state.run.judged, 1); assert.deepEqual(term(r, 's3').e, [once('flow-pattern argument')]);
+  assert.deepEqual(Object.keys(r.state.units).filter(id => r.state.units[id].checks['term-attested']?.r !== before[id].checks['term-attested']?.r), [load(project).labels.s3], 'a larger corpus changes only the verdicts whose grounds it changes');
+  r = verify(project, 'paper', { ...corpus, corpus: () => null });
+  assert.deepEqual(['s1', 's2', 's3'].map(l => term(r, l).v), ['unjudged', 'unjudged', 'unjudged']); assert.equal(r.state.complete, false); assert.match(report('demo', r), /Corpus: not built/);
+  assert.match(term(r, 's3').e[0], /the corpus is not built .*"flow-pattern argument" in "flow-pattern argument uses", "argument uses" in "flow-pattern argument uses"$/, 'without the corpus a LEXICON ground still holds and the rest is not judged');
+  put(project, 'paper/LEXICON.json', { terms: [{ term: 'imbalanced node', at: 'label:s3', approved: 'user' }] });
+  assert.throws(() => verify(project, 'paper', corpus), /LEXICON term "imbalanced node" needs exactly one of at/);
+  const other = make(t, 'The Type III theories and the fifteen quivers share the node\'s couplings, twenty-two in all.\n\nThe Type III theories and the fifteen quivers keep the node\'s couplings.');
+  r = verify(other.project, 'paper', corpus);
+  assert.deepEqual(failing(r, 'term-attested'), new Array(2).fill(`"type iii" in "type iii theories" (corpus papers: 0, sentences or titles here: 2) ${needs}`), 'a roman numeral, a number word and a possessive end a phrase');
 });
 
 test('build defects: new overfull boxes, a table header without rows, undefined references; no build is not a pass', t => {

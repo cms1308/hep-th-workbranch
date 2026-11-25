@@ -8,6 +8,7 @@ import { runEvidence } from './evidence.mjs';
 import { request, status } from './dispatch.mjs';
 import { load } from './tex.mjs';
 import { verify, report, stopGate, toolEvent } from './verify.mjs';
+import { build as buildCorpus, load as loadCorpus, attest as attestCorpus, key as phraseKey } from './corpus.mjs';
 
 export function checkProject(project) {
   const findings = [];
@@ -76,6 +77,19 @@ export async function main(args = process.argv.slice(2), root = ROOT) {
     if (!result.state.complete) process.exitCode = 1;
     return report(slug, result, { pending: options.includes('--pending') });
   }
+  if (cmd === 'corpus-build') {
+    const at = rest.indexOf('--cutoff');
+    if (at >= 0 && !rest[at + 1]) throw Error('--cutoff needs a date (YYYY-MM-DD)');
+    const corpus = buildCorpus(root, { cutoff: at < 0 ? undefined : rest[at + 1] }), excluded = {};
+    for (const e of corpus.excluded) excluded[e.reason] = (excluded[e.reason] || 0) + 1;
+    return { documents: corpus.documents, words: corpus.words, cutoff: corpus.cutoff, hash: corpus.hash, excluded, file: '.harness-local/corpus.json' };
+  }
+  if (cmd === 'corpus-count') {
+    const corpus = loadCorpus(root);
+    if (!corpus) throw Error('The corpus is not built: run `node harness/cli.mjs corpus-build`.');
+    const found = attestCorpus(corpus, rest.map(phraseKey));
+    return rest.map(phrase => { const f = found.get(phraseKey(phrase)) || { papers: 0, count: 0, ids: [] }; return { phrase, papers: f.papers, occurrences: f.count, examples: f.ids.slice(0, 5) }; });
+  }
   if (cmd === 'attest') {
     const [slug, kind, reviewer, note, ...ids] = rest;
     return attest(safePath(root, `projects/${slug}`), kind, ids, reviewer, note);
@@ -86,7 +100,7 @@ export async function main(args = process.argv.slice(2), root = ROOT) {
     return result;
   }
   if (cmd === 'hook') return hook(root, jsonInput());
-  throw Error('Commands: review-request <slug> --target <plan|step-N|paper> --reviewer <codex|claude> [--model <model>] | review-status <slug> [id] | review-resume <slug> <id> | paths | check [slug...] | queue <repo> <message> <files...> | flush [--local-only] | paper-scan <slug> | paper-verify <slug> [paper-dir] [--no-build] [--pending] [--wip <reason>] | paper-units <slug> [paper-dir] [filter] | attest <slug> <map|citations> <reviewer> <note> <ids...> | run <slug> <spec.json> | hook');
+  throw Error('Commands: review-request <slug> --target <plan|step-N|paper> --reviewer <codex|claude> [--model <model>] | review-status <slug> [id] | review-resume <slug> <id> | paths | check [slug...] | queue <repo> <message> <files...> | flush [--local-only] | paper-scan <slug> | paper-verify <slug> [paper-dir] [--no-build] [--pending] [--wip <reason>] | paper-units <slug> [paper-dir] [filter] | corpus-build [--cutoff <YYYY-MM-DD>] | corpus-count <phrase...> | attest <slug> <map|citations> <reviewer> <note> <ids...> | run <slug> <spec.json> | hook');
 }
 // Never throws: a gate error must not break the provider's hook.
 const guarded = action => { try { return action(); } catch (e) { return { block: '', notes: [`Verification gate error: ${e.message}`] }; } };

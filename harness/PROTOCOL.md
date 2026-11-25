@@ -175,17 +175,19 @@ authorized multi-step work solely because of it. Include it in the normal report
   judgment within its scope and dependencies. Follow [PAPER-REVIEW](PAPER-REVIEW.md#judge-every-sentence).
   Compilation, searches, delegated reviewer reports and scripted edits do not replace
   this responsibility (user, 2026-11-25); `queue` prints a reminder for manuscript TeX.
-- **Verification gate, stage 1 of 5 implemented (user, 2026-11-25).** Rules become
+- **Verification gate, stages 1 and 2 of 5 implemented (user, 2026-11-25).** Rules become
   registered checks, verdicts come from code or an independent model, and a completion
   report requires every unit verified ([design](design/paper-verification.md)). Implemented:
-  the checks that code decides, run by `node harness/cli.mjs paper-verify <slug> [paper-dir]`
+  the checks that code decides, among them the comparison of terms and standard notation
+  with a dated literature corpus (`corpus-build`), run by
+  `node harness/cli.mjs paper-verify <slug> [paper-dir]`
   ([PAPER-REVIEW](PAPER-REVIEW.md#verification-gate)). A manuscript is gated once it is
   enrolled (its directory holds `VERIFY.json`). For an enrolled manuscript the table
   printed by `paper-verify` is the only evidence of verification a report may cite, and
   the Stop hook blocks the end of a turn that changed it without a complete verification
   or a declared work in progress (once the tool hooks of
   [OPERATIONS](OPERATIONS.md#manuscript-verification-gate) are installed, which awaits the
-  user's word). The independent verdict (stages 2 to 5) is not implemented: the reading
+  user's word). The independent verdict (stages 3 to 5) is not implemented: the reading
   duty above stays in full for every manuscript, enrolled or not.
 - Use the default explanatory prose in `PAPER-STYLE.md` for drafting and substantive prose
   edits. Shared context, authorization, validation and optional review tracking are in

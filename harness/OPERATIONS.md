@@ -75,6 +75,15 @@ after each shell or editing call, and needs the app's trust review, so it waits 
 user's word. Until then no session is blocked. With no manuscript enrolled the hooks do
 nothing.
 
+**Corpus.** The term check reads `.harness-local/corpus.json`, built by
+`node harness/cli.mjs corpus-build` from the wiki sources, which it only reads. The file is
+local and gitignored, about 20 MB for 277 papers, and takes a few seconds to build. Build
+it on each computer, and again after papers are added to the wiki or when a term fails for
+want of a paper that has since passed the two-year cutoff. An older corpus is only stricter,
+never more lenient, as long as no source was removed. A corpus built by another version of
+the extraction is not used. Without a corpus the term check is not judged, so the
+verification of an enrolled manuscript is incomplete.
+
 **Commits.** `queue` appends `Manuscript-Verification: incomplete (<directory>)` to the
 commit message when a queued TeX file belongs to an enrolled manuscript that is not
 verified. Such commits are allowed and marked, with or without the hooks. Queue
@@ -100,7 +109,8 @@ they cannot lock another computer. A rejected push is the signal to reconcile ch
 
 `node --test tests/*.test.mjs` runs local integration tests using temporary repositories
 and bare remotes, without sending research files anywhere. `tests/verify.test.mjs` covers
-the verification gate on fixture manuscripts, with the build injected. `node harness/cli.mjs check`
+the verification gate on fixture manuscripts, with the build and the corpus injected, and
+the corpus build on a fixture vault. `node harness/cli.mjs check`
 checks state structure, links, open verification criteria and any existing paper-review
 tracking. Paper tracking findings are advisory; an ordinary draft needs no review tracker.
 The cross-platform CI matrix runs the same tests on macOS and Windows (also Linux).

@@ -1,7 +1,7 @@
 # Manuscript verification — design
 
-Status: design and its four open choices decided by the user on 2026-11-25. **Stage 1 of
-5 implemented on 2026-11-25** ([record](#implementation-record)); stages 2 to 5 are not.
+Status: design and its four open choices decided by the user on 2026-11-25. **Stages 1 and
+2 of 5 implemented on 2026-11-25** ([record](#implementation-record)); stages 3 to 5 are not.
 No manuscript is enrolled yet (the pilot is stage 5). [PAPER-REVIEW](../PAPER-REVIEW.md)
 and [PAPER-STYLE](../../PAPER-STYLE.md) remain the active policy, and the reading duty
 stays in full until the independent verdict exists. This file is the specification the
@@ -233,8 +233,8 @@ Choices made in the implementation, each the lead's and open to the user's corre
 
 Open, for the stages that need them.
 
-- Stage 2 has to supply attestation for `standard` notation and for candidate terms. The
-  term extraction of stage 1 is a list of content-word runs, which includes verbs.
+- Stage 2 supplied the attestation of `standard` notation and of candidate terms
+  ([record](#stage-2-2026-11-25)). Verbs remain among the candidates.
 - Stage 3 has to judge the grounds themselves (a fact with `at`, a `standard`
   declaration, a colon), not only sentences, and give the run metadata that makes a
   verdict file impossible to produce by hand.
@@ -252,3 +252,106 @@ Open, for the stages that need them.
 - A session that has named a manuscript and has a call running while another session
   edits it is counted as having changed it. With two writers on one project this can
   happen. The three-block limit ends it, at the cost of three continuations.
+
+### Stage 2 (2026-11-25)
+
+Code: `harness/corpus.mjs` (the corpus built from the wiki sources, the words and symbols of
+a paper, attestation counts), the `term-attested` check and the attestation of `standard`
+notation in `harness/verify.mjs`, the `term-attested` rule in `harness/rules.json`, the
+`corpus-build` and `corpus-count` entries of `harness/cli.mjs`, `segments` and `numberWord`
+exported from `harness/tex.mjs`. Use: [PAPER-REVIEW](../PAPER-REVIEW.md#verification-gate)
+and [OPERATIONS](../OPERATIONS.md#manuscript-verification-gate).
+
+Criterion and result. `tests/verify.test.mjs` has two new tests, and all 43 tests of the
+repository pass. On fixtures: the three coined labels of the origin fail (they are the
+failing texts of the registered rule, which is refused unless its check flags them), their
+replacements pass, mathematical notation is never a candidate term, and a term with a
+definition site passes. Also tested: the selection of the corpus by category and by an
+exclusive cutoff, the refusal of a cutoff later than two years before the build, the places
+that break a word sequence, the folding of case, plural and hyphen, a term that needs the
+user's approval or a declaration, a larger corpus changing only the verdict whose ground it
+changes, the check left not judged without a corpus, and `standard` notation absent from the
+corpus failing.
+
+The corpus built from the wiki on this computer (396 source folders): 277 papers and
+3,041,460 words with the cutoff 2024-11-25, 104 folders excluded by date and 15 by category,
+built in two seconds. Three checks of the extraction against other methods.
+
+1. Words per paper against the corpus of the 2026-11-05 language audit (a Python tool using
+   pylatexenc) for the 198 papers in both: the median ratio is 0.95, with 5 % of the papers
+   below 0.79 and 5 % above 1.17. The Python tool counts single letters of mathematics as
+   words, and it kept 3,470 words of 1408.6522, a paper of many files, where this build
+   has about 22,000.
+2. "conformal window" is in 25 corpus papers. A regular-expression search of the raw
+   sources finds 31. The six others have the phrase only in a reference title or a comment.
+3. The three origin labels are in no corpus paper and in no raw source.
+
+These checks found four defects of the first form, all fixed and now tested: a harvmac
+source where `\Title` and `\listrefs` first occur in the format's own definitions gave no
+text (1305.3924); two adjacent inline formulas were read as the opening of a display, which
+lost four fifths of a paper (1805.11543); a chapter file was taken for the root file
+(hep-th/9905111, 1503.08825); an archive stored under the name `main.tex` was read as a
+source.
+
+On the susu-quiver Claude draft at 2a4d45a, on a scratch copy with no project file written:
+of 476 sentences and titles, 175 pass, 195 fail and 106 await the independent verdict, in
+0.46 s without the build. Six compounds fail (anomaly-forced, decoupling-corrected,
+description-dependent, gauge-group-independent, non-dualized, non-Veneziano) and 91 word
+pairs, singular and plural counted separately. Among the pairs are phrases of the project
+("flavor numbers", 46 sentences, one corpus paper; "single-node fixed point", 19;
+"magnetic coupling", 11; "bifundamental pair", 10 and one corpus paper) and about 25 pairs
+of a subject and its verb or predicate ("flow reaches", "realizes case"). The wording that
+replaced one origin label in the draft, "one bifundamental pair", is itself in a single
+corpus paper, so on the real corpus it fails until it has a definition site.
+
+Choices made in the implementation, each the lead's and open to the user's correction.
+
+1. Candidates are hyphenated compounds and pairs of adjacent content words, not noun
+   phrases, since nothing here tags parts of speech.
+2. Code fails an unattested compound, and an unattested pair that stands in two or more
+   sentences or titles. A pair that occurs once awaits the independent verdict, as the
+   colons do at stage 1. A coined label used once is therefore not failed by code.
+   Measured before the choice, with the corpus of the Python audit tool: failing every compound
+   and pair absent from the corpus, repeated or not, flagged 314 of the 476 sentences and
+   titles of the draft, mostly for ordinary wording.
+3. Attested means at least two corpus papers, since one occurrence in the literature does
+   not show that a wording is natural (PROTOCOL, Paper discipline).
+4. Words are compared in lower case, without a possessive ending, in the singular, with a
+   hyphen as a space. Without this "conformal windows" was absent from the corpus. The
+   cost is leniency: "two-part" is attested through "two parts".
+5. A ground in `LEXICON.json` is `at`, `approved` or `ordinary`. Code cannot check that the
+   user approved, so every report lists the approved terms. `ordinary` does not pass. It
+   awaits the independent verdict, so the writer cannot clear its own wording.
+6. No pair starts at a number word, a roman numeral or a possessive. The first run on the
+   draft had failed "iii configurations" (from "Type III configurations"), "fifteen
+   theories" and "node's fixed".
+7. The corpus is data read at verification, like a calculation output. It is not part of
+   the gate hash, and the key of a verdict holds the attestation of each candidate, so a
+   rebuilt corpus changes only the verdicts whose grounds it changes. `VERIFY.json` records
+   the hash, cutoff and size of the corpus used. The corpus is built by the harness in
+   Node. The audit tool `projects/susu-quiver/calc/audit_gpt_language.py` was not reused:
+   it belongs to one project, needs pylatexenc and has a fixed cutoff.
+8. `standard` notation must occur in the mathematics of two corpus papers. A single letter
+   nearly always does, so this catches composite notation (`N_{bif}`) and little else.
+   The meaning stays with stage 3.
+9. A term entry of the lexicon needs exactly one ground. An entry without `at` was ignored
+   at stage 1 and is now refused.
+10. Two tests of stage 1 changed with the behavior: their fixtures now carry a corpus, and
+    the test of `standard` notation asserts the new verdicts.
+
+Open after stage 2.
+
+- A subject and its verb form a pair. On the pilot draft about 25 such pairs need an
+  `ordinary` declaration. A test of verb use drawn from the corpus could replace the
+  declarations and is not built.
+- An adjective before an attested term fails as a pair ("leading central" in "leading
+  central charge"), although the finding shows the phrase it stands in.
+- The corpus is the wiki's selection, not all of hep-th. A standard term of a subfield can
+  be absent. The remedies are a definition site, the user's approval, or more papers in the
+  wiki (`/wiki-ingest`, the user's step) followed by `corpus-build`.
+- Single words are not compared ("flavorless"), and British spelling is not folded.
+- Stage 3 has to judge the pairs that occur once, the `ordinary` declarations and the
+  meaning of `standard` notation.
+- Three source folders of the wiki hold a tar archive under the name `main.tex`
+  (1406.1078, 1706.03762, 2111.00955). The build skips such files. The vault is not edited
+  from this repository.
