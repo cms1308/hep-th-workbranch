@@ -45,7 +45,15 @@
       "pass": [
         "The coupling is irrelevant (as expected) at the fixed point.",
         "The one-loop coefficient is:\n\\begin{equation}\nb=x.\n\\end{equation}"
-      ]
+      ],
+      "judge": {
+        "fail": [
+          "The coupling is irrelevant at the fixed point; as an aside, the anomaly was first computed in a different context."
+        ],
+        "pass": [
+          "Three flows remain: one to the free theory, one to the first fixed point and one to the second."
+        ]
+      }
     },
     {
       "id": "opening-weakly-gauging-it",
@@ -66,7 +74,15 @@
       ],
       "pass": [
         { "tex": "We denote by $b$ the one-loop coefficient.\\label{def-b}\n\nThe coefficient $b$ is positive.", "lexicon": { "symbols": [{ "symbol": "b", "at": "label:def-b" }] } }
-      ]
+      ],
+      "judge": {
+        "fail": [
+          {"tex": "The superpotential $\\Xi$ is cubic in the fields.", "lexicon": {"symbols": [{"symbol": "\\Xi", "standard": "the superpotential"}]}, "corpus": ["The generating function $\\Xi$ is finite.", "We expand $\\Xi$ in the fugacities."], "item": "\\Xi"}
+        ],
+        "pass": [
+          {"tex": "The theory has $\\mathcal{N}=1$ supersymmetry.", "lexicon": {"symbols": [{"symbol": "\\mathcal{N}", "standard": "the number of supersymmetries, as in $\\mathcal{N}=1$"}]}, "corpus": ["A theory with $\\mathcal{N}=1$ supersymmetry.", "The $\\mathcal{N}=2$ theories are different."], "item": "\\mathcal{N}"}
+        ]
+      }
     },
     {
       "id": "term-attested",
@@ -82,7 +98,17 @@
         {"tex": "The theories with one bifundamental pair are consistent.", "corpus": ["Both gauge couplings are asymptotically free. One pair of bifundamental fields connects the nodes, and a bifundamental pair is charged under both groups. The one-loop coefficient counts the marginal deformations.", "The gauge couplings are asymptotically free here. Each bifundamental pair adds one pair of chiral fields. The one-loop coefficient is negative, and marginal deformations exist."]},
         {"tex": "The number of bifundamental pairs is $N_{\\rm bif}$ and $r_{\\rm bif}$ is their charge.", "corpus": ["Both gauge couplings are asymptotically free. One pair of bifundamental fields connects the nodes, and a bifundamental pair is charged under both groups. The one-loop coefficient counts the marginal deformations.", "The gauge couplings are asymptotically free here. Each bifundamental pair adds one pair of chiral fields. The one-loop coefficient is negative, and marginal deformations exist."]},
         {"tex": "We call a node whose one-loop coefficient is negative an imbalanced node.\\label{def}\n\nAn imbalanced node is free.", "lexicon": {"terms": [{"term": "imbalanced node", "at": "label:def"}]}, "corpus": ["Both gauge couplings are asymptotically free. One pair of bifundamental fields connects the nodes, and a bifundamental pair is charged under both groups. The one-loop coefficient counts the marginal deformations.", "The gauge couplings are asymptotically free here. Each bifundamental pair adds one pair of chiral fields. The one-loop coefficient is negative, and marginal deformations exist."]}
-      ]
+      ],
+      "judge": {
+        "fail": [
+          {"tex": "This holds in the saddle scenario.", "item": "saddle scenario"},
+          {"tex": "We then apply the symmetry quotient.", "lexicon": {"terms": [{"term": "symmetry quotient", "ordinary": "an adjective and its noun"}]}, "item": "symmetry quotient"}
+        ],
+        "pass": [
+          {"tex": "Here the enumeration ends.", "item": "enumeration ends"},
+          {"tex": "There the tabulation stops.", "lexicon": {"terms": [{"term": "tabulation stops", "ordinary": "a subject and its verb"}]}, "item": "tabulation stops"}
+        ]
+      }
     },
     {
       "id": "number-bound",
@@ -94,7 +120,15 @@
       ],
       "pass": [
         { "tex": "We find 208 theories.\\label{s}", "facts": { "facts": { "count": { "file": "calc/count.json", "pointer": "/n" } }, "uses": { "label:s": { "208": "count" } } }, "files": { "calc/count.json": "{\"n\": 208}" } }
-      ]
+      ],
+      "judge": {
+        "fail": [
+          {"tex": "The theories fall into nine classes.\\label{seed-number-a}\n\nAll ten classes are listed below.\\label{seed-number-b}", "facts": {"facts": {"seed-number-classes": {"at": "label:seed-number-a"}}, "uses": {"label:seed-number-b": {"ten": "seed-number-classes"}}}, "item": "ten"}
+        ],
+        "pass": [
+          {"tex": "The quivers fall into six families.\\label{seed-number-c}\n\nEach of the six families is treated in turn.\\label{seed-number-d}", "facts": {"facts": {"seed-number-families": {"at": "label:seed-number-c"}}, "uses": {"label:seed-number-d": {"six": "seed-number-families"}}}, "item": "six"}
+        ]
+      }
     },
     {
       "id": "build-defects",
@@ -107,6 +141,38 @@
       ],
       "pass": [
         { "tex": "Text.", "build": { "log": "Overfull \\hbox (46.87863pt too wide) in paragraph at lines 3--4\n", "pages": ["Type a b\n1 2 3\n- 1 -", "Type a b\n4 5 6\nTable 1. The theories.\n- 2 -"] }, "baseline": { "overfull": ["46.87863pt in paragraph"] } }
+      ]
+    },
+    {
+      "id": "scope-stated",
+      "kind": "judge",
+      "question": "Does the sentence state its claim with the restrictions it holds under (assumptions, matter content, parameter ranges, limits, exceptions), in the sentence itself or earlier in its paragraph? Pass if it does, or if it makes no claim that needs one. Fail if it claims more than the restrictions stated in the paragraph allow, for example with \"all\", \"every\" or \"always\" where the paragraph establishes the statement for a range or a case only.",
+      "source": "PAPER-REVIEW, Judge every sentence, third item: assumptions, parameter ranges, limits and exceptions apply to the exact claim; design/paper-verification (user, 2026-11-25): a claim without its scope is a seeded defect",
+      "fail": [
+        {"tex": "\\section{Conformal window of SQCD}\n\nFor $3N_c/2<N_f<3N_c$ the gauge coupling of SQCD flows to an interacting fixed point. SQCD is therefore an interacting conformal theory in the infrared for every number of flavors.", "at": "for every number of flavors"}
+      ],
+      "pass": [
+        {"tex": "\\section{Conformal window of SQCD}\n\nFor $3N_c/2<N_f<3N_c$ the gauge coupling of SQCD flows to an interacting fixed point. In this range of $N_f$ SQCD is therefore an interacting conformal theory in the infrared.", "at": "In this range"}
+      ]
+    },
+    {
+      "id": "in-place",
+      "kind": "judge",
+      "question": "Does the sentence belong where it stands? Pass if its subject is the subject of its paragraph and of the headings above it, or if the sentence connects them to the rest of the argument. Fail if it concerns another case, object or Section than the sentences around it and draws no connection to them.",
+      "source": "PAPER-REVIEW, Judge every sentence, fifth item: role and logical connection to the surrounding sentences; design/paper-verification (user, 2026-11-25): a sentence placed in the wrong Section is a seeded defect (origin: a sentence about case (3) left at the end of the Section on case (5))",
+      "fail": [
+        {"tex": "\\section{Case (5): two asymptotically free nodes}\n\nIn case (5) both gauge couplings are asymptotically free at the free fixed point. Both couplings grow toward the infrared, and the flow ends at the fixed point where both are nonzero. In case (3) the first node has no flavors, so that its one-loop coefficient is fixed by the bifundamental fields alone.", "at": "In case (3)"}
+      ],
+      "pass": [
+        {"tex": "\\section{Case (5): two asymptotically free nodes}\n\nIn case (5) both gauge couplings are asymptotically free at the free fixed point. Both couplings grow toward the infrared, and the flow ends at the fixed point where both are nonzero.", "at": "Both couplings grow"}
+      ]
+    },
+    {
+      "id": "better-sentence",
+      "kind": "better",
+      "source": "design/paper-verification (user, 2026-11-25): the judge is asked for a sentence that is better under the ranked criteria, and a unit passes when two independent judges both fail to improve on it",
+      "fail": [
+        {"tex": "\\section{The model}\n\nWe consider SQCD with gauge group $SU(N_c)$ and $N_f$ flavors. It is important to note that, as a matter of fact, the gauge coupling of this theory is, in this particular case, a coupling that is asymptotically free for $N_f<3N_c$.", "at": "It is important to note"}
       ]
     }
   ]

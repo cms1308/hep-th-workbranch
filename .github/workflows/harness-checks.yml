@@ -14,4 +14,4 @@ jobs:
         with:
           node-version: '22'
       - run: node harness/sync.mjs --check
-      - run: node --test tests/harness.test.mjs tests/verify.test.mjs
+      - run: node --test tests/harness.test.mjs tests/verify.test.mjs tests/judge.test.mjs

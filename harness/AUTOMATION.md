@@ -56,6 +56,19 @@ distinguish bookkeeping from later substantive changes. Any changed reviewed
 calculation or manuscript requires re-review. No automatic physical-claim upgrades
 or paper attestations are performed by the launcher.
 
+## Independent verdicts on a manuscript
+
+`node harness/cli.mjs paper-judge <slug> [paper-dir] --writer <claude|codex>` uses the same
+launcher for the verification gate ([PAPER-REVIEW](PAPER-REVIEW.md#verification-gate),
+[OPERATIONS](OPERATIONS.md#manuscript-verification-gate)). It differs from a review in
+four ways. The judge is always of the vendor that did not write the manuscript. A call
+judges one unit under one rule family from its prompt alone, in an empty directory outside
+the repository, with no tools (Claude) or the read-only sandbox and no stored session
+(Codex), and returns one object that the generated schema of that call requires in full.
+Every run is tested on planted texts before the manuscript is asked, and a run that gets
+one of them wrong is void. And the answers are not recorded by the lead: `paper-verify`
+reads them from the run records under `.harness-local/verdicts/`.
+
 ## Recovery
 
 review-resume is a read-only recovery inspection: it returns the saved result and

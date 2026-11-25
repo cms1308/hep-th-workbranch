@@ -60,7 +60,8 @@ example by reading it through the shell, and has a call running at the moment an
 session edits it.
 
 **Stop.** A session that changed the manuscript must leave it verified (`paper-verify`
-complete for the current text, rules, lexicon and facts) or declared work in progress
+complete for the current text, rules, lexicon and facts, which since stage 3 includes the
+independent verdicts of `paper-judge`) or declared work in progress
 (`paper-verify <slug> [paper-dir] --wip "<reason>"`, which records and prints the
 unverified units for the report to the user). Otherwise the hook answers
 `{"decision": "block", "reason": ...}` and the turn continues. One text is blocked at most
@@ -83,6 +84,28 @@ want of a paper that has since passed the two-year cutoff. An older corpus is on
 never more lenient, as long as no source was removed. A corpus built by another version of
 the extraction is not used. Without a corpus the term check is not judged, so the
 verification of an enrolled manuscript is incomplete.
+
+**Judges.** `node harness/cli.mjs paper-judge <slug> [paper-dir] --writer <claude|codex>`
+launches the other vendor's CLI once for each question, through the launcher of
+[AUTOMATION](AUTOMATION.md) (`HEP_CODEX_BIN`, `HEP_CLAUDE_BIN`, no shell, no nested
+dispatch). A call runs in an empty temporary directory outside every repository, so no
+project instruction file or hook is loaded. Codex runs with its read-only sandbox and
+without a stored session, Claude without tools. Each call uses the provider's default
+model and settings unless `--model` names one. Run `--dry-run` first: a whole draft is
+about two calls for each sentence and each of the two judges, and the planted texts of a
+run (14 calls when every family is asked) come before them. Run long jobs in the
+background and keep the computer awake. A run that is cut short keeps the answers it
+recorded, and the next run asks only what is still open. One run at a time for each
+manuscript (`active.lock` in its record directory, released when its process has ended).
+
+**Run records.** `.harness-local/verdicts/<slug>/<paper-dir>/` holds `seal.json` (the hash
+of the `VERIFY.json` the CLI last wrote, and the declared writer) and one directory for
+each run of the judges. They are local and gitignored, like the corpus. On another
+computer, or after `VERIFY.json` was changed by anything but the CLI, the manuscript
+counts as unverified: `paper-verify` there judges the code checks again in seconds, and
+the independent verdicts have to be asked again because their records are absent. Do not
+edit or delete these records. A verdict is disputed by changing the text or by taking it
+to the user, never by removing the run that gave it.
 
 **Commits.** `queue` appends `Manuscript-Verification: incomplete (<directory>)` to the
 commit message when a queued TeX file belongs to an enrolled manuscript that is not
@@ -110,7 +133,8 @@ they cannot lock another computer. A rejected push is the signal to reconcile ch
 `node --test tests/*.test.mjs` runs local integration tests using temporary repositories
 and bare remotes, without sending research files anywhere. `tests/verify.test.mjs` covers
 the verification gate on fixture manuscripts, with the build and the corpus injected, and
-the corpus build on a fixture vault. `node harness/cli.mjs check`
+the corpus build on a fixture vault. `tests/judge.test.mjs` covers the independent
+verdicts with an injected judge (`tests/judges.mjs`) and calls no model. `node harness/cli.mjs check`
 checks state structure, links, open verification criteria and any existing paper-review
 tracking. Paper tracking findings are advisory; an ordinary draft needs no review tracker.
 The cross-platform CI matrix runs the same tests on macOS and Windows (also Linux).

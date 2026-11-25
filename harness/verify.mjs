@@ -1,7 +1,9 @@
-// Manuscript verification, stages 1 and 2 of harness/design/paper-verification.md: registered
+// Manuscript verification, stages 1 to 3 of harness/design/paper-verification.md: registered
 // rules with failing and passing texts, the checks decided by code (stage 2: terms and standard
 // notation against the literature corpus), hash-bound verdicts in paper/VERIFY.json and the gate
-// read by the Stop hook. Independent verdicts are stage 3.
+// read by the Stop hook. Stage 3: what only a reader can decide becomes a question to independent
+// judges (harness/judge.mjs runs them); their answers count only through the run records the CLI
+// keeps under .harness-local/verdicts/, and VERIFY.json counts only as the CLI wrote it.
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
@@ -11,6 +13,11 @@ import { flatten, decompose, symbols, value, expand, numberWord } from './tex.mj
 import { load as storedCorpus, fromTex, attest, key as gram, symbolPapers, ATTESTED } from './corpus.mjs';
 
 export const TOOL = 1;                                   // raise when the decomposition or a check changes meaning: every verdict is judged again
+export const JUDGE = 1;                                  // raise when a question, the prompt, the schema or the reading of an answer changes: every independent verdict is asked again
+export const JUDGES = 2;                                 // independent runs that must pass a question; one failing run fails it
+// Ranked criteria of "better" (user decision 2026-11-25). The eighth: on a tie the existing sentence stays.
+export const CRITERIA = ['physical and mathematical correctness', "the user's decisions", 'harness rules', 'completeness of the information the argument needs', 'no redundancy', 'terminology attested in the literature', 'the shorter text'];
+const AWAIT = 'awaits the independent verdict';
 const BASE = fileURLToPath(new URL('./rules.json', import.meta.url));
 const R_MARK = '⟦R⟧', D_MARK = '⟦D⟧';
 const DOCUMENT = { id: 'document', kind: 'document', role: 'document', where: 'document' };
@@ -85,7 +92,7 @@ function context(doc, { lexicon = {}, facts = {}, file, build: builder, baseline
   const lex = (lexicon.terms || []).map(t => {
     const kind = ['at', 'approved', 'ordinary'].filter(k => t[k] !== undefined);
     if (kind.length !== 1 || !gram(String(t.term ?? ''))) throw Error(`LEXICON term ${JSON.stringify(t.term)} needs exactly one of at (its definition site), approved (the user's words and their date) or ordinary (why it is wording and not a term).`);
-    return { term: t.term, kind: kind[0], key: ` ${gram(t.term)} ` };
+    return { term: t.term, kind: kind[0], key: ` ${gram(t.term)} `, note: String(t[kind[0]]) };
   });
   const found = new Map(), occurs = new Map(), approved = new Set();
   const candidates = u => found.get(u.id) || found.set(u.id, (() => {
@@ -107,17 +114,18 @@ function context(doc, { lexicon = {}, facts = {}, file, build: builder, baseline
     const n = papers(c.key), entry = ground(c.key);
     if (n >= ATTESTED) return ['attested'];
     if (entry?.kind === 'approved') approved.add(entry.term);
-    return entry ? [entry.kind, entry.term] : n === null ? ['no-corpus'] : [c.compound ? 'compound' : occurs.get(c.key) > 1 ? 'recurrent' : 'once', n, occurs.get(c.key)];
+    return entry ? [entry.kind, entry.term, ...(entry.kind === 'ordinary' ? [entry.note] : [])] : n === null ? ['no-corpus'] : [c.compound ? 'compound' : occurs.get(c.key) > 1 ? 'recurrent' : 'once', n, occurs.get(c.key)];
   };
   const lone = k => papers(k) !== null && papers(k) < ATTESTED && !ground(k);          // a compound that is a finding by itself: the pairs containing it add nothing
   return { hash: doc.hash, unit, used, symbol: k => table.get(k), terms, uses, orphans, facts: facts.facts || {}, file, capitals, baseline, corpus, approved,
     term: u => candidates(u).filter(c => c.compound || !c.parts.some(lone)).map(c => [c.text, ...status(c)]),
-    standard: [...table].filter(([, e]) => e.at === undefined).map(([k, e]) => [e.symbol, k]), symbolPapers: k => corpus() ? symbolPapers(corpus(), k) : null,
+    standard: [...table].filter(([, e]) => e.at === undefined).map(([k, e]) => [e.symbol, k, typeof e.standard === 'string' ? e.standard : null]), symbolPapers: k => corpus() ? symbolPapers(corpus(), k) : null,
+    first: k => doc.units.find(u => u.kind === 'sentence' && used(u).has(k)) ?? null, papers: () => corpus()?.documents ?? 0,
     build: () => built === undefined ? (built = builder()) : built };
 }
 
 const prose = u => u.kind === 'sentence';
-const CHECKS = {
+export const CHECKS = {
   banned: {
     units: (u, rule) => (u.kind === 'sentence' || u.kind === 'title') && (!rule.roles || rule.roles.includes(u.role)),
     judge(u, rule) { const hit = new RegExp(rule.pattern, rule.flags ?? 'i').exec(rule.in === 'tex' ? u.text : u.prose); return hit ? { fail: [`"${hit[0]}"`] } : {}; },
@@ -140,12 +148,14 @@ const CHECKS = {
   'aside-punctuation': {
     units: prose,
     judge(u) {
-      const p = u.prose, pending = [];
+      const p = u.prose, pending = [], ask = [];
       for (const m of p.matchAll(/;|(?<!\d):(?!\d)/g)) {
-        const rest = p.slice(m.index + 1).trim();
-        if (m[0] === ';' || (rest && !rest.startsWith(D_MARK))) pending.push(`${m[0] === ';' ? 'semicolon' : 'colon'} at "${p.slice(Math.max(0, m.index - 30), m.index + 20)}": whether it is an aside needs the independent verdict`);
+        const rest = p.slice(m.index + 1).trim(), name = m[0] === ';' ? 'semicolon' : 'colon', near = p.slice(Math.max(0, m.index - 30), m.index + 20);
+        if (m[0] !== ';' && (!rest || rest.startsWith(D_MARK))) continue;
+        pending.push(`${name} at "${near}": whether it is an aside needs the independent verdict`);
+        ask.push({ tag: near, q: `The ${name} in "${near}" (in this excerpt a formula, a reference or a citation of the unit appears as a mark in double brackets). Pass if it introduces a list, an equation, a definition or an explanation that the sentence needs, or joins two statements that belong in one sentence. Fail if what it sets off is an aside, which belongs in parentheses or in a sentence of its own.` });
       }
-      return { fail: /---|—/.test(p) ? ['an em-dash sets off an aside: use parentheses or split the sentence'] : [], pending };
+      return { fail: /---|—/.test(p) ? ['an em-dash sets off an aside: use parentheses or split the sentence'] : [], pending, ask };
     },
   },
   'hard-wrap': {
@@ -158,7 +168,7 @@ const CHECKS = {
   'defined-before-use': {
     units: u => prose(u) || u.kind === 'document',
     inputs(u, rule, ctx) {
-      if (u.kind === 'document') return ctx.standard.map(([symbol, k]) => [symbol, ctx.symbolPapers(k)]);
+      if (u.kind === 'document') return ctx.standard.map(([symbol, k, meaning]) => [symbol, ctx.symbolPapers(k), meaning, ctx.first(k)?.id ?? null]);
       const site = (name, e, has) => { const d = e?.at === undefined ? null : ctx.unit(e.at); return [name, !e ? 'none' : e.at === undefined ? 'standard' : !d ? 'lost' : !has(d) ? 'absent' : d.index > u.index ? `late ${d.where}` : 'ok', d?.id ?? null]; };
       return [...[...ctx.used(u)].sort().map(k => site(k, ctx.symbol(k), d => ctx.used(d).has(k))),
         ...ctx.terms.filter(t => t.re.test(u.prose)).map(t => site(`"${t.term}"`, t, d => t.re.test(d.prose)))];
@@ -168,7 +178,8 @@ const CHECKS = {
         const list = pick => inputs.filter(([, n]) => pick(n)).map(([s]) => s).join(', '), none = n => n === null, known = n => n >= ATTESTED;
         return { unjudged: inputs.some(([, n]) => none(n)) ? [`standard notation cannot be attested, the corpus is not built (node harness/cli.mjs corpus-build): ${list(none)}`] : [],
           fail: inputs.filter(([, n]) => !none(n) && !known(n)).map(([s, n]) => `${s} is declared standard notation (corpus papers with it in their mathematics: ${n}): it needs a definition site`),
-          pending: inputs.some(([, n]) => known(n)) ? [`declared standard notation, present in the corpus, its meaning needs the independent verdict: ${list(known)}`] : [] };
+          pending: inputs.some(([, n]) => known(n)) ? [`declared standard notation, present in the corpus, its meaning needs the independent verdict: ${list(known)}`] : [],
+          ask: inputs.filter(([, n]) => known(n)).map(([s, , meaning, first]) => ({ tag: s, q: `The manuscript declares $${s}$ standard notation that needs no definition${meaning ? `, with the meaning "${meaning}"` : ', and states no meaning'}. ${first ? `Its first use in the manuscript: «${ctx.unit(first).text}».` : 'No sentence of the manuscript uses it.'} Pass if hep-th papers commonly use this symbol with this meaning without defining it, and the manuscript uses it with that meaning. Fail otherwise.` })) };
       }
       const text = { none: 'has no LEXICON entry (no definition site)', lost: 'has a definition site that is not in the manuscript', absent: 'does not occur at its definition site' };
       return { fail: inputs.filter(([, s]) => s !== 'ok' && s !== 'standard').map(([k, s]) => s.startsWith('late') ? `${k} is used before its definition at ${s.slice(5)}` : `${k} ${text[s]}`) };
@@ -187,7 +198,7 @@ const CHECKS = {
       });
     },
     judge(u, rule, ctx, inputs) {
-      const fail = [], pending = [];
+      const fail = [], pending = [], ask = [];
       u.numbers.forEach((n, i) => {
         const [key, id, f, a, b, where] = inputs[i];
         if (!f) return fail.push(id === null ? `"${key}" is not bound to a fact` : `"${key}" is bound to the unknown fact ${id}`);
@@ -199,9 +210,12 @@ const CHECKS = {
           if (!agrees(n, data)) fail.push(`"${key}" disagrees with fact ${id} = ${JSON.stringify(data)} (${f.file})`);
         } else if (a === null) fail.push(`"${key}": fact ${id} points to a unit that is not in the manuscript`);
         else if (!b) fail.push(`"${key}": fact ${id} points to ${where}, after this sentence`);
-        else pending.push(`"${key}" is stated at ${where} (fact ${id}): whether that explains it needs the independent verdict`);
+        else {
+          pending.push(`"${key}" is stated at ${where} (fact ${id}): whether that explains it needs the independent verdict`);
+          ask.push({ tag: key, q: `The numeral "${key}" of the unit is bound to this earlier statement of the manuscript: «${ctx.unit(f.at).text}». Pass if that statement states this number, or fixes it directly, for the same quantity. Fail if the number differs from it, counts something else, or is not explained there.` });
+        }
       });
-      return { fail, pending };
+      return { fail, pending, ask };
     },
   },
   'term-attested': {
@@ -213,7 +227,9 @@ const CHECKS = {
         fail: [...of('compound').map(([t, , n]) => `${t} (corpus papers with or without the hyphen: ${n}) ${needs}`),
           ...of('recurrent').map(([t, , n, m]) => `${t} (corpus papers: ${n}, sentences or titles here: ${m}) ${needs}`)],
         pending: [...of('once').map(([t, , n]) => `${t} (corpus papers: ${n}) occurs once: whether it is a term needs the independent verdict`),
-          ...of('ordinary').map(([t, , term]) => `${t} is declared ordinary wording (LEXICON "${term}"): the declaration needs the independent verdict`)] };
+          ...of('ordinary').map(([t, , term]) => `${t} is declared ordinary wording (LEXICON "${term}"): the declaration needs the independent verdict`)],
+        ask: [...of('once').map(([t, , n]) => ({ tag: t, q: `${t} occurs once in the manuscript and in ${n} of the ${ctx.papers()} papers of the literature corpus. Pass if it is ordinary wording read literally (for example a subject and its verb, or an adjective and its noun). Fail if it is used as a technical term or as a label, which needs attestation in the literature or a definition.` })),
+          ...of('ordinary').map(([t, , term, note]) => ({ tag: t, q: `The author declares "${term}" ordinary wording and not a term, with the reason "${note}". Pass if ${t} is ordinary wording read literally in the unit. Fail if it is used there as a technical term or as a label coined for this manuscript.` }))] };
     },
   },
   build: {
@@ -229,87 +245,204 @@ const CHECKS = {
         ...[...b.log.matchAll(/^LaTeX Warning: ((?:Reference|Citation) `[^']*').* undefined/gm)].map(m => `undefined: ${m[1]}`)] };
     },
   },
+  // Kinds that only a reader can decide: no code verdict, one question to the independent judges for each sentence.
+  judge: { reader: true, units: (u, rule) => prose(u) && (!rule.roles || rule.roles.includes(u.role)), ask: rule => rule.question },
+  better: { reader: true, units: (u, rule) => prose(u) && (!rule.roles || rule.roles.includes(u.role)), ask: () => 'Can you write a sentence that is strictly better than the unit under the ranked criteria stated above?' },
 };
+// The rule family of one call to a judge: a reader rule joins the family it names (default "content"); a code rule and the search for a better sentence are families of their own.
+export const family = rule => rule.kind === 'judge' ? rule.family ?? 'content' : rule.id;
+// The items of a question that a sample or a seeded defect designates: by the numeral, the symbol, or the quoted phrase the item is about.
+export const designates = (tag, item) => item === undefined || tag === item || tag.startsWith(`"${item}"`);
+// The sentence of a sample that a reader rule is tested on: the one containing `at`, the last one without it.
+export function target(units, check, rule, s) {
+  const found = units.filter(u => check.units(u, rule) && (s.at === undefined || u.text.includes(s.at) || u.prose.includes(s.at)));
+  return s.at === undefined ? found.at(-1) ?? null : found.length === 1 ? found[0] : null;
+}
 
 function outcome(check, u, rule, ctx) {
   const r = check.judge(u, rule, ctx, check.inputs?.(u, rule, ctx));
   const v = r.unjudged?.length ? 'unjudged' : r.fail?.length ? 'fail' : r.pending?.length ? 'pending' : 'pass';
-  return v === 'pass' ? { v } : { v, e: r[v] };
+  return { ...(v === 'pass' ? { v } : { v, e: r[v] }), ...(v === 'pending' ? { ask: r.ask || [] } : {}) };
 }
-// A rule is registered only if its check flags its failing texts and passes its passing texts.
+const sample = s => typeof s === 'string' ? { tex: s } : s;
+const lines = (tex, file = 'sample') => tex.split('\n').map((text, i) => ({ file, line: i + 1, text }));
+// A rule is registered only if its check flags its failing texts and passes its passing texts. A rule that only a
+// reader can judge has no code check: its failing texts are the defects seeded into every run of the judges and its
+// passing texts are the texts a judge must leave alone, so that every run repeats the registration test (harness/judge.mjs).
 function admit(rule) {
   const refuse = why => { throw Error(`Rule ${rule.id || JSON.stringify(rule).slice(0, 60)} refused: ${why}`); };
   if (!/^[a-z0-9-]+$/.test(rule.id || '')) refuse('the id must be lowercase letters, digits and hyphens');
-  const check = CHECKS[rule.kind] || refuse(`unknown check kind ${rule.kind} (code checks: ${Object.keys(CHECKS).join(', ')}; a rule only a reader can judge waits for the independent verdict of stage 3)`);
+  const kinds = reader => Object.keys(CHECKS).filter(k => !CHECKS[k].reader === !reader).join(', ');
+  const check = CHECKS[rule.kind] || refuse(`unknown check kind ${rule.kind} (decided by code: ${kinds(false)}; decided by the independent verdict: ${kinds(true)})`);
   if (!rule.source) refuse('record where the rule comes from (document, decision or the user\'s words)');
-  if (!rule.fail?.length || !rule.pass?.length) refuse('it needs at least one text that must fail and one that must pass');
-  for (const want of ['fail', 'pass']) for (const sample of rule[want]) {
-    const s = typeof sample === 'string' ? { tex: sample } : sample;
-    const doc = decompose(s.tex.split('\n').map((text, i) => ({ file: 'sample', line: i + 1, text })));
-    const ctx = context({ ...doc, hash: 'sample' }, { lexicon: s.lexicon, facts: s.facts, file: rel => s.files?.[rel] ?? null, build: () => s.build ?? null, baseline: s.baseline, corpus: () => s.corpus ? fromTex(s.corpus) : null });
-    let seen;
-    try { seen = [...doc.units, DOCUMENT].filter(u => check.units(u, rule)).map(u => outcome(check, u, rule, ctx).v); } catch (e) { refuse(`its check cannot run (${e.message})`); }
-    if (want === 'fail' ? !seen.includes('fail') : seen.some(v => v !== 'pass')) refuse(`its check ${want === 'fail' ? 'does not flag the failing text' : 'does not pass the passing text'} ${JSON.stringify(s.tex).slice(0, 140)}`);
+  // The search for a better sentence has failing texts only: no text is beyond improvement by registration, a sentence passes when two judges fail to improve on it.
+  if (rule.kind === 'better' ? !rule.fail?.length || rule.pass !== undefined : !rule.fail?.length || !rule.pass?.length) refuse(rule.kind === 'better' ? 'it needs at least one text that a judge must improve, and takes no passing text: a sentence passes when two judges fail to improve on it' : 'it needs at least one text that must fail and one that must pass');
+  const probe = (s, corpus) => { const doc = decompose(lines(s.tex)); return { doc, ctx: context({ ...doc, hash: 'sample' }, { lexicon: s.lexicon, facts: s.facts, file: rel => s.files?.[rel] ?? null, build: () => s.build ?? null, baseline: s.baseline, corpus }) }; };
+  const shown = s => JSON.stringify(s.tex).slice(0, 140);
+  if (check.reader) {
+    if (rule.kind === 'judge' && !(typeof rule.question === 'string' && rule.question.trim())) refuse('a rule judged by a reader needs its question: what passes and what fails');
+    if (!/^[a-z0-9-]+$/.test(family(rule))) refuse('the family must be lowercase letters, digits and hyphens');
+    for (const want of ['fail', 'pass']) for (const s of (rule[want] ?? []).map(sample)) {
+      if (!/^\s*\\section\*?\s*\{/.test(s.tex ?? '')) refuse(`its ${want}ing text must open with its own \\section heading, since a judge sees the headings above every unit: ${shown(s)}`);
+      if (!target(decompose(lines(s.tex)).units, check, rule, s)) refuse(`its ${want}ing text has ${s.at === undefined ? 'no sentence the rule applies to' : `no single sentence containing ${JSON.stringify(s.at)}`}: ${shown(s)}`);
+    }
+  } else {
+    for (const want of ['fail', 'pass']) for (const s of rule[want].map(sample)) {
+      let seen;
+      try { const { doc, ctx } = probe(s, () => s.corpus ? fromTex(s.corpus) : null); seen = [...doc.units, DOCUMENT].filter(u => check.units(u, rule)).map(u => outcome(check, u, rule, ctx).v); } catch (e) { refuse(`its check cannot run (${e.message})`); }
+      if (want === 'fail' ? !seen.includes('fail') : seen.some(v => v !== 'pass')) refuse(`its check ${want === 'fail' ? 'does not flag the failing text' : 'does not pass the passing text'} ${shown(s)}`);
+    }
+    // What the code check leaves to a reader is tested on the judges by the rule's judge samples: each must reach the independent verdict.
+    if (rule.judge && (!rule.judge.fail?.length || !rule.judge.pass?.length)) refuse('its judge samples need at least one text that must fail and one that must pass');
+    for (const want of ['fail', 'pass']) for (const s of (rule.judge?.[want] ?? []).map(sample)) {
+      let reached;
+      try { const { doc, ctx } = probe(s, () => fromTex(s.corpus || [])); reached = [...doc.units, DOCUMENT].filter(u => check.units(u, rule)).some(u => { const o = outcome(check, u, rule, ctx); return o.v === 'pending' && o.ask.some(a => designates(a.tag, s.item)); }); } catch (e) { refuse(`its judge sample cannot be read (${e.message})`); }
+      if (!reached) refuse(`its judge sample does not reach the independent verdict (the code check must leave ${s.item === undefined ? 'a question' : JSON.stringify(s.item)} awaiting it): ${shown(s)}`);
+    }
   }
-  const { source, fail, pass, ...effective } = rule;
+  const { source, fail, pass, judge, ...effective } = rule;
   return { ...rule, hash: sha(JSON.stringify(effective)) };
 }
 export function rules(project, paper = 'paper') {
   const all = [...json(BASE).rules, ...(optional(path.join(project, paper, 'RULES.json')).rules || [])];
   const twice = all.map(r => r.id).find((id, i, ids) => ids.indexOf(id) !== i);
   if (twice) throw Error(`Rule ${twice} is registered twice.`);
-  return all.map(admit);
+  const list = all.map(admit), own = new Set(list.filter(r => r.kind !== 'judge').map(r => r.id)), clash = list.find(r => r.kind === 'judge' && own.has(family(r)));
+  if (clash) throw Error(`Rule ${clash.id} refused: its family ${family(clash)} is the id of a rule that is a family of its own.`);
+  return list;
 }
 
 const part = (project, paper, name) => { const file = path.join(project, paper, name); return fs.existsSync(file) ? read(file) : ''; };
-// source: the manuscript sources; gate: everything a verdict was computed from (except calculation outputs and the corpus, read at verification).
+// source: the manuscript sources; gate: everything a verdict was computed from (except calculation outputs, the corpus and the run records of the judges, read at verification).
 export function fingerprint(project, paper = 'paper') {
   const flat = flatten(project, `${paper}/main.tex`);
-  return { flat, source: flat.hash, gate: sha(JSON.stringify([TOOL, flat.hash, read(BASE), ...['RULES.json', 'LEXICON.json', 'FACTS.json'].map(n => part(project, paper, n))])) };
+  return { flat, source: flat.hash, gate: sha(JSON.stringify([TOOL, JUDGE, flat.hash, read(BASE), ...['RULES.json', 'LEXICON.json', 'FACTS.json'].map(n => part(project, paper, n))])) };
 }
 const stateFile = (project, paper) => path.join(project, paper, 'VERIFY.json');
 const serialize = ({ units, ...head }) => JSON.stringify(head, null, 2).replace(/\n}$/, `,\n  "units": {\n${Object.entries(units).map(([id, u]) => `    ${JSON.stringify(id)}: ${JSON.stringify(u)}`).join(',\n')}\n  }\n}\n`);
+// Run metadata of the CLI, local to this computer and never committed: the seal of its last VERIFY.json and one directory for each run of the judges.
+export const ledger = (project, paper) => path.resolve(project, '..', '..', '.harness-local', 'verdicts', path.basename(project), paper);
+const sealFile = (project, paper) => path.join(ledger(project, paper), 'seal.json');
+// VERIFY.json counts only as the CLI wrote it: its bytes must be the ones whose hash the CLI recorded at its last write.
+function sealed(project, paper) {
+  try { return json(sealFile(project, paper)).file === sha(read(stateFile(project, paper))); } catch { return false; }
+}
+// The vendor whose model wrote the manuscript, as last declared to the CLI on this computer, or null.
+export function declaredWriter(project, paper) {
+  try { return json(sealFile(project, paper)).writer ?? null; } catch { return null; }
+}
 
-// Judge every (unit, rule) pair whose content or dependencies changed; keep the other verdicts.
-export function verify(project, paper = 'paper', { build: builder = () => build(project, paper), corpus = () => storedCorpus(path.resolve(project, '..', '..')), wip, now = new Date() } = {}) {
-  const print = fingerprint(project, paper), doc = { ...decompose(print.flat.lines), hash: print.source };
-  const old = fs.existsSync(stateFile(project, paper)) ? json(stateFile(project, paper)) : null, list = rules(project, paper);
-  const ctx = context(doc, { lexicon: optional(path.join(project, paper, 'LEXICON.json')), facts: optional(path.join(project, paper, 'FACTS.json')), build: builder, corpus, baseline: old?.baseline ?? null,
-    file: rel => { const file = safePath(project, rel); return fs.existsSync(file) ? read(file) : null; } });
-  const id = crypto.randomBytes(4).toString('hex'), units = {};
-  // Enrollment: the overfull boxes of the first build are the baseline against which later ones are new.
-  if (!ctx.baseline) { const first = ctx.build(); if (first?.log !== undefined) ctx.baseline = { overfull: overfull(first.log) }; }
+// Every (unit, rule): the code verdict, or a placeholder for a rule only a reader can judge; and the questions put to the judges,
+// one for each unit and rule family. The key of a question covers all that a judge is shown and asked.
+function assess(doc, ctx, list, prior = () => undefined, run = null) {
+  const units = {}, questions = [], heads = [], byId = new Map(doc.units.map(u => [u.id, u])), reading = new Set(list.filter(r => CHECKS[r.kind].reader).map(family));
   let judged = 0, total = 0;
-  for (const u of [...doc.units, { ...DOCUMENT, id: 'document' }]) {
-    const checks = {};
+  for (const u of [...doc.units, { ...DOCUMENT }]) {
+    const above = heads.slice(1, u.kind === 'title' ? Math.max(u.level, 1) : undefined).filter(Boolean), checks = {}, asked = new Map();
+    if (u.kind === 'title' && u.level > 0) { heads.length = u.level; heads[u.level] = u.prose; }
     for (const rule of list) {
       const check = CHECKS[rule.kind];
       if (!check.units(u, rule)) continue;
-      const k = sha(JSON.stringify([TOOL, rule.hash, u.kind === 'document' ? '' : u.id.split('~')[0], check.inputs?.(u, rule, ctx) ?? null])).slice(0, 16), prior = old?.units?.[u.id]?.checks?.[rule.id];
+      const base = [TOOL, rule.hash, u.kind === 'document' ? '' : u.id.split('~')[0]], old = prior(u.id, rule.id);
+      const k = sha(JSON.stringify(check.reader ? base : [...base, check.inputs?.(u, rule, ctx) ?? null])).slice(0, 16), same = old?.k === k && old.v !== 'unjudged';
       total++;
-      if (prior?.k === k && prior.v !== 'unjudged') { checks[rule.id] = prior; continue; }
-      judged++;
-      checks[rule.id] = { ...outcome(check, u, rule, ctx), k, r: id };
+      if (same && !check.reader && old.v !== 'pending' && !old.by) { checks[rule.id] = old; continue; }       // decided by code and unchanged
+      if (!same) judged++;
+      const { ask = [], ...code } = check.reader ? { v: 'pending', e: [AWAIT], ask: [{ id: rule.id, q: check.ask(rule), ...(rule.kind === 'better' ? { better: true } : {}) }] } : outcome(check, u, rule, ctx);
+      checks[rule.id] = { ...code, k, r: same ? old.r : run };
+      if (ask.length) asked.set(family(rule), [...(asked.get(family(rule)) || []), ...ask.map(a => ({ ...a, rule: rule.id }))]);
+    }
+    for (const [name, items] of asked) {
+      const q = { unit: u.id, family: name, kind: u.kind, where: u.where, file: u.file ?? null, text: u.text ?? '', context: u.paragraph ? byId.get(u.paragraph).text : '', headings: reading.has(name) ? above : [],
+        items: items.map((a, i) => ({ id: a.id ?? `item-${i + 1}`, rule: a.rule, tag: a.tag ?? a.id, q: a.q, ...(a.better ? { better: true } : {}) })) };
+      questions.push({ ...q, key: sha(JSON.stringify([JUDGE, q.family, q.kind, q.text, q.context, q.headings, q.items.map(i => [i.id, i.q, !!i.better])])).slice(0, 16) });
     }
     if (Object.keys(checks).length) units[u.id] = { kind: u.kind, where: u.where, ...(u.file ? { at: `${u.file}:${u.line}` } : {}), checks };
   }
+  return { units, questions, judged, total };
+}
+// Read-only: the units of a manuscript, the code verdict of every (unit, rule) and the questions for the judges. `extra` appends
+// lines and registry entries to a copy of the manuscript (the seeded defects of a run of the judges). Nothing is written.
+export function examine(project, paper = 'paper', { build: builder = () => null, corpus = () => storedCorpus(path.resolve(project, '..', '..')), baseline = null, prior, run, extra } = {}) {
+  const print = fingerprint(project, paper), own = print.flat.lines, end = own.findIndex(l => l.text.includes('\\end{document}')), cut = end < 0 ? own.length : end;
+  const doc = { ...decompose(extra ? [...own.slice(0, cut), ...extra.lines, ...own.slice(cut)] : own), hash: print.source }, list = rules(project, paper);
+  let lexicon = optional(path.join(project, paper, 'LEXICON.json')), facts = optional(path.join(project, paper, 'FACTS.json'));
+  if (extra) { lexicon = { symbols: [...(lexicon.symbols || []), ...extra.symbols], terms: [...(lexicon.terms || []), ...extra.terms] }; facts = { facts: { ...facts.facts, ...extra.facts }, uses: { ...facts.uses, ...extra.uses } }; }
+  const ctx = context(doc, { lexicon, facts, build: builder, corpus, baseline, file: rel => { const file = safePath(project, rel); return fs.existsSync(file) ? read(file) : null; } });
+  // Enrollment: the overfull boxes of the first build are the baseline against which later ones are new.
+  if (!ctx.baseline) { const first = ctx.build(); if (first?.log !== undefined) ctx.baseline = { overfull: overfull(first.log) }; }
+  return { print, doc, ctx, list, ...assess(doc, ctx, list, prior, run) };
+}
+
+// The answers of the judges, read from the run records the CLI wrote on this computer. A run counts when it is valid (every
+// seeded defect caught, every passing text passed) and its judge is not of the writer's vendor. A void run supplies nothing.
+export function recorded(project, paper, writer) {
+  const dir = ledger(project, paper), index = new Map(), runs = new Map(), voided = [], found = [];
+  for (const name of fs.existsSync(dir) ? fs.readdirSync(dir) : []) {
+    try { const run = json(path.join(dir, name, 'run.json')); if (run.id === name && run.tool === JUDGE) found.push(run); } catch { /* not a run record */ }
+  }
+  for (const run of found.sort((a, b) => `${a.started} ${a.id}` < `${b.started} ${b.id}` ? -1 : 1)) {
+    if (run.state === 'void') voided.push({ id: run.id, time: run.started, provider: run.provider, model: run.requestedModel, missed: run.seeds.filter(s => s.status === 'missed').map(s => s.id) });
+    if (run.state !== 'valid' || !writer || run.writer !== writer || run.provider === writer || !(run.seeded > 0) || run.caught !== run.seeded || run.passed !== run.controls) continue;
+    runs.set(run.id, run);
+    for (const c of run.calls) {
+      if (c.seed || c.state !== 'ok') continue;
+      const key = `${c.unit}|${c.family}|${c.key}`;
+      index.set(key, [...(index.get(key) || []), { run: run.id, n: c.n, answers: c.answers }]);
+    }
+  }
+  return { index, runs, voided };
+}
+const judgeName = r => `${r.provider}, ${r.requestedModel ?? r.model ? `model ${r.requestedModel ?? r.model}` : 'provider default model'}${r.models?.length ? ` (reported: ${r.models.join(', ')})` : ''}`;
+// The independent verdicts into the checks: one failing judge fails a (unit, rule), JUDGES passing judges pass it, fewer leave it awaiting.
+function settle(units, questions, rec) {
+  const used = new Map();
+  for (const q of questions) {
+    q.votes = (rec.index.get(`${q.unit}|${q.family}|${q.key}`) || []).filter(b => q.items.every(i => b.answers?.[i.id]));
+    for (const rule of new Set(q.items.map(i => i.rule))) {
+      const c = units[q.unit].checks[rule], items = q.items.filter(i => i.rule === rule);
+      const votes = q.votes.map(b => ({ ...b, bad: items.filter(i => b.answers[i.id].v === 'fail') })), failed = votes.filter(b => b.bad.length);
+      if (!votes.length) continue;
+      c.by = { q: q.key, runs: votes.map(b => [b.run, b.n, b.bad.length ? 'fail' : 'pass']) };
+      for (const b of votes) used.set(b.run, (used.get(b.run) || 0) + 1);
+      if (failed.length) {
+        c.v = 'fail';
+        c.e = failed.flatMap(b => b.bad.map(i => { const a = b.answers[i.id], who = `judge ${judgeName(rec.runs.get(b.run))} (run ${b.run})`;
+          return i.better ? `${who} wrote a better sentence under criterion ${a.criterion} (${CRITERIA[a.criterion - 1]}): ${a.sentence} Reason: ${a.reason}` : `${i.tag === i.id ? '' : `${i.tag}: `}${who} fails it: ${a.reason} Evidence: "${a.evidence}"`; }));
+      } else if (votes.length >= JUDGES) { c.v = 'pass'; delete c.e; }
+    }
+  }
+  return used;
+}
+
+// Judge every (unit, rule) pair whose content or dependencies changed; keep the other verdicts; take the independent verdicts from the run records.
+// writer: the vendor whose model wrote the manuscript (the last declaration is kept when omitted); a judge of that vendor supplies no verdict.
+export function verify(project, paper = 'paper', { build: builder = () => build(project, paper), corpus = () => storedCorpus(path.resolve(project, '..', '..')), wip, writer, dry = false, now = new Date() } = {}) {
+  const old = sealed(project, paper) ? json(stateFile(project, paper)) : null, id = crypto.randomBytes(4).toString('hex');
+  const { print, doc, ctx, list, units, questions, judged, total } = examine(project, paper, { build: builder, corpus, baseline: old?.baseline ?? null, prior: (unit, rule) => old?.units?.[unit]?.checks?.[rule], run: id });
+  const who = writer ?? declaredWriter(project, paper), rec = recorded(project, paper, who), used = settle(units, questions, rec);
   const tally = list.map(rule => Object.values(units).reduce((c, u) => (u.checks[rule.id] && c[u.checks[rule.id].v]++, c), { id: rule.id, kind: rule.kind, pass: 0, fail: 0, pending: 0, unjudged: 0 }));
-  const sentences = doc.units.filter(prose), lit = ctx.corpus(), open = Object.entries(units).flatMap(([unit, u]) => Object.entries(u.checks).filter(([, c]) => c.v === 'fail' || c.v === 'unjudged').map(([rule, c]) => ({ unit, rule, where: u.where, at: u.at, verdict: c.v, evidence: c.e })));
-  const state = { version: 1, tool: TOOL, paper, hash: print.gate, source_hash: print.source, run: { id, time: now.toISOString(), judged, total }, complete: !open.length,
+  const pick = (...which) => Object.entries(units).flatMap(([unit, u]) => Object.entries(u.checks).filter(([, c]) => which.includes(c.v)).map(([rule, c]) => ({ unit, rule, where: u.where, at: u.at, verdict: c.v, evidence: c.e })));
+  const sentences = doc.units.filter(prose), lit = ctx.corpus(), open = pick('fail', 'unjudged'), awaiting = pick('pending');
+  const state = { version: 2, tool: TOOL, paper, hash: print.gate, source_hash: print.source, run: { id, time: now.toISOString(), judged, total }, complete: !open.length && !awaiting.length,
     counts: { sentences: sentences.length, paragraphs: doc.units.filter(u => u.kind === 'paragraph').length, titles: doc.units.filter(u => u.kind === 'title').length,
       numbers: sentences.reduce((n, u) => n + u.numbers.length, 0), symbols: new Set(sentences.flatMap(u => [...ctx.used(u)])).size, terms: new Set(sentences.flatMap(u => u.terms)).size },
     rules: tally, orphans: ctx.orphans, baseline: ctx.baseline, corpus: lit && { hash: lit.hash, cutoff: lit.cutoff, documents: lit.documents, words: lit.words, built: lit.built }, approved: [...ctx.approved].sort(),
-    wip: wip ? { hash: print.gate, declared: now.toISOString(), note: wip, units: open.map(({ unit, rule, where }) => ({ unit, rule, where })) } : old?.wip?.hash === print.gate ? old.wip : null, units };
-  write(stateFile(project, paper), serialize(state));
-  return { state, open };
+    independent: { writer: who, judges: JUDGES, awaiting: awaiting.length, rest: Object.values(units).reduce((n, u) => n + Object.values(u.checks).filter(c => c.by && c.v !== 'pending').length, 0),
+      runs: [...used].map(([run, answers]) => { const r = rec.runs.get(run); return { id: run, time: r.started, provider: r.provider, model: r.requestedModel, models: r.models, seeded: r.seeded, caught: r.caught, controls: r.controls, passed: r.passed, answers }; }),
+      void: rec.voided.length, last_void: rec.voided.at(-1) ?? null },
+    wip: wip ? { hash: print.gate, declared: now.toISOString(), note: wip, units: [...open, ...awaiting].map(({ unit, rule, where }) => ({ unit, rule, where })) } : old?.wip?.hash === print.gate ? old.wip : null, units };
+  const text = serialize(state);
+  if (dry) return { state, open, awaiting, questions, list };               // a plan: nothing is written, and a manuscript is not enrolled by it
+  write(stateFile(project, paper), text);
+  writeJSON(sealFile(project, paper), { file: sha(text), run: id, time: now.toISOString(), writer: who });
+  return { state, open, awaiting, questions, list };
 }
 
-const LIMITS = 'Not judged at this stage: the meaning of a sentence, a paragraph, a Section and the document (independent verdict, stage 3 and 4); single words and the wording of a phrase beyond its adjacent word pairs and hyphenated compounds; numerals in display equations and table cells; one, ordinals and comparisons with zero; indices of symbols.';
+const LIMITS = 'Not judged at this stage: the meaning of a paragraph, a Section and the document, the outline and the scope of central claims (stage 4); whether a sentence is correct or supported by the notes, the data or the cited source (a judge sees the sentence, its paragraph and its headings, nothing else); single words and the wording of a phrase beyond its adjacent word pairs and hyphenated compounds; numerals in display equations and table cells; one, ordinals and comparisons with zero; indices of symbols.';
 // The completion report: the only evidence of verification that a report to the user may cite.
-export function report(slug, { state, open }, { pending = false } = {}) {
-  const c = state.counts, rows = state.rules.map(r => `| ${r.id} | ${r.pass} | ${r.fail} | ${r.pending} | ${r.unjudged} |`);
-  const waiting = state.rules.reduce((n, r) => n + r.pending, 0);
-  const listed = pending ? Object.entries(state.units).flatMap(([unit, u]) => Object.entries(u.checks).filter(([, x]) => x.v === 'pending').map(([rule, x]) => ({ unit, rule, where: u.where, at: u.at, verdict: 'pending', evidence: x.e }))) : [];
+export function report(slug, { state, open, awaiting = [] }, { pending = false } = {}) {
+  const c = state.counts, ind = state.independent, rows = state.rules.map(r => `| ${r.id} | ${r.pass} | ${r.fail} | ${r.pending} | ${r.unjudged} |`);
   const line = f => `- [${f.rule}] ${f.where}${f.at ? ` ${f.at}` : ''} unit ${f.unit} (${f.verdict}): ${(f.evidence || []).join('; ')}`;
   return [`Manuscript verification: projects/${slug}/${state.paper}, ${state.run.time}, run ${state.run.id}`,
     `Source ${state.source_hash.slice(0, 12)}. Judged in this run: ${state.run.judged} of ${state.run.total} verdicts (the rest unchanged since an earlier run).`,
@@ -317,11 +450,14 @@ export function report(slug, { state, open }, { pending = false } = {}) {
     '| rule | pass | fail | awaiting independent verdict | not judged |', '| --- | ---: | ---: | ---: | ---: |', ...rows, '',
     state.corpus ? `Corpus: ${state.corpus.documents} hep-th papers, ${state.corpus.words} words, inspected sources dated before ${state.corpus.cutoff} (${state.corpus.hash.slice(0, 12)}).` : 'Corpus: not built (node harness/cli.mjs corpus-build).',
     ...(state.approved.length ? [`Terms that pass on the user's approval recorded in LEXICON: ${state.approved.join('; ')}.`] : []),
-    'Independent verdicts, seeded defects and judging models: not implemented (stage 3).', LIMITS,
+    ind.runs.length ? `Independent verdicts: writer ${ind.writer}. ${ind.rest} verdicts rest on ${ind.runs.length} valid runs of the judges: ${ind.runs.map(r => `run ${r.id} (${judgeName(r)}) caught ${r.caught} of ${r.seeded} seeded defects and passed ${r.passed} of ${r.controls} passing texts`).join('; ')}. A pass needs ${ind.judges} judges, and one failing judge fails the unit.`
+      : `Independent verdicts: none recorded on this computer${ind.writer ? ` (writer ${ind.writer})` : ''}.`,
+    ...(ind.void ? [`Void runs (a seeded defect missed or a passing text failed; none of their answers is used): ${ind.void}. The latest, run ${ind.last_void.id} (${judgeName(ind.last_void)}), missed ${ind.last_void.missed.join(', ')}.`] : []), LIMITS,
     ...(state.orphans.length ? [`FACTS uses that match no sentence of the manuscript: ${state.orphans.join(', ')}`] : []),
-    state.complete ? `Status: code checks complete, no failure${waiting ? `; ${waiting} verdicts await the independent verdict` : ''}.` : `Status: INCOMPLETE, ${open.filter(f => f.verdict === 'fail').length} failing and ${open.filter(f => f.verdict === 'unjudged').length} not judged.`,
+    state.complete ? 'Status: verification complete: no failure, nothing unjudged, nothing awaiting the independent verdict.'
+      : `Status: INCOMPLETE, ${open.filter(f => f.verdict === 'fail').length} failing and ${open.filter(f => f.verdict === 'unjudged').length} not judged.${ind.awaiting ? ` Awaiting the independent verdict: ${ind.awaiting} (node harness/cli.mjs paper-judge ${slug} ${state.paper} --writer <claude|codex>).${open.length ? ' A unit with a failing or unjudged verdict is put to a judge only after that is settled.' : ''}` : ''}`,
     ...(state.wip ? [`Work in progress declared ${state.wip.declared}: ${state.wip.note} (${state.wip.units.length} unverified verdicts, listed below; report them to the user).`] : []),
-    ...open.map(line), ...listed.map(line)].join('\n');
+    ...open.map(line), ...(pending || state.wip ? awaiting.map(line) : [])].join('\n');
 }
 
 // Enrolled manuscripts: a paper directory holding VERIFY.json. Nothing else is gated.
@@ -332,9 +468,10 @@ export function enrolled(root) {
 }
 export function standing(project, paper) {
   try {
-    const state = json(stateFile(project, paper)), print = fingerprint(project, paper), current = state.hash === print.gate;
-    return { source: print.source, verified: current && state.complete, wip: state.wip?.hash === print.gate, open: current ? state.rules.reduce((n, r) => n + r.fail + r.unjudged, 0) : null };
-  } catch (e) { return { source: null, verified: false, wip: false, open: null, error: e.message }; }
+    const state = json(stateFile(project, paper)), print = fingerprint(project, paper), current = state.hash === print.gate, count = (...which) => current ? state.rules.reduce((n, r) => n + which.reduce((m, v) => m + r[v], 0), 0) : null;
+    if (!sealed(project, paper)) return { source: print.source, verified: false, wip: false, open: null, awaiting: null, error: 'VERIFY.json does not carry the run metadata of this computer\'s CLI: it was written or changed by other means, or comes from another computer' };
+    return { source: print.source, verified: current && state.complete, wip: state.wip?.hash === print.gate, open: count('fail', 'unjudged'), awaiting: count('pending') };
+  } catch (e) { return { source: null, verified: false, wip: false, open: null, awaiting: null, error: e.message }; }
 }
 // For the queue: manuscript directories among the queued files that are enrolled and not verified.
 export function unverified(root, repoName, files) {
@@ -386,7 +523,7 @@ export function stopGate(root, input) {
     const tried = blocked[key]?.source === source ? blocked[key].count : 0;
     if (!now.verified && !now.wip && tried < BLOCK_LIMIT) {
       blocked[key] = { source, count: tried + 1 };
-      blocks.push(`projects/${key} was changed in this session and is not verified${now.error ? ` (${now.error})` : now.open === null ? ' (no verification of its current text)' : ` (${now.open} failing or unjudged verdicts)`}. Run \`node harness/cli.mjs paper-verify ${m.slug} ${m.paper}\`, fix what it lists and run it again; or declare work in progress with \`--wip "<reason>"\` and give the user the list of unverified units it prints. Do not report the manuscript as finished. (block ${tried + 1} of ${BLOCK_LIMIT})`);
+      blocks.push(`projects/${key} was changed in this session and is not verified${now.error ? ` (${now.error})` : now.open === null ? ' (no verification of its current text)' : ` (${now.open} failing or unjudged verdicts, ${now.awaiting} awaiting the independent verdict)`}. Run \`node harness/cli.mjs paper-verify ${m.slug} ${m.paper}\`, fix what it lists, run \`node harness/cli.mjs paper-judge ${m.slug} ${m.paper} --writer <claude|codex>\` for the verdicts that await the judges and fix what they fail; or declare work in progress with \`--wip "<reason>"\` and give the user the list of unverified units it prints. Do not report the manuscript as finished. (block ${tried + 1} of ${BLOCK_LIMIT})`);
       continue;
     }
     if (!now.verified) notes.push(now.wip ? `Manuscript projects/${key}: work in progress declared, verification incomplete.` : `Manuscript projects/${key} ends this turn UNVERIFIED after ${BLOCK_LIMIT} blocks.`);

@@ -10,6 +10,7 @@ import { build as buildCorpus, load as loadCorpus, fromTex, attest, key, fold, s
 import { installHooks, toolMatcher } from '../harness/install-hooks.mjs';
 import { queue, flush } from '../harness/checkpoint.mjs';
 import { hook, main, checkProject } from '../harness/cli.mjs';
+import { settle } from './judges.mjs';
 
 function temp(t) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'hep verify 한글 '));
@@ -120,7 +121,8 @@ test('a rule is refused unless its check flags its failing text and passes its p
   register({ ...rule, pass: [] }); assert.throws(() => rules(project), /one text that must fail and one that must pass/);
   register({ ...rule, source: '' }); assert.throws(() => rules(project), /where the rule comes from/);
   register({ ...rule, pattern: '(' }); assert.throws(() => rules(project), /no-saddle refused: its check cannot run/);
-  register({ ...rule, kind: 'judge' }); assert.throws(() => rules(project), /unknown check kind judge .*stage 3/);
+  register({ ...rule, kind: 'oracle' }); assert.throws(() => rules(project), /unknown check kind oracle \(decided by code: .*; decided by the independent verdict: judge, better\)/);
+  register({ ...rule, kind: 'judge' }); assert.throws(() => rules(project), /no-saddle refused: a rule judged by a reader needs its question/);
   register({ ...rule, id: 'hard-wrap' }); assert.throws(() => rules(project), /registered twice/);
   assert.ok(!fs.existsSync(path.join(project, 'paper/VERIFY.json')), 'a refused rule produces no verdict file');
 });
@@ -336,7 +338,7 @@ test('build defects: new overfull boxes, a table header without rows, undefined 
   let r = verify(project, 'paper', { build: () => ({ unavailable: 'latexmk is not installed' }) });
   assert.equal(r.state.complete, false); assert.deepEqual(r.open.map(f => [f.rule, f.verdict]), [['build-defects', 'unjudged']]); assert.equal(r.state.baseline, null);
   r = verify(project, 'paper', { build: () => ({ log: box('46.87863'), pages }) });
-  assert.equal(r.state.complete, true, 'boxes present at enrollment are the baseline'); assert.deepEqual(r.state.baseline, { overfull: ['46.87863pt in paragraph'] });
+  assert.deepEqual([r.open, r.state.units.document.checks['build-defects'].v], [[], 'pass'], 'boxes present at enrollment are the baseline'); assert.deepEqual(r.state.baseline, { overfull: ['46.87863pt in paragraph'] });
   edit(project, 'One', 'Another');
   r = verify(project, 'paper', { build: () => ({ log: box('46.87863') + box('2.5') + "LaTeX Warning: Citation `Doe:2020' on page 1 undefined on input line 3.\n", pages: [pages[0], 'Type a b\nTable 1. The theories.\n- 2 -'] }) });
   assert.deepEqual(failing(r, 'build-defects'), ['new overfull box: 2.5pt in paragraph', 'page 2: the repeated table header "Type a b" stands without a row', "undefined: Citation `Doe:2020'"]);
@@ -377,7 +379,7 @@ function call(root, session, tool_input, during = () => {}, { id = 'c1', end = t
   during();
   if (end) assert.equal(hook(root, { hook_event_name: 'PostToolUse', session_id: session, tool_name: 'Bash', tool_input, tool_use_id: id }), undefined);
 }
-test('the Stop hook blocks the session that changed an enrolled manuscript, no other session, and releases on verification or declared work in progress', t => {
+test('the Stop hook blocks the session that changed an enrolled manuscript, no other session, and releases on verification or declared work in progress', async t => {
   const { root, project } = make(t, 'A sentence about section~\\ref{s}.');
   const file = path.join(project, 'paper/main.tex'), text = n => () => fs.appendFileSync(file, `\n\nMore text ${n}.\n`);
   put(root, 'projects/plain/paper/main.tex', 'An ordinary draft.');
@@ -394,12 +396,15 @@ test('the Stop hook blocks the session that changed an enrolled manuscript, no o
   verify(project, 'paper', built);
   out = stop(root); assert.equal(out.decision, 'block'); assert.match(out.reason, /1 failing or unjudged verdicts.*block 2 of 3/s);
   edit(project, 'section~', 'Section~'); verify(project, 'paper', built);
+  assert.match(stop(root).reason, /\(0 failing or unjudged verdicts, 11 awaiting the independent verdict\).*paper-judge demo paper --writer/s, 'what awaits the independent verdict holds the turn as a failure does');
+  assert.equal((await settle(root, built)).result.state.complete, true);
   assert.deepEqual(stop(root), {}, 'verified: released'); assert.deepEqual(stop(root), {});
   call(root, 'session-a', { file_path: '/scratch/fix.py', content: 'open("projects/demo/paper/main.tex")' });      // a script that names the manuscript
   call(root, 'session-a', { command: 'python3 /scratch/fix.py' }, text('in this section~\\ref{t}'), { id: 'c2' });   // and a call that runs it
   assert.equal(stop(root).decision, 'block', 'a scripted edit is attributed through the earlier tool input');
   const wip = verify(project, 'paper', { ...built, wip: 'Section 3 is being rewritten' });
-  assert.equal(wip.state.wip.units.length, 1); assert.match(report('demo', wip), /Work in progress declared .*Section 3 is being rewritten \(1 unverified verdicts/);
+  assert.deepEqual(wip.state.wip.units.map(u => u.rule), ['reference-capital', 'scope-stated', 'in-place', 'better-sentence'], 'the failure and what awaits the judges for the added sentence');
+  assert.match(report('demo', wip), /Work in progress declared .*Section 3 is being rewritten \(4 unverified verdicts.*\(pending\): awaits the independent verdict/s);
   out = stop(root); assert.equal(out.decision, undefined); assert.match(out.systemMessage, /projects\/demo\/paper: work in progress declared/);
   assert.deepEqual(stop(root), {}, 'released until the session changes the manuscript again');
   call(root, 'session-a', { command: 'cd projects/demo && sed -i s/a/b/ paper/main.tex' }, text('gamma'), { end: false });  // a call that fails reports no end
@@ -410,7 +415,7 @@ test('the Stop hook blocks the session that changed an enrolled manuscript, no o
   fs.rmSync(path.join(project, 'paper/main.tex')); assert.equal(stop(root).decision, 'block', 'a missing manuscript is reported, not thrown');
 });
 
-test('queued commits of an unverified enrolled manuscript are marked; the installer adds the tool events once', t => {
+test('queued commits of an unverified enrolled manuscript are marked; the installer adds the tool events once', async t => {
   const { root, project } = make(t, 'A sentence in section~\\ref{s}.');
   for (const repo of [root, project]) { git(repo, ['init', '-b', 'main']); git(repo, ['config', 'user.email', 'test@example.invalid']); git(repo, ['config', 'user.name', 'Harness Test']); }
   put(root, '.gitignore', '.harness-local/\nprojects/\n');
@@ -421,6 +426,8 @@ test('queued commits of an unverified enrolled manuscript are marked; the instal
   assert.equal(job.message, 'Edit the draft\n\nManuscript-Verification: incomplete (projects/demo/paper)'); assert.match(job.notice, /read the complete manuscript/);
   assert.equal(flush(root, { push: false })[0].ok, true); assert.match(git(project, ['log', '-1', '--format=%B']), /Manuscript-Verification: incomplete/);
   edit(project, 'section~', 'Section~'); verify(project, 'paper', built);
+  assert.match(queue(root, '.', ['projects/demo/paper/main.tex'], 'Awaiting the judges').message, /Manuscript-Verification: incomplete/);
+  await settle(root, built);
   assert.equal(queue(root, '.', ['projects/demo/paper/main.tex'], 'Verified').message, 'Verified');
   installHooks(root); installHooks(root);
   for (const config of ['.claude/settings.json', '.codex/hooks.json']) {
@@ -440,7 +447,7 @@ test('paper-verify prints the completion table and fails its exit status while a
     assert.equal(process.exitCode, 1);
     assert.match(text, /\| rule \| pass \| fail \| awaiting independent verdict \| not judged \|/); assert.match(text, /\| number-bound \| 0 \| 1 \| 0 \| 0 \|/);
     assert.match(text, /Status: INCOMPLETE, 2 failing and 1 not judged\./); assert.match(text, /- \[number-bound\] front ¶1 s1 paper\/main\.tex:1 unit [0-9a-f]{12} \(fail\): "204" is not bound to a fact/);
-    assert.match(text, /Independent verdicts, seeded defects and judging models: not implemented \(stage 3\)/);
+    assert.match(text, /Independent verdicts: none recorded on this computer\./); assert.match(text, /Awaiting the independent verdict: 3 \(node harness\/cli\.mjs paper-judge demo paper/);
     const units = await main(['paper-units', 'demo', 'theories'], root);
     assert.deepEqual(units.map(u => [u.kind, u.where, u.numbers]), [['sentence', 'front ¶1 s1', ['204']]]);
   } finally { process.exitCode = saved; }

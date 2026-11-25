@@ -34,10 +34,11 @@ export function executable(provider) {
   return fs.existsSync(native) ? native : provider;
 }
 
-export function invocation(provider, dir, model) {
+// narrow: a call that carries everything in its prompt (a verdict on one unit). It runs outside any repository, without tools, and keeps no session.
+export function invocation(provider, dir, model, { narrow = false, schema: shape = schema } = {}) {
   const args = provider === 'codex'
-    ? ['exec', '--sandbox', 'read-only', '--json', '--output-schema', path.join(dir, 'schema.json'), '-o', path.join(dir, 'response.json'), '-']
-    : ['-p', '--output-format', 'json', '--json-schema', JSON.stringify(schema), '--permission-mode', 'dontAsk', '--tools', 'Read,Glob,Grep,WebFetch,WebSearch'];
+    ? ['exec', '--sandbox', 'read-only', ...(narrow ? ['--skip-git-repo-check', '--ephemeral'] : []), '--json', '--output-schema', path.join(dir, 'schema.json'), '-o', path.join(dir, 'response.json'), '-']
+    : ['-p', '--output-format', 'json', '--json-schema', JSON.stringify(shape), '--permission-mode', 'dontAsk', '--tools', narrow ? '' : 'Read,Glob,Grep,WebFetch,WebSearch', ...(narrow ? ['--strict-mcp-config', '--no-session-persistence'] : [])];
   if (model) args.push('--model', model);
   return { command: executable(provider), args };
 }
@@ -49,12 +50,26 @@ export function execute(command, args, options) {
     const child = spawn(command, args, { cwd: options.cwd, windowsHide: true, shell: false,
       env: { ...process.env, HEP_REVIEW_CHILD: '1' }, stdio: ['pipe', out, err] });
     fs.closeSync(out); fs.closeSync(err);
-    child.once('error', reject);
-    child.once('close', (code, signal) => code === 0 ? resolve() : reject(Error(`Reviewer exited ${code ?? signal}; inspect stderr.log`)));
+    const timer = options.timeout ? setTimeout(() => child.kill(), options.timeout) : null;
+    child.once('error', e => { clearTimeout(timer); reject(e); });
+    child.once('close', (code, signal) => { clearTimeout(timer); code === 0 ? resolve() : reject(Error(`Reviewer exited ${code ?? signal}; inspect stderr.log`)); });
     child.stdin.on('error', () => {});
     child.stdin.end(options.prompt);
     options.started?.(child.pid);
   });
+}
+
+// The answer a provider left in `dir` after a completed call: the structured value, the session, and the models and usage it reported.
+export function collect(provider, dir) {
+  if (provider === 'codex') {
+    const value = json(path.join(dir, 'response.json'));
+    const events = read(path.join(dir, 'stdout.jsonl')).split('\n').filter(Boolean).map(line => JSON.parse(line));
+    if (!events.some(e => e.type === 'turn.completed') || events.some(e => e.type === 'turn.failed' || e.type === 'error')) throw Error('Codex did not complete successfully');
+    return { value, sessionId: events.find(e => e.type === 'thread.started')?.thread_id || null, models: [], usage: events.findLast(e => e.type === 'turn.completed').usage || null };
+  }
+  const envelope = json(path.join(dir, 'stdout.jsonl'));
+  if (envelope.is_error || envelope.subtype !== 'success') throw Error('Claude did not complete successfully');
+  return { value: envelope.structured_output, sessionId: envelope.session_id || null, models: Object.keys(envelope.modelUsage || {}), usage: envelope.usage ? { ...envelope.usage, cost_usd: envelope.total_cost_usd } : null };
 }
 
 export function validate(value) {
@@ -100,19 +115,9 @@ export async function request(root, slug, target, provider, { model, runner = ex
     fs.writeFileSync(path.join(dir, 'prompt.txt'), prompt);
     const call = invocation(provider, dir, model);
     await runner(call.command, call.args, { cwd: root, dir, prompt, started: pid => { record.childPid = pid; writeJSON(path.join(dir, 'run.json'), record); } });
-    let value;
-    if (provider === 'codex') {
-      value = json(path.join(dir, 'response.json'));
-      const events = read(path.join(dir, 'stdout.jsonl')).split('\n').filter(Boolean).map(line => JSON.parse(line));
-      if (!events.some(e => e.type === 'turn.completed') || events.some(e => e.type === 'turn.failed' || e.type === 'error')) throw Error('Codex did not complete successfully');
-      record.sessionId = events.find(e => e.type === 'thread.started')?.thread_id || null;
-    } else {
-      const envelope = json(path.join(dir, 'stdout.jsonl'));
-      if (envelope.is_error || envelope.subtype !== 'success') throw Error('Claude did not complete successfully');
-      record.sessionId = envelope.session_id || null;
-      value = envelope.structured_output;
-    }
-    record.result = validate(value);
+    const got = collect(provider, dir);
+    record.sessionId = got.sessionId;
+    record.result = validate(got.value);
     if (JSON.stringify(snapshot(project)) !== JSON.stringify(record.snapshot)) throw Error('Project changed during review; result cannot be accepted');
     record.state = 'completed';
   } catch (error) {

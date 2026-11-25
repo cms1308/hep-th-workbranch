@@ -1,10 +1,11 @@
 # Manuscript verification — design
 
-Status: design and its four open choices decided by the user on 2026-11-25. **Stages 1 and
-2 of 5 implemented on 2026-11-25** ([record](#implementation-record)); stages 3 to 5 are not.
-No manuscript is enrolled yet (the pilot is stage 5). [PAPER-REVIEW](../PAPER-REVIEW.md)
+Status: design and its four open choices decided by the user on 2026-11-25. **Stages 1 to
+3 of 5 implemented on 2026-11-25** ([record](#implementation-record)); stages 4 and 5 are
+not. No manuscript is enrolled yet (the pilot is stage 5). [PAPER-REVIEW](../PAPER-REVIEW.md)
 and [PAPER-STYLE](../../PAPER-STYLE.md) remain the active policy, and the reading duty
-stays in full until the independent verdict exists. This file is the specification the
+stays in full: the independent verdict of stage 3 sees a sentence with its paragraph and
+headings, not the notes, the data or the cited sources. This file is the specification the
 next stage starts from.
 
 ## Why
@@ -237,7 +238,7 @@ Open, for the stages that need them.
   ([record](#stage-2-2026-11-25)). Verbs remain among the candidates.
 - Stage 3 has to judge the grounds themselves (a fact with `at`, a `standard`
   declaration, a colon), not only sentences, and give the run metadata that makes a
-  verdict file impossible to produce by hand.
+  verdict file impossible to produce by hand. Done at [stage 3](#stage-3-2026-11-25).
 - The pilot will show the cost of binding every numeral sentence by sentence (470
   numerals in 448 sentences on the susu-quiver draft), notation such as $\mathcal N=1$
   included. A registry of notation that contains a numeral is the likely remedy and is
@@ -351,7 +352,236 @@ Open after stage 2.
   wiki (`/wiki-ingest`, the user's step) followed by `corpus-build`.
 - Single words are not compared ("flavorless"), and British spelling is not folded.
 - Stage 3 has to judge the pairs that occur once, the `ordinary` declarations and the
-  meaning of `standard` notation.
+  meaning of `standard` notation. Done at [stage 3](#stage-3-2026-11-25).
 - Three source folders of the wiki hold a tar archive under the name `main.tex`
   (1406.1078, 1706.03762, 2111.00955). The build skips such files. The vault is not edited
   from this repository.
+
+### Stage 3 (2026-11-25)
+
+Criterion and plan of checks, written before the code. The design's criterion has two
+parts, and the plan adds what the Section "Making the independent verdict real" requires.
+Every item is a test with an injected judge. No test calls a model.
+
+1. Void run. A judge that answers every seeded defect of a run correctly except one gives a
+   run reported void: the report names the missed defect, no verdict of the run is
+   recorded, and the manuscript stays incomplete. The same judge with nothing removed gives
+   a valid run whose verdicts are recorded. A judge that fails a text registered as passing
+   voids the run as well.
+2. Verdict files need the CLI run metadata. (a) A `VERIFY.json` written or changed by hand
+   (a fail turned into a pass, `complete` set, an independent verdict typed in) is not
+   accepted: the gate reports the manuscript unverified, and the next `paper-verify` judges
+   every unit again and drops what no run record supports. (b) An independent verdict
+   counts only while the record of its run exists with a valid state and holds the same
+   unit, rule family and key. (c) A record of a void or unfinished run, or of a judge from
+   the writer's vendor, supplies no verdict.
+3. Narrow calls. Every call holds one unit and one rule family. Its schema requires, for
+   each question, pass or fail, a reason and evidence. An answer that omits a question, or
+   whose evidence is not a quotation of the material shown, supplies no verdict.
+4. The grounds that awaited the verdict at stages 1 and 2 are judged: a number bound with
+   `at`, a `standard` declaration, a colon or semicolon, a pair that occurs once, an
+   `ordinary` declaration. Two passing judges give a pass, one failing judge a fail, one
+   passing judge alone leaves the verdict awaiting.
+5. Better sentence. A unit for which a judge returns a replacement fails, with the
+   replacement and the ranked criterion as evidence. It passes when two judges return none.
+6. A defect found by the user, registered as a rule with its failing text, is among the
+   seeded defects of every later run that asks its family.
+7. Hash binding. After a one-sentence edit only the questions of its paragraph are asked
+   again, and the verdicts of the other units are kept.
+8. Completeness and the gate. A verdict awaiting the independent verdict now leaves the
+   verification incomplete (stage 1, choice 3), so the Stop gate and the commit mark hold
+   until the judges have passed the text. The hook does not throw.
+9. The 43 earlier tests pass. An assertion changes only where it states the behavior that
+   stage 3 replaces, and each such change is listed in the record.
+10. One live run with Codex on a small scratch manuscript, to check what no injected judge
+    can: that the provider accepts the generated schema and returns answers the reader of
+    answers accepts. Its calls, tokens and time are reported.
+
+Code: `harness/judge.mjs` (the prompt, the schema and the reading of an answer, the planting of
+registered texts, one run of a judge, `paper-judge`), in `harness/verify.mjs` the questions
+that code leaves to a reader, the rule kinds `judge` and `better`, the judge samples of a
+code rule, the reading of run records into verdicts, the seal of `VERIFY.json` and the new
+meaning of complete, in `harness/dispatch.mjs` the narrow invocation, the call timeout and
+`collect`, in `harness/rules.json` judge samples for four code rules and the rules
+`scope-stated`, `in-place` and `better-sentence`, the `paper-judge` entry of
+`harness/cli.mjs`. Use: [PAPER-REVIEW](../PAPER-REVIEW.md#verification-gate),
+[OPERATIONS](../OPERATIONS.md#manuscript-verification-gate) and
+[AUTOMATION](../AUTOMATION.md#independent-verdicts-on-a-manuscript).
+
+Result. `tests/judge.test.mjs` has seven tests with an injected judge (`tests/judges.mjs`),
+and all 50 tests of the repository pass. By the numbers of the plan above:
+
+1. Passed. A judge whose catch list lacks the coined label used once gives two void runs
+   (7 of 8 seeded defects caught), 14 calls each, none of them about the manuscript, no
+   verdict in `VERIFY.json`, and a report that names the missed text. A judge that fails one
+   passing text is void as well. With nothing removed the same manuscript gets two valid
+   runs and is complete, 19 verdicts resting on them.
+2. Passed. A fail turned into a pass by hand with `complete` set: the gate reports the
+   manuscript unverified and blocks, and the next `paper-verify` judges all 44 verdicts
+   again and restores the fail. The complete file copied to a manuscript without run records
+   gives no verdict. A record set to an unfinished state, one whose seeded defects were not
+   all caught, a removed one and an unreadable one supply nothing, and neither does a judge
+   of the writer's vendor.
+3. Passed. A call holds one unit and one family, the schema requires every question with
+   verdict, reason and evidence, and an answer that omits a question or quotes words that
+   are not in the material is refused, so its questions keep awaiting.
+4. Passed for the five grounds (the questions and what they quote are asserted): two passing
+   judges pass, a failing judge fails with its reason and quotation, one passing judge
+   leaves the verdict awaiting.
+5. Passed. The unit fails with the replacement and its criterion as evidence, the second
+   judge is not asked about it, and the replaced sentence is judged as a new unit.
+6. Passed. A rule registered in `paper/RULES.json` with the user's failing text is among the
+   planted texts of the runs after an edit, and a judge that misses it is void.
+7. Passed. After one sentence changed, 8 questions are asked in each run, those of the two
+   sentences of its paragraph, and the other units keep their verdicts and runs.
+8. Passed, with the hook tested on an unreadable seal and unreadable run records.
+9. Five of the 43 earlier tests changed, each in what stage 3 replaces. The refusal of the
+   kind `judge` "until stage 3" became the refusal of a `judge` rule without a question and
+   of an unknown kind. The report line "not implemented (stage 3)" became the line on
+   independent verdicts. Three tests that asserted a verified manuscript (the build
+   baseline, the release by the Stop hook, the unmarked commit) had fixtures with verdicts
+   awaiting a judge: the first now asserts the build verdict itself, the other two reach
+   the verified state through two injected judges, and the work-in-progress list of the
+   Stop test counts the awaiting verdicts (4 instead of 1).
+10. Done, see the live runs below.
+
+Measured, on scratch copies with no project file written.
+
+- The susu-quiver Claude draft at 2a4d45a, with the corpus and without the build: 448
+  sentences give 1,008 questions (448 for the family `content`, 448 for a better sentence,
+  106 on word pairs that occur once, 6 on colons and semicolons, none on numbers and
+  notation because the draft has no `FACTS.json` or `LEXICON.json`). 402 of the 448
+  sentences fail a code check (an unbound numeral, a symbol without an entry, an unattested
+  term), so 116 questions on 46 sentences could be put to a judge today. A prompt has a
+  median of 2,981 characters, 5,134 at most, 3.07 million for the 1,008. The verification
+  takes 0.33 s.
+- Live runs with Codex (CLI 0.171.0-alpha.13.2, provider default model: this computer's
+  configuration names gpt-6.2-astra at reasoning effort xhigh, and the provider reports no
+  model identity in its events), on a scratch manuscript of four sentences with one ground
+  of each kind. In all 53 calls, 1,095,382 input tokens and 16,018 output tokens.
+  - First run, the better-sentence family only: 4 calls, 107 s of call time, 83,970 input
+    and 3,044 output tokens. Both judges improved the seeded wordy sentence, and both
+    replaced the sentence then registered as passing ("The gauge coupling is asymptotically
+    free for $N_f<3N_c$.") by "The theory is asymptotically free for $N_f<3N_c$." under
+    criterion 7. Both runs were void, as built. The judges applied the criteria as written,
+    so the fault was the registration of a passing text for this search (choice 6).
+  - A call with a one-line prompt: 20,772 input tokens. Without the user's Codex
+    configuration 18,493, and 109 s against 9 s.
+  - Second run, every family: 47 calls in 949 s with four at a time, 972,147 input tokens
+    (96,000 from cache) and 12,964 output tokens (7,513 of them reasoning). Each call took
+    21.0 to 21.3 thousand input tokens whatever its prompt (868 to 2,065 bytes), and a
+    median of 73 s in the first run and 51 s in the second. Both runs were valid: the
+    judges answered 28 of 28 planted texts as registered (15 of 15 caught, 13 of 13
+    passed). The provider accepted every generated schema. Of the 21 answers on the
+    manuscript one was refused, for evidence that quoted the headings line of the prompt
+    word for word: the reader of answers compared quotations with the unit, paragraph,
+    headings and questions and not with the whole material shown. It now does, with a test,
+    and the call was not repeated.
+  - What the judges did with the four sentences: each of them got a better sentence from
+    one of the two judges (criterion 4 once, 5 once, 7 twice), and the two sentences the
+    first judge passed were the two the second replaced. One of its replacements writes
+    "two" as "2" to save two characters. `scope-stated` failed one sentence and `in-place`
+    one, a sentence on $\mathcal{N}$ under the heading "Two nodes", which the fixture
+    deserves. The ground questions that both judges answered passed (a number, a
+    declaration of ordinary wording, the standard notation).
+
+Choices made in the implementation, each the lead's and open to the user's correction.
+
+1. Two commands. `paper-verify` never calls a model and stays the only writer of
+   `VERIFY.json`. `paper-judge` asks the judges, records their answers and then runs the
+   same verification.
+2. The writer is declared with `--writer`, kept in the local run metadata and printed in
+   every report. The judge is the other of the two vendors the launcher knows. Code cannot
+   check the declaration, and a manuscript with sentences from both vendors has no eligible
+   judge.
+3. "Two judges" are two separate runs of that vendor's CLI, with its default model unless
+   `--model a,b` names one for each. A pass needs two valid runs, one failing run fails the
+   unit, and there is no third opinion: the writer cannot overrule a judge, so a disputed
+   verdict is settled by changing the text or by the user.
+4. A run asks the planted texts first and the manuscript only when the judge got all of
+   them right. The calls are separate processes without memory of one another, so the order
+   tells the judge nothing, and a void run costs the planted calls only (14 when every
+   family is asked).
+5. A judge that fails a text registered as passing voids the run as well. The design names
+   only the seeded defects. Without this a judge that fails everything would catch every
+   defect and force edits on sound text.
+6. The search for a better sentence has failing texts only (texts a judge must improve). A
+   passing text was registered at first and dropped after the first live run (below): the
+   design defines a pass of this search by two judges failing to improve, not by
+   registration.
+7. A planted text is a registered text appended to a copy of the manuscript and checked by
+   code there, with the manuscript's own lexicon, facts and word counts. A text that code
+   decides in this manuscript (an approved term, a repeated pair) is reported as not
+   planted, and a family without a planted defect is not asked.
+8. Rule families. The reader rules share the family `content` unless they name another.
+   Each code rule's open questions, and the search for a better sentence, are families of
+   their own. A sentence therefore costs two calls for each judge, and one more for each
+   code rule that left it a question.
+9. Every call shows the unit and its paragraph, and the calls of reader rules also the
+   headings above it. The key of a question covers all that is shown, so an edit asks the
+   sentences of its paragraph again and nothing else. The position label of a unit is not
+   shown, since it changes when a paragraph is inserted earlier.
+10. Evidence must be a quotation of the material shown, compared without regard to spacing,
+    for a pass as for a fail. An answer without one is refused.
+11. A unit that fails or is not judged by a code check is not put to a judge, since it has
+    to change first.
+12. The harness-wide reader rules are two, `scope-stated` and `in-place`, the third and
+    fifth items of "Judge every sentence" in PAPER-REVIEW and two of the seeded defects the
+    design names. The first two items (correct, supported) are not registered: a judge
+    without the notes and sources cannot decide them, and a rule the judge cannot apply
+    only adds void runs.
+13. The independent verdicts live in the run records, and `VERIFY.json` is a view of them
+    rebuilt at each `paper-verify`. The file itself is sealed by a hash in the local run
+    metadata. A file without a matching seal contributes nothing but the enrollment: every
+    verdict is judged again, and its build baseline and work-in-progress declaration are
+    not taken over.
+14. A verdict awaiting the independent verdict now leaves the verification incomplete, as
+    choice 3 of stage 1 announced, and the work-in-progress list includes these verdicts.
+15. The prompt of the better-sentence search states the ranked criteria and not the
+    registered rules. A replacement is checked by the rules once it stands in the
+    manuscript, and listing them would ask every sentence again whenever a rule is added.
+16. A call runs in an empty temporary directory, so that no project instruction file or
+    hook reaches the judge, with the provider's default model and settings.
+17. `JUDGE` in `verify.mjs` is part of every question key and of the gate hash. Raising it
+    asks every independent verdict again. `VERIFY.json` is now version 2.
+
+Open after stage 3.
+
+- Whether the search for a better sentence settles. Under criterion 7 the live judge
+  shortened a plain sentence by one word, twice out of two. Each replacement is a new unit
+  that two judges read again, so a draft may need several rounds, and nothing here measures
+  how many. Proposed for the pilot: run the search on one Section first and count the
+  rounds until no judge improves a sentence. If it does not settle in three, the threshold
+  of criterion 7 (how much shorter counts) goes to the user.
+- Cost. At 21 thousand input tokens and 20 s of elapsed time for each call, the 1,008
+  questions of the pilot draft, put once to each of two judges, would be about 2,000 calls,
+  43 million input tokens and 11 hours with four calls at a time, before any round of
+  replacements. This is an extrapolation from 47 calls on a four-sentence text, and the
+  draft's prompts are longer. The fixed 21 thousand tokens are the provider's own
+  instructions and tools, not the question. Proposed: bind the numbers and symbols first
+  (402 of the 448 sentences cannot be asked yet), then ask one Section, and before the
+  whole draft bring the user the choice among a lower reasoning effort, asking the
+  better-sentence family (half of the calls) only after the other families pass, and a
+  provider interface without the fixed instructions.
+- The run records are local. On another computer the code checks are judged again in
+  seconds, and the independent verdicts must be asked again. Proposed, if the pilot draft
+  is edited on two computers: commit a compact copy of the run records with the project.
+- What the seal establishes: a verdict typed or changed in `VERIFY.json`, and a verdict
+  without a recorded run, do not count. It does not resist a session that deliberately
+  writes run records with its shell access. Nothing kept on the same computer can.
+- Two runs of one model are two samples of one judge. `--model a,b` gives two models of
+  the vendor. Whether that changes the verdicts is not measured.
+- A Claude judge, for text written by Codex, has not been launched live. Its arguments are
+  built and tested, the call is not.
+- The sentence row of the table "Units and grounds" (a type and its link to an equation, an
+  evidence run or a CITATIONS row) is not built, and no judge reads the notes, the data or
+  a cited paper. Proposed: with the outline contract of stage 4, a registry of links and a
+  family whose calls may read the linked file.
+- A replacement written by a judge is not checked by the code rules before it is reported.
+  It is checked once the lead puts it in the manuscript.
+- The planted texts are fixed fixtures, the same in every run. They test that this judge,
+  with this prompt, applies each rule. A defect made from the manuscript's own sentences
+  (its own number changed, its own sentence moved) is not built.
+- Single coined words, and the items listed as open after stage 2, are unchanged.
+- The tool hooks are still not installed and no manuscript is enrolled, so the gate has
+  not yet held a live session.

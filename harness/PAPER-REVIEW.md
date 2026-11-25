@@ -133,11 +133,13 @@ conflicts before deciding a scientific change; ordinary authorized merges can pr
 
 ## Verification gate
 
-Stages 1 and 2 of [the design](design/paper-verification.md) are implemented: the checks
-that code decides, including the comparison of terms with the literature corpus. They
-supplement the reading duty above and replace none of it. Whether a
-sentence is correct, supported and in its place is the independent verdict of stage 3,
-which does not exist yet.
+Stages 1 to 3 of [the design](design/paper-verification.md) are implemented: the checks
+that code decides, including the comparison of terms with the literature corpus, and the
+independent verdict on what only a reader can decide. They supplement the reading duty
+above and replace none of it. A judge sees a sentence, its paragraph and its headings, so
+whether a sentence is physically correct and supported by the notes, the data or the cited
+source stays with the reading duty. The outline and the scope of central claims are
+stage 4, which does not exist yet.
 
 `node harness/cli.mjs paper-verify <slug> [paper-dir]` splits the manuscript (literal
 `input`/`include` followed, preamble macros without arguments expanded) into titles,
@@ -151,15 +153,26 @@ local edit of one needs none of these files, and no user-approval step is added.
 | `RULES.json` | The project's rules, `{"version": 1, "rules": [...]}`. Harness-wide rules are in `harness/rules.json`. |
 | `LEXICON.json` | `symbols`: `{"symbol", "at"}` or `{"symbol", "standard"}`. `terms`: `{"term"}` with exactly one of `"at"`, `"approved"`, `"ordinary"`. |
 | `FACTS.json` | `facts`: id to `{"file", "pointer"}`, `{"file", "pattern"}` or `{"at"}`. `uses`: sentence to numeral to fact id. |
-| `VERIFY.json` | Written by the CLI only: one verdict for each (unit, rule), bound to content hashes. |
+| `VERIFY.json` | Written by the CLI only: one verdict for each (unit, rule), bound to content hashes. It counts only together with the run metadata the CLI keeps on the same computer. |
 
 - **Rules.** An entry has `id`, `kind`, `source`, at least one `fail` text and one `pass`
   text, and the parameters of its kind. It is refused, and no verdict is produced, unless
   its check flags every `fail` text and passes every `pass` text. A user objection supplies
   the failing text verbatim. Kinds decided by code: `banned` (`pattern`, optional `flags`,
   `roles`, `in: "tex"`), `reference-capital`, `sentence-case-title`, `aside-punctuation`,
-  `hard-wrap`, `defined-before-use`, `term-attested`, `number-bound`, `build`. A rule that only a reader can
-  judge cannot be registered before stage 3. It stays in DECISIONS under the reading duty.
+  `hard-wrap`, `defined-before-use`, `term-attested`, `number-bound`, `build`. Kinds decided
+  by the independent verdict: `judge`, a rule only a reader can apply, with its `question`
+  (what passes and what fails), an optional `family` (the rules asked together in one call,
+  `content` by default) and optional `roles`. And `better`, the search for a better
+  sentence, which has `fail` texts only (texts a judge must improve), since a sentence
+  passes when two judges fail to improve on it and not by registration. The `fail` and
+  `pass` texts of these kinds open with a `\section` heading of their own, and
+  `at` names the sentence the rule is tested on (the last one otherwise). Code cannot test
+  such a rule at registration. Instead every run of the judges plants these texts, so a
+  defect the user found is registered as a `judge` rule with the failing text verbatim and
+  is seeded from then on. A code rule that leaves questions to a reader carries `judge`
+  samples (`{"fail": [...], "pass": [...]}`, each with `tex`, optional `lexicon`, `facts`,
+  `corpus` and the `item` it is about), refused unless they reach the independent verdict.
 - **Units.** `node harness/cli.mjs paper-units <slug> [paper-dir] [filter]` lists unit ids
   (content hashes), positions and numerals. `at` and the keys of `uses` take a unit id or
   `label:<LaTeX label>`, which names the sentence or caption containing that label.
@@ -212,13 +225,48 @@ local edit of one needs none of these files, and no user-approval step is added.
   undefined reference or citation, and a failed build. `--no-build`, or a missing tool,
   leaves the check not judged.
 - **Verdicts.** Pass, fail, awaiting the independent verdict, or not judged. Verification
-  is complete when no verdict fails and none is unjudged. A verdict is judged again only
-  when its unit, its rule or what it depends on changed (a definition site, a bound fact,
-  the calculation output, the attestation of one of its terms). A rebuilt corpus changes
-  only the verdicts whose grounds it changes.
+  is complete when no verdict fails, none is unjudged and none awaits the independent
+  verdict. A verdict is judged again only when its unit, its rule or what it depends on
+  changed (a definition site, a bound fact, the calculation output, the attestation of one
+  of its terms). A rebuilt corpus changes only the verdicts whose grounds it changes.
+- **Independent verdicts.** `node harness/cli.mjs paper-judge <slug> [paper-dir] --writer
+  <claude|codex>` asks judges of the vendor that did not write the manuscript. The writer is
+  a declaration, kept after the first run and printed in every report. Asked are: for every
+  sentence the registered `judge` rules (harness-wide `scope-stated` and `in-place`) and
+  the search for a better sentence under the ranked criteria of the design, and for the
+  units where code left a question, a numeral bound with `at`, a colon or semicolon, a word
+  pair that occurs once, an `ordinary` declaration and the notation declared `standard`.
+  One call holds one unit and one rule family, shows the unit with its paragraph (and, for
+  the rules about a sentence, its headings), and must answer every question with pass or
+  fail, a reason and a quotation of the material shown. An answer that omits a question or
+  quotes nothing is refused and supplies no verdict. A unit that fails a code check is
+  not put to a judge until the failure is fixed.
+- **Seeded defects.** Each run of a judge first plants the registered failing and passing
+  texts of the families it asks in a copy of the manuscript and asks about them in calls of
+  the same form. If the judge misses one seeded defect or fails one passing text, the run
+  is void: the manuscript's questions are not asked and none of its answers is used. A
+  family for which no defect can be planted in this manuscript is not asked.
+- **Two judges.** A (unit, rule) passes when two different valid runs pass it and fails
+  when one fails it. A failed unit is changed, not asked again: the writer cannot overrule
+  a judge, and a disputed verdict goes to the user. A sentence fails `better-sentence`
+  when a judge writes a better one, which the report prints with its criterion. The changed
+  sentence is a new unit, so it and the other sentences of its paragraph are asked again,
+  and nothing else is.
+- **Run metadata.** Every run is recorded under
+  `.harness-local/verdicts/<slug>/<paper-dir>/<run>/`: `run.json` (judge, requested model,
+  seeded defects and their outcome, every call with its answers, tokens and time) and, for
+  each call, the prompt, the schema and the provider's output. The independent verdicts in
+  `VERIFY.json` are read from these records at each `paper-verify` and never from the file.
+  The CLI also records the hash of the `VERIFY.json` it wrote. A file that was written or
+  changed by other means is not accepted: the manuscript counts as unverified and the next
+  `paper-verify` judges every unit again. The records are local to one computer.
+  `--dry-run` prints the number of questions without a call and without enrolling.
+  `--model <a[,b]>` names the model of each run, `--family` and `--limit` narrow a run,
+  `--parallel` sets the simultaneous calls (4).
 - **Reporting.** State the result of an enrolled manuscript by the table `paper-verify`
   prints, with its counts of verdicts awaiting the independent verdict, the corpus it
-  names and its list of what the implemented stages do not judge. A statement that the text was read is not evidence. If the
+  names, the judges, the seeded defects they caught, the void runs and its list of what
+  the implemented stages do not judge. A statement that the text was read is not evidence. If the
   manuscript is unfinished, run `paper-verify <slug> [paper-dir] --wip "<reason>"` and give
   the user the unverified units it prints. Hook and commit behavior are in
   [OPERATIONS](OPERATIONS.md#manuscript-verification-gate).
