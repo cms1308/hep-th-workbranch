@@ -53,26 +53,26 @@ projects/<slug>/
 ## Lifecycle
 
 ```
-/new-project   formulate & plan → scaffold projects/<slug>/
-/import-project onboard pre-existing material (draft, calculations, data) into a project
-/solve         execute next step(s): calculate → verify → notes/ → STATE.md
-/research-review    review a plan, a completed step, or the project against its question → findings → STATE.md
-/auto-calculate Claude-led solve → Codex review → corrections → calculation handoff
-/auto-paper     GPT-led paper → Claude review → corrections → final draft
-/pause         checkpoint before ending a session
-/resume-project cold-start briefing in a new session, then continue
-/paper         JHEP-style draft from established results
-/report        plain-language TL;DR report (tex+pdf) from notes/ — English by default, Korean on request
-/revise        flow-aware revision of the draft
-/line-edit     improve wording and flow while preserving claims; propose or apply edits
-               according to the user's requested mode and project decisions
-/proofread     systematic read-through of the draft: stale refs, symbol collisions,
-               claim/data mismatches vs notes/calc, terminology drift, paragraphs that
-               leave gaps or contradictions in the argument
-/cite-check    every \cite against the cited paper itself: exact location of the claim
-               (equation/section/table), whether the paper is the ORIGINAL source or a
-               restatement, bib entry vs INSPIRE; maintains paper/CITATIONS.md
+/new-project     start a project: formulate and plan a new problem, or reconstruct one
+                 from existing material (draft, calculations, data) → projects/<slug>/
+/resume-project  cold-start briefing in a new session, then continue
+/solve           next step(s): calculate → verify → record → review by the other vendor's
+                 model → corrections → STATE.md; then the paper handoff
+/research-review review of a plan, a step, the project or the manuscript, in this session
+                 (solve and paper dispatch it to the other vendor)
+/paper           paper from reviewed results: outline → draft with the grounds of every
+                 sentence → verification gate → review by the other vendor → corrections
+/revise          every manuscript change: a specified edit or referee response, wording,
+                 or a read-through; the changed units pass the gate again
+/cite-check      every \cite against the cited paper itself: exact location of the claim
+                 (equation/section/table), whether the paper is the ORIGINAL source or a
+                 restatement, bib entry vs INSPIRE; maintains paper/CITATIONS.md
+/report          plain-language TL;DR report (tex+pdf) from notes/ — English by default,
+                 Korean on request
+/pause           checkpoint before ending a session
 ```
+Every command is the same in Claude and in Codex. The app that runs it is the author of
+the work; review and the independent verdicts are always by the other vendor.
 
 If the user says they are about to clear/end the session, run the `/pause` protocol
 without being asked.

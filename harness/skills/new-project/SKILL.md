@@ -1,6 +1,6 @@
 ---
 name: new-project
-description: Start a new hep-th research project from a problem the user brings — study background via LLMwiki, formulate the problem precisely, decompose into verifiable steps, and scaffold the project directory. Use when the user brings a new physics problem or asks to start a project.
+description: Start a hep-th research project — from a problem the user brings (study the background in LLMwiki, formulate it precisely, decompose it into verifiable steps) or from existing material (a draft, calculations, data, notes: inventory it, reconstruct the project and its support, interview the user) — and scaffold the project directory. Use when the user brings a new problem, asks to start a project, or brings work that already exists outside this repository.
 ---
 
 ## Shared memory and execution contract
@@ -57,6 +57,40 @@ Input: the user's problem statement (possibly vague), from $ARGUMENTS or the con
 Scaffold STATE, PLAN, RESULTS, DECISIONS, HISTORY and OPEN-QUESTIONS from their
 templates together. Results and the full plan go in their dedicated files; STATE
 links them. Imported claims retain their original verification status.
+
+## Starting from existing material
+
+When the user brings work that already exists outside this repository (a draft,
+notebooks or scripts, data, notes), the input is the path(s) to it. These steps take the
+place of sections 1–3; scaffolding and the user's sign-off follow section 4, with the
+additions of step 5.
+
+1. **Inventory.** Read everything the user points at and classify each file: draft
+   (.tex/.pdf), calculation (notebook/script), data, notes or correspondence. Report what
+   was found before analyzing.
+2. **Reconstruct from the material, not from guesses**: the problem and its intended
+   success criteria; the conventions in use; which results are established and how each is
+   supported (a reproducible calculation in the material, derived in the draft only, or
+   merely claimed; a claim is never upgraded to a result); what visibly remains (TODOs,
+   missing sections, dangling references, unverified steps).
+3. **Cross-check knowledge.** Collect the draft's references and check which are in the
+   wiki; name the missing key ones with arXiv ids for ingest, and read the relevant wiki
+   pages.
+4. **Interview the user** in Korean with the reconstruction, and ask what the files cannot
+   tell: whether the problem statement is right and what the goal is now, which results
+   the user considers solid or shaky, known issues, referee feedback or abandoned
+   directions, and whether to copy or move the originals (default: copy, originals
+   untouched).
+5. **Scaffold** as in section 4, with the draft in `paper/` and calculations and data in
+   `calc/` (a one-line header noting provenance and import date), an existing or short
+   new section outline, `notes/00-import.md` as the import audit (inventory, result-by-result
+   support status, discrepancies, what was not verified), PLAN with the done steps checked,
+   and every imported result in RESULTS tagged **[imported — verified here: yes/no]**.
+6. **Offer verification.** Propose which imported results to verify first (cheap,
+   load-bearing or shaky) as the first `/solve` steps; the user decides and the plan
+   records it. An imported result loses its tag only after passing a check in this harness.
+   An imported draft is enrolled in the verification gate when `/paper` or `/revise` first
+   works on it.
 
 ## Changing the question of an existing project
 

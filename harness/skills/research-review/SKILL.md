@@ -1,12 +1,13 @@
 ---
 name: research-review
-description: Review a research project's plan, a completed calculation step, or the whole project against its question, including re-review after corrections. Use to review a research plan, a completed solve step, or the project as a whole (on a change of question, before /paper, or on request) in either Codex or Claude. Records findings and independent checks without rewriting the author's calculation. Paper editing and whole-draft citation audits use their existing skills.
+description: Review a research project's plan, a completed calculation step, the whole project against its question, or its manuscript, including re-review after corrections. Use to review in this session, in Codex or Claude; solve and paper dispatch the same review to the other vendor's model. Records findings and independent checks without rewriting the author's work. Manuscript editing uses revise and whole-draft citation audits cite-check.
 ---
 
-# Plan and calculation review
+# Research review
 
 Input examples: `/research-review <slug> plan`, `/research-review <slug> step 3`,
-`/research-review <slug> recheck step 3`, `/research-review <slug> project`. Infer the project from the user's context.
+`/research-review <slug> recheck step 3`, `/research-review <slug> project`,
+`/research-review <slug> paper`. Infer the project from the user's context.
 Without a target, review the plan if no calculation exists; otherwise review the
 latest completed step awaiting review. Ask only if the target remains ambiguous.
 
@@ -71,6 +72,29 @@ split into per-step items. Write `notes/review-project-YYYY-MM-DD.md` with the v
 `ready` (the work can answer the question as planned), `corrections required` or
 `inconclusive`, scoped to the question as stated.
 
+## Manuscript review
+
+Target `paper`: `/research-review <slug> paper`, or the review that paper's workflow
+dispatches to the vendor that did not write the manuscript. Read PAPER-STYLE, PAPER-REVIEW
+and the manuscript in scope, with the results, notes and data it relies on, and check its
+citations against their primary sources as cite-check describes. Check:
+
+- Claims, assumptions and quantifiers agree with the supporting record. A finite expansion,
+  a restricted parameter range or a numerical check is not an all-orders proof.
+- Each central claim has the same scope in the abstract, introduction, body and conclusion.
+- Equations, tables, captions and text agree; notation is defined before use and consistent;
+  references point to the right material; renames have left no stale term.
+- The argument has its necessary steps and no contradiction or redundancy. Definitions,
+  motivation and transitions may serve it without a new result. A missing paragraph map is
+  not a finding.
+- Each Section does what its title says, and each sentence stands where its subject is.
+- Terminology is the literature's or defined in the manuscript; no coined labels, and no
+  work log in place of exposition.
+
+Findings follow the record rules below, with the verdict scoped to the manuscript. A
+`ready` verdict attests only the checks the report lists; the table of the verification
+gate is separate evidence and is not reported as the reviewer's own.
+
 ## Completed-step review
 
 1. Identify the step, result IDs, predeclared criteria, assumptions and dependencies.
@@ -99,7 +123,7 @@ split into per-step items. Write `notes/review-project-YYYY-MM-DD.md` with the v
 ## Record and hand off
 
 Write an English review note under `notes/review-plan-YYYY-MM-DD.md`,
-`notes/review-step-NN-YYYY-MM-DD.md` or `notes/review-project-YYYY-MM-DD.md`; use a new suffix for subsequent passes so the
+`notes/review-step-NN-YYYY-MM-DD.md`, `notes/review-project-YYYY-MM-DD.md` or `notes/review-paper-YYYY-MM-DD.md`; use a new suffix for subsequent passes so the
 earlier record survives. Include:
 
 - Target and reviewed versions, actual reviewer, and agreed success criteria.

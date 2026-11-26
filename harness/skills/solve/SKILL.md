@@ -1,6 +1,6 @@
 ---
 name: solve
-description: Execute the next step(s) of the active research project — calculate, verify, record, update state. Use when the user says to continue, solve, or do the next step of a project.
+description: Execute the next step(s) of the active research project — calculate, verify, record, have the other vendor's model review each step, correct, update state — and hand the reviewed results to the paper. The same command in Claude and in Codex. Use when the user says to continue, solve, or do the next step of a project.
 ---
 
 ## Shared memory and execution contract
@@ -16,6 +16,9 @@ flush only the files changed by this task as described in `harness/OPERATIONS.md
 
 Precondition: `PROJECT.md` and `STATE.md` of the project have been read this session.
 Scope: the step(s) the user asked for; if unspecified, the next unchecked plan step.
+The calculating app is the lead: `claude` in Claude Code, `codex` in Codex. Its reviewer is
+always the other vendor (commands, acceptance and recovery in `harness/AUTOMATION.md`).
+User sign-off of the formulation stays the user's; a model's plan review does not replace it.
 
 Before each nontrivial calculation read `harness/EVIDENCE.md`, prepare the
 verification spec before running, and record its run manifest. An execution PASS
@@ -48,6 +51,30 @@ For each step:
    note sections and relevant issues, each with a link and reason; follow MEMORY's
    dependency and decision rules rather than accumulating completed-step notes.
    Run `node harness/cli.mjs check <slug>`; report remaining findings honestly.
+6. **Review by the other vendor.** Before the first step of a plan that has not been
+   reviewed, run `node harness/cli.mjs review-request <slug> --target plan --reviewer
+   <other vendor>`; after each step is checkpointed, `--target step-N`. Do not edit the
+   project while it runs. Accept only a completed, current report (AUTOMATION), save it in
+   full as `notes/review-<target>-<run-id>.md`, and update STATE, RESULTS and
+   OPEN-QUESTIONS by research-review's record rules.
+   - Corrections required: fix the blocking findings with this skill, checkpoint and request
+     a review of the same target again, keeping earlier reports and finding IDs. At most
+     three rounds for a target unless the user set another limit.
+   - A reviewer is report-only and runs no code. A check it asks for is arranged as a
+     separately scoped research-review under EVIDENCE.md before the re-review.
+   - Inconclusive, failed execution, missing references, exhausted usage, changed scope or
+     conflicting evidence: preserve the state and report what is needed. Do not retry
+     silently or advance dependent steps.
+   - Ready: go on to the next authorized step without another instruction. A passed review
+     does not turn finite-order or numerical evidence into a proof. A step the user exempts
+     from review is recorded as unreviewed in RESULTS.
+
+When all results the agreed paper needs are reviewed, write `notes/paper-handoff.md`
+(result IDs, criteria, review links and versions, assumptions, unresolved limitations, the
+proposed thesis, required reading), set STATE's next action to `/paper`, checkpoint and
+stop; do not start writing the paper in the same pass. On resumption reconstruct review
+rounds and outstanding work from STATE and the saved review runs; a restart never resets
+the round count.
 
 If a step reveals the plan itself is wrong, propose the revised plan to the user before
 continuing — do not silently reroute. If the user's instruction changes the question the

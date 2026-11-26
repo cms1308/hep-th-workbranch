@@ -19,15 +19,15 @@ multiple computers and checkpoint commands.
 
 ## Research lifecycle
 
-`/new-project` or `/import-project` → `/solve` → `/paper` or `/report` →
-`/revise`, `/proofread`, `/cite-check`. `/pause` records WIP; `/resume-project` resumes.
+`/new-project` → `/solve` → `/paper` or `/report` → `/revise`, `/cite-check`.
+`/pause` records WIP; `/resume-project` resumes. Every command is the same in Claude and
+Codex; the other vendor's model reviews and judges.
 Interaction is Korean; artifacts are English unless the project/user specifies otherwise.
 
-For automatic calls, use `/auto-calculate <slug>` in Claude, then `/auto-paper <slug>`
-in GPT/Codex after calculation handoff. The lead conversation invokes the other CLI
-for report-only reviews and handles corrections. See [automatic calls](harness/AUTOMATION.md)
-for configuration, status, recovery and limitations. The standalone `/research-review`
-skill still reviews in the current session without switching or dispatching models.
+`/solve` and `/paper` call the other vendor's CLI for report-only reviews and handle the
+corrections in the lead conversation. See [automatic calls](harness/AUTOMATION.md) for
+configuration, status, recovery and limitations. `/research-review` also reviews in the
+current session without dispatching.
 
 Each project is a separate Git repository under `projects/` (gitignored by this repo):
 

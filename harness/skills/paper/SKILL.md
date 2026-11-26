@@ -1,45 +1,81 @@
 ---
 name: paper
-description: Write a JHEP-style LaTeX paper draft in paper/ from the project's established results. Use when the user asks for a draft, write-up, or paper.
+description: Write a project's paper from its reviewed results to a verified draft — claims and outline, the draft with the grounds of every sentence, the verification gate, review by the other vendor's model and corrections. The same command in Claude and in Codex. Use when the user asks for a draft, write-up or paper.
 ---
 
-Read `harness/PAPER-REVIEW.md` for shared context, authorization, validation and saving,
-and `PAPER-STYLE.md` for prose. This workflow writes from recorded results and primary
-sources, not from memory of the conversation.
+Read `harness/PAPER-REVIEW.md` (with its verification gate), `PAPER-STYLE.md` and
+`harness/AUTOMATION.md`. Write from recorded results and primary sources, not from memory
+of the conversation.
 
-## Establish the scope
+The writer is the app that runs this skill: `claude` in Claude Code, `codex` in Codex.
+The reviewer and the judges are always of the other vendor. Nothing else in these steps
+depends on which app writes.
 
-Read the relevant RESULTS entries and supporting notes, including assumptions and
-verification limits. Identify the main contribution and what evidence supports it.
-Keep conjectures and preliminary results explicitly qualified; resolve a material
-uncertainty about including them before treating them as an established result.
+## 1. Prerequisites
 
-For a substantial draft, make a short section outline using `templates/PUNCHLINES.md`
-when a separate outline helps continuity. Do not plan every paragraph in advance.
-If the user has already supplied or authorized the scope, proceed with drafting.
-Ask about an unresolved scientific or scope choice, not for routine outline approval.
+- Read `notes/paper-handoff.md` if present, the RESULTS entries the paper will state,
+  their notes, reviews, assumptions and limits. A result whose calculation has no passed
+  review is not stated as established: finish its review with solve, or stop and report.
+- Every source the paper will cite must be in the wiki, since the grounds quote its text.
+  Ingest a missing one as the user's working rules say. Search the literature beyond the
+  wiki before calling anything new.
+- Ask only about an unresolved scientific or scope choice, not for routine approval.
 
-## Draft
+## 2. Claims and structure
 
-- Use the project's JHEP setup. Look for `jheppub.sty` locally or in a sibling LaTeX
-  directory; otherwise obtain it from the JHEP author site.
-- Use `paper/main.tex` and the existing included sources. Preserve any separately
-  requested manuscript directory or author version.
-- Obtain bibliography metadata from recorded references or INSPIRE. Check new citation
-  claims against the primary paper, including attribution to original sources.
-- Organize the argument for the reader. Include definitions, derivations and checks
-  where needed, and move lengthy supporting material to appendices when appropriate.
-- Write original prose, keeping notation, assumptions and test ranges intact. Search
-  the literature before describing a result as new. The abstract and conclusion must
-  match what the body actually establishes.
-- Revise the section outline when the argument changes. No per-paragraph anchors or
-  full map coverage are required for ordinary drafting.
+Write `OUTLINE.json` before the prose: the central claims, each with the restrictions it
+holds under, the sentences that will state the setting, and the role of every Section and
+paragraph. Revise it when the argument changes. Definitions, motivation and transitions are
+roles like any other.
 
-## Deliver
+## 3. Draft
 
-Read the draft for scientific consistency and flow; compile and inspect affected layout.
-Check the citations added in this pass. Use cite-check for the full audit before
-submission or when requested. Detailed scan/attestation tracking is optional under
-PAPER-REVIEW; do not represent drafting or compilation as a completed independent review.
-Update STATE with the draft's scope, remaining issues and review status, checkpoint the
-changed files, and report the manuscript location and validation outcome in Korean.
+- Use the project's JHEP setup: `jheppub.sty` locally or in a sibling LaTeX directory,
+  otherwise from the JHEP author site; `paper/main.tex` and its included sources. Preserve
+  a separately requested manuscript directory or author version.
+- Take bibliography metadata from recorded references or INSPIRE.
+- Organize the argument for the reader: definitions, derivations and checks where needed,
+  lengthy support in appendices. Keep notation, assumptions and test ranges intact. The
+  abstract and conclusion state what the body establishes, with the same scope.
+- Write each sentence with its ground, in the same pass:
+  - its entry in `GROUNDS.json`: its type and the quoted passages of notes, RESULTS,
+    calculation outputs or cited sources that it rests on;
+  - each numeral in `FACTS.json`: a calculation output, or a declared name;
+  - each symbol, and each term the literature does not attest, in `LEXICON.json`.
+  A sentence that no record supports is not written.
+
+## 4. Verification gate
+
+- `node harness/cli.mjs paper-verify <slug>`: its first run enrolls the draft. Repeat until
+  code finds nothing to fix.
+- `node harness/cli.mjs paper-judge <slug> --writer <writer>`. A failed unit is changed,
+  never overruled. A verdict the writer disputes goes to the user. Changed units are
+  verified again.
+
+## 5. Citations and the lead's reading
+
+- Run cite-check for every citation of the draft.
+- Read the whole manuscript sentence by sentence against the records (PAPER-REVIEW, "Judge
+  every sentence"). The gate and the review do not replace this reading.
+
+## 6. Review by the other vendor
+
+- `node harness/cli.mjs review-request <slug> --target paper --reviewer <other vendor>`.
+  Do not edit the project while it runs.
+- Accept only a completed, current report (AUTOMATION). Save it in full with its version
+  metadata as `notes/review-paper-<run-id>.md`, and record its scope and unresolved
+  findings in STATE.
+- Fix blocking findings with revise, which verifies the changed units again, and request a
+  re-review. Keep earlier reports and finding IDs. At most three correction rounds unless
+  the user set another limit; reconstruct the count across sessions.
+- Stop and record an inconclusive or failed review, a usage limit, a missing source, a scope
+  decision or a physical contradiction. A calculation defect goes back to solve:
+  unsupported physics is never repaired by changing prose.
+
+## 7. Done
+
+The draft is done when the `paper-verify` table shows no failure and nothing awaiting, the
+latest review passes for the final files and the PDF compiles. Update STATE, checkpoint,
+and report in Korean with that table and the review record. An unfinished draft is
+reported with `paper-verify --wip "<reason>"` and its list of unverified units. Submission
+is the user's decision.

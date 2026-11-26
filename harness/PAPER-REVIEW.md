@@ -1,6 +1,6 @@
 # Writing and reviewing papers
 
-This is the shared workflow for paper, revise, line-edit, proofread and cite-check.
+This is the shared workflow for paper, revise and cite-check, and for the manuscript review of research-review.
 Use [PAPER-STYLE](../PAPER-STYLE.md) for prose and [MEMORY](MEMORY.md) for project records.
 Every manuscript-writing and revision task requires sentence-by-sentence judgment under
 the permanent rule below (user instruction, 2026-11-04).
@@ -153,8 +153,11 @@ a real manuscript is stage 5, which has not been run.
 `input`/`include` followed, preamble macros without arguments expanded) into titles,
 paragraphs and sentences, extracts the numerals, symbols and candidate terms of each
 sentence, applies every registered rule and writes `<paper-dir>/VERIFY.json`. Its first
-run enrolls the manuscript. Only an enrolled manuscript is gated. An ordinary draft or a
-local edit of one needs none of these files, and no user-approval step is added.
+run enrolls the manuscript. A draft written with `/paper` is enrolled from its first
+verification, and `/revise` puts the units it changed through the gate again; a local edit
+verifies its own units, not the whole draft. A manuscript outside that workflow (an author
+copy, a draft from before the gate) needs none of these files until `/paper` or `/revise`
+first works on it. No user-approval step is added.
 
 | File in the paper directory | Content |
 | --- | --- |

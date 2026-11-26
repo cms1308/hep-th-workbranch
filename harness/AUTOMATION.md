@@ -1,8 +1,9 @@
 # Conversation-led model calls
 
-Use `/auto-calculate <slug>` in Claude for calculations with Codex review, then
-`/auto-paper <slug>` in Codex for writing with Claude review. These shared skills
-drive the loop in the active conversation; the CLI dispatches one review at a time.
+`/solve` has each plan and step reviewed, and `/paper` the manuscript, by the model of the
+vendor that did not do the work: in Claude Code the reviewer is `codex`, in Codex it is
+`claude`. The same skills drive the loop in either app; the CLI dispatches one review at a
+time.
 If a new skill is not discovered until app restart, explicitly read its shared
 `harness/skills/<name>/SKILL.md`. No desktop chat is created or switched automatically.
 
