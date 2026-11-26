@@ -723,13 +723,15 @@ export function recorded(project, paper, writer) {
       index.set(key, [...(index.get(key) || []), { run: run.id, n: c.n, model: run.requestedModel ?? MODEL, answers: kept }]);
     }
     const sum = pick => Object.values(tally).reduce((n, t) => n + t[pick], 0);
-    runs.set(run.id, { id: run.id, time: run.started, provider: run.provider, model: run.requestedModel ?? null, models: run.models || [], calls: run.calls.length, planted: sum('planted'), met: sum('met'),
+    runs.set(run.id, { id: run.id, time: run.started, provider: run.provider, model: run.requestedModel ?? null, ...(run.configured ? { configured: run.configured } : {}), models: run.models || [], calls: run.calls.length, planted: sum('planted'), met: sum('met'),
       unfit: Object.keys(tally).filter(rule => !fit(rule)).sort(), missed: [...new Set(calls.flatMap(c => (c.planted || []).filter(p => p.met !== true).map(p => p.id)))].sort() });
   }
   return { index, runs };
 }
 export const MODEL = 'default';                          // how a judge is told apart when no model was named for its run
-const judgeName = r => `${r.provider}, ${r.model ? `model ${r.model}` : 'provider default model'}${r.models?.length ? ` (reported: ${r.models.join(', ')})` : ''}`;
+// The model a run asked for: one named for it, else the one configured for the provider (passed explicitly by the call), else the provider's default.
+export const judgeModel = (named, conf) => `${named ? `model ${named}` : conf?.model ? `configured model ${conf.model}` : 'provider default model'}${conf?.effort ? ` at effort ${conf.effort}` : ''}`;
+const judgeName = r => `${r.provider}, ${judgeModel(r.model, r.configured)}${r.models?.length ? ` (reported: ${r.models.join(', ')})` : ''}`;
 // The independent verdicts into the checks: one failing run fails a (unit, rule), `judges` passing judges pass it, fewer leave it
 // awaiting. Judges are told apart by model: the runs of one model give one passing vote, since they read alike (measured: design
 // record). q.lacks: for each rule of the question that still needs a judge, the models that have passed it.

@@ -360,6 +360,11 @@ local edit of one needs none of these files, and no user-approval step is added.
   of a call that did not improve the planted wordy sentence are not printed. A judge sees
   one paragraph: a replacement that changes a claim is checked against the notes before it
   is taken, and a sentence that is changed is verified again like any other edit.
+- **The call.** A judge's call carries its whole question in the prompt, the instruction
+  `harness/judge-instructions.md` in place of the provider's own, no tool and neither the
+  user's Codex configuration nor the user's Claude settings. The model and effort that the
+  user configured are passed explicitly unless `--model` names one, and the report names
+  them. Codex needs `HEP_CODEX_BIN` where it is not on the PATH.
 - **Run metadata.** Every run is recorded under
   `.harness-local/verdicts/<slug>/<paper-dir>/<run>/`: `run.json` (judge, requested model,
   the planted texts, every call with its answers, the outcome of its planted texts, tokens

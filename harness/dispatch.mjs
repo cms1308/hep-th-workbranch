@@ -3,6 +3,7 @@ import path from 'node:path';
 import os from 'node:os';
 import crypto from 'node:crypto';
 import { spawn } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { git, read, json, sha, safePath, repository, writeJSON } from './core.mjs';
 
 export const schema = {
@@ -34,11 +35,34 @@ export function executable(provider) {
   return fs.existsSync(native) ? native : provider;
 }
 
-// narrow: a call that carries everything in its prompt (a verdict on one unit). It runs outside any repository, without tools, and keeps no session.
-export function invocation(provider, dir, model, { narrow = false, schema: shape = schema } = {}) {
+// The instruction a judge's call carries in place of the provider's own: the question is all in the prompt.
+export const JUDGE_INSTRUCTIONS = path.join(path.dirname(fileURLToPath(import.meta.url)), 'judge-instructions.md');
+// Codex features whose tools or notices a judge does not use. Set by -c, which ignores a name the CLI does not know (--disable stops on it).
+const IDLE = ['shell_tool', 'unified_exec', 'multi_agent', 'image_generation', 'goals', 'plugins', 'apps', 'browser_use', 'browser_use_external', 'computer_use', 'in_app_browser',
+  'sleep_tool', 'skill_search', 'tool_suggest', 'code_mode_host', 'hooks', 'view_image'];
+const toml = value => JSON.stringify(value);                // a TOML basic string has the escapes of JSON
+// The model and effort the user configured for a provider, which a judge's call passes explicitly since it leaves the configuration out.
+export function configured(provider, env = process.env) {
+  try {
+    if (provider === 'codex') {
+      const text = fs.readFileSync(path.join(env.CODEX_HOME || path.join(os.homedir(), '.codex'), 'config.toml'), 'utf8').split(/^\s*\[/m)[0];
+      const key = name => text.match(new RegExp(`^\\s*${name}\\s*=\\s*"([^"]*)"`, 'm'))?.[1] || null;
+      return { model: key('model'), effort: key('model_reasoning_effort') };
+    }
+    const settings = json(path.join(env.CLAUDE_CONFIG_DIR || path.join(os.homedir(), '.claude'), 'settings.json'));
+    return { model: typeof settings.model === 'string' ? settings.model : null, effort: typeof settings.effortLevel === 'string' ? settings.effortLevel : null };
+  } catch { return { model: null, effort: null }; }
+}
+// narrow: a call that carries everything in its prompt (a verdict on one unit). It runs outside any repository, without tools, keeps no session,
+// and carries the judge's instruction instead of the provider's, without the user's configuration (measured: design record).
+export function invocation(provider, dir, model, { narrow = false, schema: shape = schema, effort = null } = {}) {
+  const lean = provider === 'codex'
+    ? ['--ignore-user-config', ...['include_permissions_instructions=false', 'include_apps_instructions=false', 'include_collaboration_mode_instructions=false', 'include_environment_context=false',
+      'web_search="disabled"', `model_instructions_file=${toml(JUDGE_INSTRUCTIONS)}`, ...IDLE.map(f => `features.${f}=false`), ...(effort ? [`model_reasoning_effort=${toml(effort)}`] : [])].flatMap(c => ['-c', c])]
+    : ['--system-prompt', fs.readFileSync(JUDGE_INSTRUCTIONS, 'utf8').trim(), '--disable-slash-commands', '--setting-sources', '', ...(effort ? ['--effort', effort] : [])];
   const args = provider === 'codex'
-    ? ['exec', '--sandbox', 'read-only', ...(narrow ? ['--skip-git-repo-check', '--ephemeral'] : []), '--json', '--output-schema', path.join(dir, 'schema.json'), '-o', path.join(dir, 'response.json'), '-']
-    : ['-p', '--output-format', 'json', '--json-schema', JSON.stringify(shape), '--permission-mode', 'dontAsk', '--tools', narrow ? '' : 'Read,Glob,Grep,WebFetch,WebSearch', ...(narrow ? ['--strict-mcp-config', '--no-session-persistence'] : [])];
+    ? ['exec', '--sandbox', 'read-only', ...(narrow ? ['--skip-git-repo-check', '--ephemeral', ...lean] : []), '--json', '--output-schema', path.join(dir, 'schema.json'), '-o', path.join(dir, 'response.json'), '-']
+    : ['-p', '--output-format', 'json', '--json-schema', JSON.stringify(shape), '--permission-mode', 'dontAsk', '--tools', narrow ? '' : 'Read,Glob,Grep,WebFetch,WebSearch', ...(narrow ? ['--strict-mcp-config', '--no-session-persistence', ...lean] : [])];
   if (model) args.push('--model', model);
   return { command: executable(provider), args };
 }

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { request, status, invocation, execute } from '../harness/dispatch.mjs';
+import { request, status, invocation, execute, configured, JUDGE_INSTRUCTIONS } from '../harness/dispatch.mjs';
 import { git, write, writeJSON } from '../harness/core.mjs';
 
 function fixture(t) {
@@ -89,4 +89,26 @@ test('provider arguments restrict review tools and preserve explicit models', ()
   assert.equal(claude.args.at(-1), 'requested-model');
   assert.equal(claude.args[claude.args.indexOf('--tools') + 1].includes('Bash'), false);
   assert.ok(invocation('codex', '/tmp').args.includes('read-only'));
+});
+
+test('a judge call carries the judge instruction, no tool and no user configuration, and is given the configured model and effort', t => {
+  const codex = invocation('codex', '/tmp', 'm', { narrow: true, effort: 'xhigh' }).args, set = codex.flatMap((x, i) => x === '-c' ? [codex[i + 1]] : []);
+  assert.ok(codex.includes('--ignore-user-config'));
+  for (const c of [`model_instructions_file=${JSON.stringify(JUDGE_INSTRUCTIONS)}`, 'model_reasoning_effort="xhigh"', 'features.shell_tool=false', 'features.multi_agent=false', 'include_environment_context=false', 'web_search="disabled"'])
+    assert.ok(set.includes(c), c);
+  assert.ok(!codex.includes('--disable'), 'a feature that the CLI does not know must not stop the call');
+  assert.deepEqual(codex.slice(-2), ['--model', 'm']);
+  const claude = invocation('claude', '/tmp', 'c', { narrow: true, effort: 'high' }).args;
+  assert.equal(claude[claude.indexOf('--system-prompt') + 1], fs.readFileSync(JUDGE_INSTRUCTIONS, 'utf8').trim());
+  assert.deepEqual([claude[claude.indexOf('--setting-sources') + 1], claude[claude.indexOf('--effort') + 1], claude[claude.indexOf('--tools') + 1]], ['', 'high', '']);
+  assert.ok(claude.includes('--disable-slash-commands'));
+  for (const review of [invocation('codex', '/tmp').args, invocation('claude', '/tmp').args])
+    assert.ok(!review.includes('--ignore-user-config') && !review.includes('--system-prompt'), 'a review keeps its tools and configuration');
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'hep-config-'));
+  t.after(() => fs.rmSync(home, { recursive: true, force: true }));
+  fs.writeFileSync(path.join(home, 'config.toml'), 'notify = ["x"]\nmodel = "gpt-x"\nmodel_reasoning_effort = "xhigh"\n\n[profiles.other]\nmodel = "gpt-y"\n');
+  writeJSON(path.join(home, 'settings.json'), { model: 'fable', effortLevel: 'max' });
+  assert.deepEqual(configured('codex', { CODEX_HOME: home }), { model: 'gpt-x', effort: 'xhigh' }, 'a value in a later table is not the configured one');
+  assert.deepEqual(configured('claude', { CLAUDE_CONFIG_DIR: home }), { model: 'fable', effort: 'max' });
+  assert.deepEqual(configured('codex', { CODEX_HOME: path.join(home, 'missing') }), { model: null, effort: null });
 });

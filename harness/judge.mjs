@@ -10,14 +10,16 @@ import os from 'node:os';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { json, sha, safePath, writeJSON } from './core.mjs';
-import { execute, invocation, collect } from './dispatch.mjs';
+import { execute, invocation, collect, configured } from './dispatch.mjs';
 import { load as storedCorpus } from './corpus.mjs';
-import { verify, examine, report, ledger, declaredWriter, family, designates, target, CHECKS, JUDGE, MODEL, CRITERIA, FIT, SHORTER } from './verify.mjs';
+import { verify, examine, report, ledger, declaredWriter, family, designates, target, judgeModel, CHECKS, JUDGE, MODEL, CRITERIA, FIT, SHORTER } from './verify.mjs';
 
 export const VENDORS = ['claude', 'codex'];
 export const BATCH = 25;                                 // units judged without their paragraph that one call holds, by default
 const fence = text => `<<<\n${text}\n>>>`;
 const bare = text => String(text).replace(/\s+/g, '');
+// A quotation is compared without spacing and without math delimiters, which a judge adds to close a formula it cuts (live, 2 of 17 answers).
+const quoted = text => bare(text).replace(/\$/g, '');
 const words = text => String(text).replace(/\\label\s*\{[^}]*\}/g, ' ').split(/\s+/).filter(Boolean).length;
 const sample = s => typeof s === 'string' ? { tex: s } : s;
 
@@ -64,12 +66,12 @@ export function shape(call) {
 // A replacement that is only shorter, by less than a fifth of the words, does not count: the judge has not improved the unit.
 export function reading(call, value) {
   if (!value || typeof value !== 'object') throw Error('Answer refused: no structured answer');
-  const shown = bare(material(call)), ok = {}, refused = {};
+  const shown = quoted(material(call)), ok = {}, refused = {};
   for (const e of call.blocks.flatMap(b => b.entries)) for (const i of e.items) {
     const a = value[i.key], no = why => { refused[i.key] = why; };
     if (!a || !['pass', 'fail'].includes(a.verdict)) { no('no verdict'); continue; }
     if (typeof a.reason !== 'string' || !a.reason.trim()) { no('no reason'); continue; }
-    if (typeof a.evidence !== 'string' || !bare(a.evidence) || !shown.includes(bare(a.evidence))) { no('the evidence is not a quotation of the material shown'); continue; }
+    if (typeof a.evidence !== 'string' || !quoted(a.evidence) || !shown.includes(quoted(a.evidence))) { no('the evidence is not a quotation of the material shown'); continue; }
     const out = { v: a.verdict, reason: a.reason.trim(), evidence: a.evidence.trim() };
     if (i.better && a.verdict === 'fail') {
       if (typeof a.sentence !== 'string' || !bare(a.sentence) || bare(a.sentence) === bare(e.text)) { no('the unit is failed without a different sentence'); continue; }
@@ -170,12 +172,12 @@ async function pool(items, size, work) {
   await Promise.all(Array.from({ length: Math.max(1, Math.min(size, items.length)) }, async () => { while (next < items.length) await work(items[next++]); }));
 }
 // One run of one judge over the questions in `need`.
-async function run({ project, paper, slug, dir, writer, provider, model, need, list, check, batch, parallel, timeout, runner, gate, advice = false }) {
+async function run({ project, paper, slug, dir, writer, provider, model, settings = {}, need, list, check, batch, parallel, timeout, runner, gate, advice = false }) {
   const id = crypto.randomBytes(6).toString('hex'), base = path.join(dir, id), asked = [...new Set(need.map(q => q.family))];
   const planted = plant(list, new Set(asked)), fx = fixtures(examine(project, paper, { corpus: check.corpus, ...(check.sources ? { sources: check.sources } : {}), extra: planted.extra }), planted.samples);
   // A family is asked only if a seeded defect of it can be planted in this manuscript: without one no call could be trusted.
   const covered = asked.filter(name => fx.by.get(name)?.defects), queue = covered.flatMap(name => compose(name, need.filter(q => q.family === name), fx.by.get(name), batch, id)).map((c, n) => ({ ...c, n: n + 1 }));
-  const record = { version: 2, tool: JUDGE, id, slug, paper, writer, provider, requestedModel: model || null, models: [], gate, batch, ...(advice ? { advice: true } : {}), started: new Date().toISOString(), finished: null, state: 'running',
+  const record = { version: 2, tool: JUDGE, id, slug, paper, writer, provider, requestedModel: model || null, ...(settings.model || settings.effort ? { configured: settings } : {}), models: [], gate, batch, ...(advice ? { advice: true } : {}), started: new Date().toISOString(), finished: null, state: 'running',
     seeds: fx.seeds, unseeded: asked.filter(name => !covered.includes(name)).sort(), calls: [] };
   const file = path.join(base, 'run.json'), scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'hep-judge-'));
   const ask = async c => {
@@ -184,7 +186,7 @@ async function run({ project, paper, slug, dir, writer, provider, model, need, l
     try {
       fs.mkdirSync(cdir, { recursive: true });
       fs.writeFileSync(path.join(cdir, 'prompt.txt'), text); writeJSON(path.join(cdir, 'schema.json'), schema);
-      const call = invocation(provider, cdir, model, { narrow: true, schema });
+      const call = invocation(provider, cdir, model || settings.model, { narrow: true, schema, effort: settings.effort });
       // `call` describes the questions for an injected judge (tests); the provider process receives the prompt only.
       await runner(call.command, call.args, { cwd: scratch, dir: cdir, prompt: text, timeout,
         call: { n: c.n, family: c.family, provider, entries: entries.map(e => ({ label: e.label, unit: e.unit, planted: !e.real, text: e.text, whole: !!e.whole, items: e.items.map(i => ({ key: i.key, id: i.show, rule: i.rule, tag: i.tag, better: !!i.better, expect: i.expect ?? null, seed: i.seed ?? null })) })) } });
@@ -251,6 +253,8 @@ export async function judge(root, slug, paper = 'paper', { writer, models = [], 
   const project = safePath(root, `projects/${slug}`), who = writer ?? declaredWriter(project, paper);
   if (!VENDORS.includes(who)) throw Error('Name the vendor whose model wrote the manuscript with --writer claude or --writer codex: the judges are taken from the other vendor.');
   const provider = VENDORS.find(v => v !== who), dir = ledger(project, paper), lit = corpus ? corpus() : storedCorpus(root);
+  // A call leaves the user's configuration out, so it is given the model and effort configured there. An injected judge (tests) reads none.
+  const settings = runner === execute ? configured(provider) : {};
   const check = { ...(build ? { build } : {}), ...(sources ? { sources } : {}), corpus: () => lit, writer: who }, out = { slug, paper, writer: who, provider, runs: [], plan: null };
   fs.mkdirSync(dir, { recursive: true });
   const lock = path.join(dir, 'active.lock');
@@ -271,7 +275,7 @@ export async function judge(root, slug, paper = 'paper', { writer, models = [], 
           note: `the calls of one run of a judge: one for each paragraph and rule family, and one for every ${batch} units that are judged without their paragraph; each call carries the planted texts of its family${advice ? '; advice is one run and gives no verdict' : `, and a question needs ${judges === 1 ? 'one passing judge' : `${judges} passing judges of different models`}`}` };
         break;
       }
-      out.runs.push(await run({ project, paper, slug, dir, writer: who, provider, model, need, list: result.list, check, batch, parallel, timeout, runner, gate: result.state.hash, advice }));
+      out.runs.push(await run({ project, paper, slug, dir, writer: who, provider, model, settings, need, list: result.list, check, batch, parallel, timeout, runner, gate: result.state.hash, advice }));
     }
     out.result = verify(project, paper, { ...check, dry });
     // The replacements a judge wrote, from the calls in which it also improved the planted wordy sentence.
@@ -282,7 +286,7 @@ export async function judge(root, slug, paper = 'paper', { writer, models = [], 
 }
 // What the runs did, for the report to the user.
 export function summary(out) {
-  const name = r => `${r.provider}, ${r.requestedModel ? `model ${r.requestedModel}` : 'provider default model'}${r.models.length ? ` (reported: ${r.models.join(', ')})` : ''}`;
+  const name = r => `${r.provider}, ${judgeModel(r.requestedModel, r.configured)}${r.models.length ? ` (reported: ${r.models.join(', ')})` : ''}`;
   const runs = out.runs.map(r => {
     if (r.state === 'failed') return `Run ${r.id} of the judges FAILED: ${r.error}`;
     const ok = r.calls.filter(c => c.state === 'ok'), tally = {}, use = Object.entries(r.usage).filter(([k]) => /tokens|cost/.test(k)).map(([k, v]) => `${k} ${v}`).join(', ');

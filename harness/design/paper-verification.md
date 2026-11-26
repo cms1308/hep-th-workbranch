@@ -598,7 +598,8 @@ Open after stage 3.
 - Two runs of one model are two samples of one judge. `--model a,b` gives two models of
   the vendor. Whether that changes the verdicts is not measured.
 - A Claude judge, for text written by Codex, has not been launched live. Its arguments are
-  built and tested, the call is not.
+  built and tested, the call is not. (Launched live on 2026-11-26:
+  [record](#the-fixed-input-of-a-call-2026-11-26).)
 - The sentence row of the table "Units and grounds" (a type and its link to an equation, an
   evidence run or a CITATIONS row) is not built, and no judge reads the notes, the data or
   a cited paper. Proposed: with the outline contract of stage 4, a registry of links and a
@@ -1152,7 +1153,8 @@ Open after stage 4.
   Its cost depends on the length of the passages and is not estimated.
 - The fixed 21 thousand input tokens of every call are nearly nine tenths of the input. A
   provider interface without them would cut a pass to about half a million input tokens.
-  Not built.
+  (Built on 2026-11-26 within the CLI, 5.9 thousand left:
+  [record](#the-fixed-input-of-a-call-2026-11-26).)
 - The tool hooks are still not installed and no manuscript is enrolled, so the gate has
   not yet held a live session. The items open after stage 3 stand otherwise (local run
   records, the limits of the seal, a Claude judge never launched live, planted texts that
@@ -1475,3 +1477,96 @@ Open.
 - Martin:2000cr has to be ingested before the pilot (the harness launches the Codex
   ingest, as recorded in the user's working rules).
 - Single words are still not compared, and the items open after stage 4 stand.
+
+### The fixed input of a call (2026-11-26)
+
+Why. A call of a judge carried about 21 thousand input tokens whatever its question: the
+instructions and tools of the provider's agent and the user's configuration, none of which
+a judge uses, since its whole question is in the prompt. The records of stages 3 and 4
+measured this and left it open. The user asked whether it could not be cut ("고정으로 드는
+input token 못줄이는거야?") and then why the lead waits to be told ("이거를 내가 일일히
+지적해줘야지 고치는거야?", 2026-11-26).
+
+Measured before the change, on a one-line prompt with gpt-6.2-astra (input tokens):
+
+| call | Codex | Claude |
+| --- | --- | --- |
+| as launched by the judges | 20,814 | 6,891 |
+| without the user's configuration | 18,535 | |
+| also without the agent's notices, web search and the tools of 15 features | 11,305 | |
+| also with a one-line instruction for the provider's own | 5,962 | 2,731 |
+| also without the user's settings (Claude) | | 1,421 |
+
+The rest of a Codex call (about 5.9 thousand) is the code-mode `exec` tool and the
+sub-agent tools, which no feature setting removes. A feature named with `--disable` that
+the CLI does not know stops the call; set as `-c features.<name>=false` it is ignored. Left
+to the user's settings, Claude's model changes when they are dropped (fable to Opus), so
+the model has to be passed.
+
+Criterion and plan of checks, written before the code.
+
+1. A call of a judge carries the judge's instruction file (`harness/judge-instructions.md`)
+   in place of the provider's instructions, no tool, and neither the user's Codex
+   configuration nor the user's Claude settings.
+2. The model and effort that the user configured for the provider are passed explicitly
+   and recorded in the run, and the report names them. "provider default model" is printed
+   only when no model was named and none is configured. Tests with an injected judge read
+   no configuration.
+3. A feature name that a later CLI does not know does not stop a call.
+4. Live with Codex, on the scratch manuscript of the sentence-grounds record (19 sentences,
+   17 asked): the 17 questions asked again with the new call. Every planted text is answered
+   as registered; the verdicts agree with those of the earlier runs on at least 16 of the
+   17, and every difference is read against the passages; the input tokens of each call are
+   reported.
+5. Live with Claude (the same manuscript with `--writer codex`), the first live call of a
+   Claude judge: planted texts as registered, differences from the Codex verdicts listed.
+6. All tests pass, the earlier 59 with the counts that change listed.
+
+Code: in `harness/dispatch.mjs` the judge's call (`invocation` with `narrow`) leaves out the
+user's Codex configuration (`--ignore-user-config`) and Claude settings
+(`--setting-sources ''`), sets the agent's notices, web search and the idle features off
+(`-c features.<name>=false`), and carries `harness/judge-instructions.md` in place of the
+provider's instructions (`model_instructions_file`, `--system-prompt`, with
+`--disable-slash-commands`); `configured` reads the model and effort the user configured;
+in `harness/judge.mjs` they are passed to every call of a run and recorded in `run.json`
+(`configured`), and `judgeModel` in `harness/verify.mjs` names them in the reports. A
+quotation is now compared without math delimiters as well as without spacing.
+
+Result. 61 tests pass: the earlier 59, none changed, a test of the call (`tests/dispatch.test.mjs`),
+one assertion on quotations in `tests/judge.test.mjs`, and one test that another session
+added meanwhile. By the numbers of the plan:
+
+1. Done. Measured above: 5,962 input tokens on a one-line prompt for Codex, 1,421 for Claude.
+2. Done. A live report reads "codex, configured model gpt-6.2-astra at effort xhigh".
+3. Done, by `-c features.<name>=false` (tested in the test of the call).
+4. Passed. Codex, the 17 questions of the earlier runs in 4 calls: 41,915 input tokens
+   against 97,490 (10.5 thousand a call against 24.4), 10,588 output, 270 s of call time,
+   16 of 16 planted texts as registered. The verdicts agree with the earlier runs on 17 of
+   17, and the five failures give the same reasons.
+5. Passed. Claude (configured `fable[1m]` at effort xhigh, reported claude-fable-5-1), the
+   first live Claude judge: 4 calls, 33,014 input tokens, 30,854 output, 369 s, 16 of 16
+   planted texts. Two answers were refused: the judge put a `$` before a formula it cut
+   from a passage, so the quotation was not verbatim. The run that followed asked those two
+   again (1 call, 4 of 4 planted texts). The verdicts agree with Codex on 16 of 17. On the
+   17th, the sentence "Every field other than a bifundamental is charged under only one
+   node, so its representation of the other node is trivial", which the lead typed as a
+   definition, Codex fails it as a derivation step and Claude passes it as a terminological
+   clarification. The lead reads it as Codex does: it states a property of the matter
+   content (no field charged under neither node) and draws a consequence from it. One
+   sentence is no measure of a Claude judge's leniency, but it is the first count.
+6. Done (item above).
+
+Estimated for the pilot draft from these calls: about 280 calls of Codex at 10.5 thousand
+input tokens, 2.9 million input tokens for one pass instead of 6.6 million, the output
+unchanged at about 0.8 million.
+
+Choices made in the implementation, each the lead's and open to the user's correction.
+
+1. The judge keeps the model and effort the user configured, read from the configuration
+   it otherwise leaves out, rather than a model the harness would choose.
+2. The instruction that replaces the provider's is two sentences and says nothing of the
+   rules: everything a judge needs is in the prompt, as before, so no question changed and
+   `JUDGE` is not raised.
+3. The tools that no setting removes from a Codex call (code mode and sub-agents, 5.9
+   thousand tokens) stay. Removing them needs the provider's interface without the CLI,
+   with its own authentication.

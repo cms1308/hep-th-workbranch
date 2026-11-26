@@ -189,6 +189,7 @@ test('the schema of a call requires every question of every unit, and an answer 
   const ok = { verdict: 'pass', reason: 'Stated.', evidence: 'Both nodes   are free' }, all = change => ({ 'u1-scope-stated': ok, 'u1-in-place': ok, 'u2-scope-stated': ok, 'u2-in-place': ok, ...change });
   assert.deepEqual(reading(call, all({})), { ok: Object.fromEntries(shape(call).required.map(k => [k, { v: 'pass', reason: 'Stated.', evidence: 'Both nodes   are free' }])), refused: {} }, 'a quotation is compared without regard to spacing');
   assert.deepEqual(reading(call, all({ 'u1-in-place': { ...ok, evidence: 'Headings above it: Two nodes' } })).refused, {}, 'any passage of the material shown is a quotation (the first live run refused this one)');
+  assert.deepEqual(reading(call, all({ 'u1-in-place': { ...ok, evidence: '$Both nodes are$ free' } })).refused, {}, 'a math delimiter that the judge adds is no part of the comparison (a live Claude judge added one)');
   assert.deepEqual(reading(call, all({ 'u1-in-place': undefined, 'u2-in-place': { ...ok, verdict: 'unsure' }, 'u2-scope-stated': { ...ok, reason: ' ' }, 'u1-scope-stated': { ...ok, evidence: 'copied character for character' } })).refused,
     { 'u1-scope-stated': 'the evidence is not a quotation of the material shown', 'u1-in-place': 'no verdict', 'u2-scope-stated': 'no reason', 'u2-in-place': 'no verdict' }, 'the instruction on how to answer is not material');
   assert.throws(() => reading(call, null), /Answer refused: no structured answer/);
