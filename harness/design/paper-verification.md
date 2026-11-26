@@ -94,6 +94,9 @@ The judging model is also a language model, so the verdict itself is tested.
 - **Search for a better sentence.** The judge is asked to produce a sentence that is
   better under the ranked criteria. If it can, the unit fails and is replaced. A unit
   passes when two independent judges both fail to improve on it.
+  (Taken out of the gate by the user on 2026-11-26, on its measured behavior. It now gives
+  advice on request and no verdict. See
+  [the record](#stage-3-the-search-for-a-better-sentence-leaves-the-gate-2026-11-26).)
 - **Defects found by the user become permanent tests**, seeded in every later run.
 
 Ranked criteria (user decision 2026-11-25, as recommended):
@@ -782,3 +785,51 @@ Open after the second form.
   local run records, the limits of the seal, a Claude judge never launched live, the
   sentence row of "Units and grounds", replacements unchecked by code before the report,
   the tool hooks and the enrollment.
+
+### Stage 3, the search for a better sentence leaves the gate (2026-11-26)
+
+Decision of the user, on the measurement above (13 of 15 real sentences replaced, 7 with a
+changed claim, half of the cost): "더 나은 문장은 빼고 해봐". The proposal it answers was to
+take the search out of the pass and fail of the gate and to print its replacements as
+advice. The bullet "Search for a better sentence" of the Section "Making the independent
+verdict real" no longer describes the gate. The ranked criteria stay as what the advice is
+asked under.
+
+Criterion and plan of checks, written before the code. Tests use an injected judge.
+
+1. A verification holds no verdict of the search: no check, no awaiting state, no row in
+   the table and no call. A manuscript whose rules pass is complete after the two runs for
+   the rules.
+2. `paper-judge --advice` asks the search in one run, for the sentences whose verdicts have
+   all passed, and prints each replacement with its ranked criterion and reason. It changes
+   no verdict and not the completeness of the manuscript. The replacements of a call that
+   did not improve the planted wordy sentence are not printed. A saving of less than a
+   fifth of the words is not a replacement, as before.
+3. The tests of the second form pass, with the counts that change because the rule is gone
+   listed in the record.
+
+Code: the kind `better` is marked as advice in `harness/verify.mjs` and gives a unit no
+check, its questions are kept apart from those that bind a verdict, a run of advice holds
+no vote, and `harness/judge.mjs` and `harness/cli.mjs` have `--advice`.
+
+Result. All 51 tests pass. By the numbers of the plan above:
+
+1. Passed. The fixture is complete after two runs of seven calls, the table has no row and
+   no unit a check for the search, and no call of a verification asks it.
+2. Passed. One run with a call for each paragraph returns the two replacements that count
+   (four words for six, and a gain named under criterion 5) and not "2" for "two". The
+   verdicts and the completeness are the same before and after, and the run is not listed
+   among the runs of the judges. A call that left the planted wordy sentence as it was
+   gives no advice. A sentence with a verdict that has not passed is not asked.
+3. The counts that changed with the rule: the fixture awaits 15 verdicts instead of 19 and
+   has 11 questions instead of 15, a verification is two runs instead of four, and in the
+   tests of stages 1 and 2 a sentence awaits two reader verdicts instead of three.
+
+Not measured again: the calls of the rules and the call of the search have the form
+measured in the second form. With the search out, one pass of two judges over the pilot
+draft is estimated from those calls at 212 calls, 5 million input and 0.7 million output
+tokens and 70 minutes with four calls at a time, against 43 million and 11 hours for the
+first form.
+
+Still open from the second form: whether two runs of one model count as two judges, the
+nine-in-ten threshold, and planted texts that are too easy to grade a judge.

@@ -105,7 +105,7 @@ function fixtures(copy, samples) {
   const of = name => by.get(name) || by.set(name, { entries: new Map(), declared: [], defects: 0 }).get(name);
   for (const { id, rule, want, s, file } of samples) {
     const check = CHECKS[rule.kind], name = family(rule), fx = of(name), own = copy.doc.units.filter(u => u.file === file);
-    const mine = copy.questions.filter(q => q.family === name && own.some(u => u.id === q.unit)), aim = check.reader ? target(own, check, rule, s) : null;
+    const mine = [...copy.questions, ...copy.advice].filter(q => q.family === name && own.some(u => u.id === q.unit)), aim = check.reader ? target(own, check, rule, s) : null;
     let planted = false;
     // A reader rule's text is shown whole, each of its sentences a unit like any other. A code rule's text shows the units it is about.
     for (const q of check.reader ? mine : mine.filter(x => x.items.some(i => designates(i.tag, s.item)))) {
@@ -156,12 +156,12 @@ async function pool(items, size, work) {
   await Promise.all(Array.from({ length: Math.max(1, Math.min(size, items.length)) }, async () => { while (next < items.length) await work(items[next++]); }));
 }
 // One run of one judge over the questions in `need`.
-async function run({ project, paper, slug, dir, writer, provider, model, need, list, check, batch, parallel, timeout, runner, gate }) {
+async function run({ project, paper, slug, dir, writer, provider, model, need, list, check, batch, parallel, timeout, runner, gate, advice = false }) {
   const id = crypto.randomBytes(6).toString('hex'), base = path.join(dir, id), asked = [...new Set(need.map(q => q.family))];
   const planted = plant(list, new Set(asked)), fx = fixtures(examine(project, paper, { corpus: check.corpus, extra: planted.extra }), planted.samples);
   // A family is asked only if a seeded defect of it can be planted in this manuscript: without one no call could be trusted.
   const covered = asked.filter(name => fx.by.get(name)?.defects), queue = covered.flatMap(name => compose(name, need.filter(q => q.family === name), fx.by.get(name), batch, id)).map((c, n) => ({ ...c, n: n + 1 }));
-  const record = { version: 2, tool: JUDGE, id, slug, paper, writer, provider, requestedModel: model || null, models: [], gate, batch, started: new Date().toISOString(), finished: null, state: 'running',
+  const record = { version: 2, tool: JUDGE, id, slug, paper, writer, provider, requestedModel: model || null, models: [], gate, batch, ...(advice ? { advice: true } : {}), started: new Date().toISOString(), finished: null, state: 'running',
     seeds: fx.seeds, unseeded: asked.filter(name => !covered.includes(name)).sort(), calls: [] };
   const file = path.join(base, 'run.json'), scratch = fs.mkdtempSync(path.join(os.tmpdir(), 'hep-judge-'));
   const ask = async c => {
@@ -205,12 +205,11 @@ async function run({ project, paper, slug, dir, writer, provider, model, need, l
 }
 
 // Questions a run has to ask: a rule of them still needs a judge, and (unless `all`) code finds nothing to fix in the unit
-// first. The search for a better sentence is put only to a unit whose other verdicts have all passed.
-function needed(result, { families, all }) {
-  const checks = q => Object.entries(result.state.units[q.unit].checks), better = q => q.items.some(i => i.better);
-  const stuck = q => q.unit !== 'document' && checks(q).some(([, c]) => c.v === 'fail' || c.v === 'unjudged');
-  const early = q => better(q) && checks(q).some(([rule, c]) => !q.items.some(i => i.rule === rule) && c.v !== 'pass');
-  return result.questions.filter(q => q.open && (!families || families.includes(q.family)) && (all || (!stuck(q) && !early(q))));
+// first. For advice: the search for a better sentence, for the units whose verdicts have all passed.
+function needed(result, { families, all, advice }) {
+  const verdicts = q => Object.values(result.state.units[q.unit].checks).map(c => c.v), named = q => !families || families.includes(q.family);
+  if (advice) return result.advice.filter(q => named(q) && (all || verdicts(q).every(v => v === 'pass')));
+  return result.questions.filter(q => q.open && named(q) && (all || q.unit === 'document' || !verdicts(q).some(v => v === 'fail' || v === 'unjudged')));
 }
 function acquire(lock) {
   for (let attempt = 0; attempt < 2; attempt++) {
@@ -224,11 +223,12 @@ function acquire(lock) {
   throw Error(`Cannot take ${lock}`);
 }
 // Ask the judges what the manuscript still awaits. A run is one judge of the vendor that did not write it. Runs follow one
-// another while a question is open, four at most: two for the rules, then two for the search for a better sentence, which
-// waits for them. models: one model for each run in turn (provider default when empty). batch: units judged without their
-// paragraph in one call. limit: only the first so many open questions, in this run and the following ones. all: also the units that a
-// code check fails (for trials). dry: the plan without a call.
-export async function judge(root, slug, paper = 'paper', { writer, models = [], batch = BATCH, parallel = 4, limit = Infinity, families, all = false, dry = false, timeout = 1800000, runner = execute, build, corpus } = {}) {
+// another while a question is open and votes are added, four at most: a text that passes needs two. models: one model for
+// each run in turn (provider default when empty). batch: units judged without their paragraph in one call. limit: only the
+// first so many open questions, in this run and the following ones. all: also the units that a code check fails (for
+// trials). dry: the plan without a call. advice: instead of a verification, one run of the search for a better sentence,
+// whose replacements are returned and printed and change no verdict.
+export async function judge(root, slug, paper = 'paper', { writer, models = [], batch = BATCH, parallel = 4, limit = Infinity, families, all = false, advice = false, dry = false, timeout = 1800000, runner = execute, build, corpus } = {}) {
   if (process.env.HEP_REVIEW_CHILD) throw Error('Nested judge dispatch is prohibited');
   if (typeof slug !== 'string' || !/^[a-zA-Z0-9_-]+$/.test(slug) || !/^paper[A-Za-z0-9_-]*$/.test(paper)) throw Error('Invalid project slug or paper directory');
   const project = safePath(root, `projects/${slug}`), who = writer ?? declaredWriter(project, paper);
@@ -241,8 +241,8 @@ export async function judge(root, slug, paper = 'paper', { writer, models = [], 
   // Votes recorded so far: a run that adds none is not repeated in the same invocation.
   const votes = result => Object.values(result.state.units).reduce((n, u) => n + Object.values(u.checks).reduce((m, c) => m + (c.by?.runs.length || 0), 0), 0);
   try {
-    for (let seat = 0, before = -1, only = null; seat < 2 * JUDGES; seat++) {
-      const result = verify(project, paper, { ...check, dry }), need = needed(result, { families, all }).filter(q => !only || only.has(`${q.unit}|${q.family}`)).slice(0, limit);
+    for (let seat = 0, before = -1, only = null; seat < (advice ? 1 : 2 * JUDGES); seat++) {
+      const result = verify(project, paper, { ...check, dry }), need = needed(result, { families, all, advice }).filter(q => !only || only.has(`${q.unit}|${q.family}`)).slice(0, limit);
       if (!need.length || votes(result) === before) break;
       before = votes(result);
       if (limit < Infinity) only ||= new Set(need.map(q => `${q.unit}|${q.family}`));          // a limit fixes the questions of the whole invocation
@@ -250,12 +250,15 @@ export async function judge(root, slug, paper = 'paper', { writer, models = [], 
         const count = {};
         for (const q of need) count[q.family] = (count[q.family] || 0) + 1;
         out.plan = { questions: need.length, families: count, calls: new Set(need.map(q => q.context ? `${q.family}|${q.context}|${q.headings.join('>')}` : `${q.family}|${Math.floor(need.filter(x => x.family === q.family).indexOf(q) / batch)}`)).size,
-          note: `the calls of one run of a judge: one for each paragraph and rule family, and one for every ${batch} units that are judged without their paragraph; each call carries the planted texts of its family, and a question needs ${JUDGES} passing runs` };
+          note: `the calls of one run of a judge: one for each paragraph and rule family, and one for every ${batch} units that are judged without their paragraph; each call carries the planted texts of its family${advice ? '; advice is one run and gives no verdict' : `, and a question needs ${JUDGES} passing runs`}` };
         break;
       }
-      out.runs.push(await run({ project, paper, slug, dir, writer: who, provider, model: models.length ? models[seat % models.length] : null, need, list: result.list, check, batch, parallel, timeout, runner, gate: result.state.hash }));
+      out.runs.push(await run({ project, paper, slug, dir, writer: who, provider, model: models.length ? models[seat % models.length] : null, need, list: result.list, check, batch, parallel, timeout, runner, gate: result.state.hash, advice }));
     }
     out.result = verify(project, paper, { ...check, dry });
+    // The replacements a judge wrote, from the calls in which it also improved the planted wordy sentence.
+    if (advice) out.advice = out.runs.flatMap(r => r.calls.filter(c => c.state === 'ok' && c.planted.length && c.planted.every(p => p.met)).flatMap(c => c.answers.flatMap(a => Object.values(a.items).filter(x => x.v === 'fail')
+      .map(x => ({ unit: a.unit, where: out.result.state.units[a.unit]?.where ?? null, at: out.result.state.units[a.unit]?.at ?? null, criterion: x.criterion, sentence: x.sentence, reason: x.reason })))));
   } finally { fs.rmSync(lock, { force: true }); }
   return out;
 }
@@ -268,13 +271,15 @@ export function summary(out) {
     for (const c of ok) for (const p of c.planted) { const t = tally[p.rule] ||= [0, 0]; t[1]++; if (p.met) t[0]++; }
     const total = Object.values(tally).reduce((a, t) => [a[0] + t[0], a[1] + t[1]], [0, 0]), low = Object.entries(tally).filter(([, t]) => t[0] * FIT[1] < t[1] * FIT[0]).map(([rule]) => rule);
     const missed = ok.flatMap(c => c.planted.filter(p => !p.met).map(p => `${p.id} in call ${c.n}`)), lost = r.calls.filter(c => c.state !== 'ok'), refused = ok.reduce((n, c) => n + c.refused.length, 0);
-    return [`Run ${r.id} of the judges (${name(r)}; writer ${r.writer}): ${r.calls.length} calls with ${r.calls.reduce((n, c) => n + c.units, 0)} units of the manuscript.`,
+    return [`Run ${r.id} of the judges${r.advice ? ', for advice and no verdict' : ''} (${name(r)}; writer ${r.writer}): ${r.calls.length} calls with ${r.calls.reduce((n, c) => n + c.units, 0)} units of the manuscript.`,
       `Planted texts answered as registered: ${total[0]} of ${total[1]}${total[1] ? ` (${Object.entries(tally).map(([rule, t]) => `${rule} ${t[0]}/${t[1]}`).join(', ')})` : ''}.`,
       ...(missed.length ? [`Missed: ${missed.join('; ')}. The answers of those calls on those rules are not used.`] : []),
-      ...(low.length ? [`Below ${FIT[0]} in ${FIT[1]}, so none of this run's answers is used for: ${low.join(', ')}.`] : []),
+      ...(low.length && !r.advice ? [`Below ${FIT[0]} in ${FIT[1]}, so none of this run's answers is used for: ${low.join(', ')}.`] : []),
       ...(lost.length ? [`${lost.length} calls failed (${[...new Set(lost.map(c => c.error))].join('; ').slice(0, 300)}).`] : []), ...(refused ? [`${refused} answers refused.`] : []),
       `${Math.round(r.usage.ms / 1000)} s of call time${use ? `, ${use}` : ''}.`,
       ...r.seeds.filter(s => s.status === 'unplanted').map(s => `Not planted: ${s.id} (${s.note}).`), ...(r.unseeded.length ? [`Not asked, no defect could be seeded for the family: ${r.unseeded.join(', ')}.`] : [])].join(' ');
   });
-  return [...runs, ...(out.plan ? [`Plan (no model was called): ${JSON.stringify(out.plan)}`] : []), ...(!out.runs.length && !out.plan ? ['No question awaits a judge.'] : []), '', report(out.slug, out.result)].join('\n');
+  const advice = out.advice ? [`Advice, no part of the verification: ${out.advice.length} better sentences were written under the ranked criteria. A replacement stands for what the judge could see, its paragraph: check a changed claim against the notes before taking it.`,
+    ...out.advice.map(a => `- ${a.where ?? 'unit'}${a.at ? ` ${a.at}` : ''} unit ${a.unit}, criterion ${a.criterion} (${CRITERIA[a.criterion - 1]}): ${a.sentence} Reason: ${a.reason}`)] : [];
+  return [...runs, ...advice, ...(out.plan ? [`Plan (no model was called): ${JSON.stringify(out.plan)}`] : []), ...(!out.runs.length && !out.plan ? [out.advice ? 'No sentence has passed every verdict yet: advice is asked for those that have.' : 'No question awaits a judge.'] : []), '', report(out.slug, out.result)].join('\n');
 }

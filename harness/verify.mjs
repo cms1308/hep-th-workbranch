@@ -17,7 +17,8 @@ export const JUDGE = 2;                                  // raise when a questio
 export const JUDGES = 2;                                 // independent runs that must pass a question; one failing run fails it
 export const FIT = [9, 10];                              // share of a rule's planted texts a run must answer as registered for its answers on that rule to count
 export const SHORTER = [4, 5];                           // a replacement that is only shorter counts when it has at most this share of the unit's words
-// Ranked criteria of "better" (user decision 2026-11-25). The eighth: on a tie the existing sentence stays.
+// Ranked criteria of "better" (user decision 2026-11-25). The eighth: on a tie the existing sentence stays. Since 2026-11-26 the
+// search for a better sentence gives advice on request and no verdict (user decision, on its measured behavior).
 export const CRITERIA = ['physical and mathematical correctness', "the user's decisions", 'harness rules', 'completeness of the information the argument needs', 'no redundancy', 'terminology attested in the literature', 'the shorter text'];
 const AWAIT = 'awaits the independent verdict';
 const BASE = fileURLToPath(new URL('./rules.json', import.meta.url));
@@ -249,9 +250,9 @@ export const CHECKS = {
   },
   // Kinds that only a reader can decide: no code verdict, one question to the independent judges for each sentence.
   judge: { reader: true, units: (u, rule) => prose(u) && (!rule.roles || rule.roles.includes(u.role)), ask: rule => rule.question },
-  better: { reader: true, units: (u, rule) => prose(u) && (!rule.roles || rule.roles.includes(u.role)), ask: () => 'Can you write a sentence that is strictly better than the unit under the ranked criteria stated above?' },
+  better: { reader: true, advice: true, units: (u, rule) => prose(u) && (!rule.roles || rule.roles.includes(u.role)), ask: () => 'Can you write a sentence that is strictly better than the unit under the ranked criteria stated above?' },
 };
-// The rule family of one call to a judge: a reader rule joins the family it names (default "content"); a code rule and the search for a better sentence are families of their own.
+// The rule family of one call to a judge: a reader rule joins the family it names (default "content"); a code rule and the search for a better sentence (advice, no verdict) are families of their own.
 export const family = rule => rule.kind === 'judge' ? rule.family ?? 'content' : rule.id;
 // The items of a question that a sample or a seeded defect designates: by the numeral, the symbol, or the quoted phrase the item is about.
 export const designates = (tag, item) => item === undefined || tag === item || tag.startsWith(`"${item}"`);
@@ -277,8 +278,8 @@ function admit(rule) {
   const kinds = reader => Object.keys(CHECKS).filter(k => !CHECKS[k].reader === !reader).join(', ');
   const check = CHECKS[rule.kind] || refuse(`unknown check kind ${rule.kind} (decided by code: ${kinds(false)}; decided by the independent verdict: ${kinds(true)})`);
   if (!rule.source) refuse('record where the rule comes from (document, decision or the user\'s words)');
-  // The search for a better sentence has failing texts only: no text is beyond improvement by registration, a sentence passes when two judges fail to improve on it.
-  if (rule.kind === 'better' ? !rule.fail?.length || rule.pass !== undefined : !rule.fail?.length || !rule.pass?.length) refuse(rule.kind === 'better' ? 'it needs at least one text that a judge must improve, and takes no passing text: a sentence passes when two judges fail to improve on it' : 'it needs at least one text that must fail and one that must pass');
+  // The search for a better sentence has failing texts only: no text is beyond improvement by registration.
+  if (rule.kind === 'better' ? !rule.fail?.length || rule.pass !== undefined : !rule.fail?.length || !rule.pass?.length) refuse(rule.kind === 'better' ? 'it needs at least one text that a judge must improve, and takes no passing text: no text is beyond improvement by registration' : 'it needs at least one text that must fail and one that must pass');
   const probe = (s, corpus) => { const doc = decompose(lines(s.tex)); return { doc, ctx: context({ ...doc, hash: 'sample' }, { lexicon: s.lexicon, facts: s.facts, file: rel => s.files?.[rel] ?? null, build: () => s.build ?? null, baseline: s.baseline, corpus }) }; };
   const shown = s => JSON.stringify(s.tex).slice(0, 140);
   if (check.reader) {
@@ -335,34 +336,36 @@ export function declaredWriter(project, paper) {
 }
 
 // Every (unit, rule): the code verdict, or a placeholder for a rule only a reader can judge; and the questions put to the judges,
-// one for each unit and rule family. The key of a question covers all that a judge is shown and asked.
+// one for each unit and rule family. The key of a question covers all that a judge is shown and asked. `advice`: the questions of
+// the search for a better sentence, which give no verdict and are asked on request only.
 function assess(doc, ctx, list, prior = () => undefined, run = null) {
-  const units = {}, questions = [], heads = [], byId = new Map(doc.units.map(u => [u.id, u])), reading = new Set(list.filter(r => CHECKS[r.kind].reader).map(family));
+  const units = {}, questions = [], advice = [], heads = [], byId = new Map(doc.units.map(u => [u.id, u])), reading = new Set(list.filter(r => CHECKS[r.kind].reader).map(family));
   let judged = 0, total = 0;
   for (const u of [...doc.units, { ...DOCUMENT }]) {
-    const above = heads.slice(1, u.kind === 'title' ? Math.max(u.level, 1) : undefined).filter(Boolean), checks = {}, asked = new Map();
+    const above = heads.slice(1, u.kind === 'title' ? Math.max(u.level, 1) : undefined).filter(Boolean), checks = {}, asked = new Map(), wished = new Map();
     if (u.kind === 'title' && u.level > 0) { heads.length = u.level; heads[u.level] = u.prose; }
     for (const rule of list) {
       const check = CHECKS[rule.kind];
       if (!check.units(u, rule)) continue;
+      if (check.advice) { wished.set(family(rule), [{ id: rule.id, rule: rule.id, q: check.ask(rule), better: true }]); continue; }
       const base = [TOOL, rule.hash, u.kind === 'document' ? '' : u.id.split('~')[0]], old = prior(u.id, rule.id);
       const k = sha(JSON.stringify(check.reader ? base : [...base, check.inputs?.(u, rule, ctx) ?? null])).slice(0, 16), same = old?.k === k && old.v !== 'unjudged';
       total++;
       if (same && !check.reader && old.v !== 'pending' && !old.by) { checks[rule.id] = old; continue; }       // decided by code and unchanged
       if (!same) judged++;
-      const { ask = [], ...code } = check.reader ? { v: 'pending', e: [AWAIT], ask: [{ id: rule.id, q: check.ask(rule), ...(rule.kind === 'better' ? { better: true } : {}) }] } : outcome(check, u, rule, ctx);
+      const { ask = [], ...code } = check.reader ? { v: 'pending', e: [AWAIT], ask: [{ id: rule.id, q: check.ask(rule) }] } : outcome(check, u, rule, ctx);
       checks[rule.id] = { ...code, k, r: same ? old.r : run };
       if (ask.length) asked.set(family(rule), [...(asked.get(family(rule)) || []), ...ask.map(a => ({ ...a, rule: rule.id }))]);
     }
-    for (const [name, items] of asked) {
+    for (const [into, from] of [[questions, asked], [advice, wished]]) for (const [name, items] of from) {
       // A rule about a sentence is judged in its paragraph, under its headings. A question that code left open is about the sentence alone.
       const q = { unit: u.id, family: name, kind: u.kind, where: u.where, file: u.file ?? null, text: u.text ?? '', context: reading.has(name) && u.paragraph ? byId.get(u.paragraph).text : '', headings: reading.has(name) ? above : [],
         items: items.map((a, i) => ({ id: a.id ?? `item-${i + 1}`, rule: a.rule, tag: a.tag ?? a.id, q: a.q, ...(a.better ? { better: true } : {}) })) };
-      questions.push({ ...q, key: sha(JSON.stringify([JUDGE, q.family, q.kind, q.text, q.context, q.headings, q.items.map(i => [i.id, i.q, !!i.better])])).slice(0, 16) });
+      into.push({ ...q, key: sha(JSON.stringify([JUDGE, q.family, q.kind, q.text, q.context, q.headings, q.items.map(i => [i.id, i.q, !!i.better])])).slice(0, 16) });
     }
     if (Object.keys(checks).length) units[u.id] = { kind: u.kind, where: u.where, ...(u.file ? { at: `${u.file}:${u.line}` } : {}), checks };
   }
-  return { units, questions, judged, total };
+  return { units, questions, advice, judged, total };
 }
 // Read-only: the units of a manuscript, the code verdict of every (unit, rule) and the questions for the judges. `extra` appends
 // lines and registry entries to a copy of the manuscript (the seeded defects of a run of the judges). Nothing is written.
@@ -387,7 +390,7 @@ export function recorded(project, paper, writer) {
     try { const run = json(path.join(dir, name, 'run.json')); if (run.id === name && run.tool === JUDGE && Array.isArray(run.calls)) found.push(run); } catch { /* not a run record */ }
   }
   for (const run of found.sort((a, b) => `${a.started} ${a.id}` < `${b.started} ${b.id}` ? -1 : 1)) {
-    if (!writer || run.writer !== writer || run.provider === writer) continue;
+    if (!writer || run.writer !== writer || run.provider === writer || run.advice) continue;         // a run of advice holds no verdict
     const calls = run.calls.filter(c => c.state === 'ok'), tally = {};
     for (const c of calls) for (const p of c.planted || []) { const t = tally[p.rule] ||= { planted: 0, met: 0 }; t.planted++; if (p.met === true) t.met++; }
     const fit = rule => !!tally[rule] && tally[rule].met * FIT[1] >= tally[rule].planted * FIT[0];
@@ -422,7 +425,7 @@ function settle(units, questions, rec) {
       if (failed.length) {
         c.v = 'fail';
         c.e = failed.flatMap(b => b.bad.map(i => { const a = b.answers[i.id], who = `judge ${judgeName(rec.runs.get(b.run))} (run ${b.run})`;
-          return i.better ? `${who} wrote a better sentence under criterion ${a.criterion} (${CRITERIA[a.criterion - 1]}): ${a.sentence} Reason: ${a.reason}` : `${i.tag === i.id ? '' : `${i.tag}: `}${who} fails it: ${a.reason} Evidence: "${a.evidence}"`; }));
+          return `${i.tag === i.id ? '' : `${i.tag}: `}${who} fails it: ${a.reason} Evidence: "${a.evidence}"`; }));
       } else if (votes.length >= JUDGES) { c.v = 'pass'; delete c.e; }
     }
   }
@@ -433,9 +436,9 @@ function settle(units, questions, rec) {
 // writer: the vendor whose model wrote the manuscript (the last declaration is kept when omitted); a judge of that vendor supplies no verdict.
 export function verify(project, paper = 'paper', { build: builder = () => build(project, paper), corpus = () => storedCorpus(path.resolve(project, '..', '..')), wip, writer, dry = false, now = new Date() } = {}) {
   const old = sealed(project, paper) ? json(stateFile(project, paper)) : null, id = crypto.randomBytes(4).toString('hex');
-  const { print, doc, ctx, list, units, questions, judged, total } = examine(project, paper, { build: builder, corpus, baseline: old?.baseline ?? null, prior: (unit, rule) => old?.units?.[unit]?.checks?.[rule], run: id });
+  const { print, doc, ctx, list, units, questions, advice, judged, total } = examine(project, paper, { build: builder, corpus, baseline: old?.baseline ?? null, prior: (unit, rule) => old?.units?.[unit]?.checks?.[rule], run: id });
   const who = writer ?? declaredWriter(project, paper), rec = recorded(project, paper, who), used = settle(units, questions, rec);
-  const tally = list.map(rule => Object.values(units).reduce((c, u) => (u.checks[rule.id] && c[u.checks[rule.id].v]++, c), { id: rule.id, kind: rule.kind, pass: 0, fail: 0, pending: 0, unjudged: 0 }));
+  const tally = list.filter(rule => !CHECKS[rule.kind].advice).map(rule => Object.values(units).reduce((c, u) => (u.checks[rule.id] && c[u.checks[rule.id].v]++, c), { id: rule.id, kind: rule.kind, pass: 0, fail: 0, pending: 0, unjudged: 0 }));
   const pick = (...which) => Object.entries(units).flatMap(([unit, u]) => Object.entries(u.checks).filter(([, c]) => which.includes(c.v)).map(([rule, c]) => ({ unit, rule, where: u.where, at: u.at, verdict: c.v, evidence: c.e })));
   const sentences = doc.units.filter(prose), lit = ctx.corpus(), open = pick('fail', 'unjudged'), awaiting = pick('pending');
   const state = { version: 2, tool: TOOL, paper, hash: print.gate, source_hash: print.source, run: { id, time: now.toISOString(), judged, total }, complete: !open.length && !awaiting.length,
@@ -446,13 +449,13 @@ export function verify(project, paper = 'paper', { build: builder = () => build(
       runs: [...rec.runs.values()].map(r => ({ ...r, answers: used.get(r.id) || 0 })) },
     wip: wip ? { hash: print.gate, declared: now.toISOString(), note: wip, units: [...open, ...awaiting].map(({ unit, rule, where }) => ({ unit, rule, where })) } : old?.wip?.hash === print.gate ? old.wip : null, units };
   const text = serialize(state);
-  if (dry) return { state, open, awaiting, questions, list };               // a plan: nothing is written, and a manuscript is not enrolled by it
+  if (dry) return { state, open, awaiting, questions, advice, list };       // a plan: nothing is written, and a manuscript is not enrolled by it
   write(stateFile(project, paper), text);
   writeJSON(sealFile(project, paper), { file: sha(text), run: id, time: now.toISOString(), writer: who });
-  return { state, open, awaiting, questions, list };
+  return { state, open, awaiting, questions, advice, list };
 }
 
-const LIMITS = 'Not judged at this stage: the meaning of a paragraph, a Section and the document, the outline and the scope of central claims (stage 4); whether a sentence is correct or supported by the notes, the data or the cited source (a judge sees the sentence, its paragraph and its headings, nothing else); single words and the wording of a phrase beyond its adjacent word pairs and hyphenated compounds; numerals in display equations and table cells; one, ordinals and comparisons with zero; indices of symbols.';
+const LIMITS = 'Not judged at this stage: the meaning of a paragraph, a Section and the document, the outline and the scope of central claims (stage 4); whether a sentence is correct or supported by the notes, the data or the cited source (a judge sees the sentence, its paragraph and its headings, nothing else); whether a sentence could be better (the search for a better sentence gives advice on request, `paper-judge --advice`, and no verdict); single words and the wording of a phrase beyond its adjacent word pairs and hyphenated compounds; numerals in display equations and table cells; one, ordinals and comparisons with zero; indices of symbols.';
 // The completion report: the only evidence of verification that a report to the user may cite.
 export function report(slug, { state, open, awaiting = [] }, { pending = false } = {}) {
   const c = state.counts, ind = state.independent, rows = state.rules.map(r => `| ${r.id} | ${r.pass} | ${r.fail} | ${r.pending} | ${r.unjudged} |`);

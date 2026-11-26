@@ -396,15 +396,15 @@ test('the Stop hook blocks the session that changed an enrolled manuscript, no o
   verify(project, 'paper', built);
   out = stop(root); assert.equal(out.decision, 'block'); assert.match(out.reason, /1 failing or unjudged verdicts.*block 2 of 3/s);
   edit(project, 'section~', 'Section~'); verify(project, 'paper', built);
-  assert.match(stop(root).reason, /\(0 failing or unjudged verdicts, 11 awaiting the independent verdict\).*paper-judge demo paper --writer/s, 'what awaits the independent verdict holds the turn as a failure does');
+  assert.match(stop(root).reason, /\(0 failing or unjudged verdicts, 8 awaiting the independent verdict\).*paper-judge demo paper --writer/s, 'what awaits the independent verdict holds the turn as a failure does');
   assert.equal((await settle(root, built)).result.state.complete, true);
   assert.deepEqual(stop(root), {}, 'verified: released'); assert.deepEqual(stop(root), {});
   call(root, 'session-a', { file_path: '/scratch/fix.py', content: 'open("projects/demo/paper/main.tex")' });      // a script that names the manuscript
   call(root, 'session-a', { command: 'python3 /scratch/fix.py' }, text('in this section~\\ref{t}'), { id: 'c2' });   // and a call that runs it
   assert.equal(stop(root).decision, 'block', 'a scripted edit is attributed through the earlier tool input');
   const wip = verify(project, 'paper', { ...built, wip: 'Section 3 is being rewritten' });
-  assert.deepEqual(wip.state.wip.units.map(u => u.rule), ['reference-capital', 'scope-stated', 'in-place', 'better-sentence'], 'the failure and what awaits the judges for the added sentence');
-  assert.match(report('demo', wip), /Work in progress declared .*Section 3 is being rewritten \(4 unverified verdicts.*\(pending\): awaits the independent verdict/s);
+  assert.deepEqual(wip.state.wip.units.map(u => u.rule), ['reference-capital', 'scope-stated', 'in-place'], 'the failure and what awaits the judges for the added sentence');
+  assert.match(report('demo', wip), /Work in progress declared .*Section 3 is being rewritten \(3 unverified verdicts.*\(pending\): awaits the independent verdict/s);
   out = stop(root); assert.equal(out.decision, undefined); assert.match(out.systemMessage, /projects\/demo\/paper: work in progress declared/);
   assert.deepEqual(stop(root), {}, 'released until the session changes the manuscript again');
   call(root, 'session-a', { command: 'cd projects/demo && sed -i s/a/b/ paper/main.tex' }, text('gamma'), { end: false });  // a call that fails reports no end
@@ -447,7 +447,7 @@ test('paper-verify prints the completion table and fails its exit status while a
     assert.equal(process.exitCode, 1);
     assert.match(text, /\| rule \| pass \| fail \| awaiting independent verdict \| not judged \|/); assert.match(text, /\| number-bound \| 0 \| 1 \| 0 \| 0 \|/);
     assert.match(text, /Status: INCOMPLETE, 2 failing and 1 not judged\./); assert.match(text, /- \[number-bound\] front ¶1 s1 paper\/main\.tex:1 unit [0-9a-f]{12} \(fail\): "204" is not bound to a fact/);
-    assert.match(text, /Independent verdicts: none recorded on this computer\./); assert.match(text, /Awaiting the independent verdict: 3 \(node harness\/cli\.mjs paper-judge demo paper/);
+    assert.match(text, /Independent verdicts: none recorded on this computer\./); assert.match(text, /Awaiting the independent verdict: 2 \(node harness\/cli\.mjs paper-judge demo paper/);
     const units = await main(['paper-units', 'demo', 'theories'], root);
     assert.deepEqual(units.map(u => [u.kind, u.where, u.numbers]), [['sentence', 'front ¶1 s1', ['204']]]);
   } finally { process.exitCode = saved; }

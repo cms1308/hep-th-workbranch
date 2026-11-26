@@ -95,8 +95,9 @@ stored session, Claude without tools. Each call uses the provider's default mode
 settings unless `--model` names one. Measured with Codex on 2026-11-26: a call takes about
 21 thousand input tokens before its question, 23 thousand with a paragraph and the planted
 texts, 3 to 4 thousand output tokens and 70 to 80 s with four at a time. A run over a
-draft of 100 paragraphs is about 106 calls for the rules and 100 for the better sentence,
-and a text that fails nothing needs two runs of each. Run `--dry-run` first (it prints the
+draft of 100 paragraphs is about 106 calls, and a text that fails nothing needs two runs.
+The search for a better sentence is asked only with `--advice`, one run of one call for
+each paragraph. Run `--dry-run` first (it prints the
 calls of one run), run long jobs in the background and keep the computer awake. A run that is cut short keeps the calls it recorded, and the next run asks only
 what is still open. One run at a time for each manuscript (`active.lock` in its record
 directory, released when its process has ended).

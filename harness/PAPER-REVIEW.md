@@ -164,9 +164,9 @@ local edit of one needs none of these files, and no user-approval step is added.
   by the independent verdict: `judge`, a rule only a reader can apply, with its `question`
   (what passes and what fails), an optional `family` (the rules asked together in one call,
   `content` by default) and optional `roles`. And `better`, the search for a better
-  sentence, which has `fail` texts only (texts a judge must improve), since a sentence
-  passes when two judges fail to improve on it and not by registration. The `fail` and
-  `pass` texts of these kinds open with a `\section` heading of their own, and
+  sentence, which gives advice on request and no verdict, and has `fail` texts only (texts
+  a judge must improve). The `fail` and `pass` texts of these kinds open with a `\section`
+  heading of their own, and
   `at` names the sentence the rule is tested on (the last one otherwise). Code cannot test
   such a rule at registration. Instead every run of the judges plants these texts, so a
   defect the user found is registered as a `judge` rule with the failing text verbatim and
@@ -236,10 +236,10 @@ local edit of one needs none of these files, and no user-approval step is added.
   sentence the registered `judge` rules (harness-wide `scope-stated` and `in-place`), for
   the units where code left a question a numeral bound with `at`, a colon or semicolon, a
   word pair that occurs once, an `ordinary` declaration and the notation declared
-  `standard`, and last the search for a better sentence. A unit that fails a code check
-  is not put to a judge until the failure is fixed.
+  `standard`. A unit that fails a code check is not put to a judge until the failure is
+  fixed.
 - **Calls.** One call puts one rule family to the judge. For the rules about a sentence
-  (the `judge` rules and the better sentence) a call holds the sentences of one paragraph,
+  (the `judge` rules, and the better sentence when advice is asked) a call holds the sentences of one paragraph,
   judged in that paragraph under its headings, and no other paragraph of the manuscript:
   a judge that sees two uses the one on the other (measured, design record), and the key
   of a verdict covers its own paragraph only. The questions that code left open are about
@@ -257,13 +257,18 @@ local edit of one needs none of these files, and no user-approval step is added.
   registered. A rule for which no defect can be planted in this manuscript is not asked.
 - **Two judges.** A run is one judge. A (unit, rule) passes when two different runs pass it
   and fails when one fails it. A failed unit is changed, not asked again: the writer cannot
-  overrule a judge, and a disputed verdict goes to the user. `paper-judge` makes up to four
-  runs in a row, two for the rules and two for the better sentence.
-- **Better sentence.** The search is put only to a sentence whose other verdicts have all
-  passed. The sentence fails when a judge writes a better one, which the report prints with
-  its ranked criterion. A replacement counts when the judge names a gain under criteria 1
-  to 6, or when it has at least a fifth fewer words. A smaller saving in length is kept in
-  the run record and the sentence passes. The changed sentence is a new unit.
+  overrule a judge, and a disputed verdict goes to the user. `paper-judge` makes runs one
+  after another while a question is open and a run still adds a vote, four at most. A text
+  that passes needs two.
+- **Better sentence (advice).** The search for a sentence that is better under the ranked
+  criteria of the design is no part of a verification (user, 2026-11-26): it gives no
+  verdict, and no manuscript waits for it. `paper-judge <slug> [paper-dir] --advice` asks
+  it in one run for the sentences whose verdicts have all passed and prints each
+  replacement with its criterion and reason. A replacement counts when the judge names a
+  gain under criteria 1 to 6, or when it has at least a fifth fewer words. The replacements
+  of a call that did not improve the planted wordy sentence are not printed. A judge sees
+  one paragraph: a replacement that changes a claim is checked against the notes before it
+  is taken, and a sentence that is changed is verified again like any other edit.
 - **Run metadata.** Every run is recorded under
   `.harness-local/verdicts/<slug>/<paper-dir>/<run>/`: `run.json` (judge, requested model,
   the planted texts, every call with its answers, the outcome of its planted texts, tokens

@@ -170,7 +170,7 @@
     {
       "id": "better-sentence",
       "kind": "better",
-      "source": "design/paper-verification (user, 2026-11-25): the judge is asked for a sentence that is better under the ranked criteria, and a unit passes when two independent judges both fail to improve on it",
+      "source": "design/paper-verification (user, 2026-11-25): the judge is asked for a sentence that is better under the ranked criteria. Since 2026-11-26 (user) the search gives advice on request and no verdict.",
       "fail": [
         {"tex": "\\section{The model}\n\nWe consider SQCD with gauge group $SU(N_c)$ and $N_f$ flavors. It is important to note that, as a matter of fact, the gauge coupling of this theory is, in this particular case, a coupling that is asymptotically free for $N_f<3N_c$.", "at": "It is important to note"}
       ]

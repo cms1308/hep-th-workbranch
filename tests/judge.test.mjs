@@ -44,28 +44,28 @@ const stored = project => JSON.parse(fs.readFileSync(path.join(project, 'paper/V
 const backed = state => Object.values(state.units).flatMap(u => Object.values(u.checks)).filter(c => c.by);
 const waiting = state => state.rules.reduce((n, r) => n + r.pending, 0);
 const verdicts = (state, rule) => Object.values(state.units).filter(u => u.checks[rule]).map(u => u.checks[rule].v);
-const FAMILIES = ['aside-punctuation', 'better-sentence', 'content', 'defined-before-use', 'number-bound', 'term-attested'];
+const FAMILIES = ['aside-punctuation', 'content', 'defined-before-use', 'number-bound', 'term-attested'];
 // The calls of a run on this manuscript: one for each of its three paragraphs under the rules about a sentence, one for each kind of question that code left open.
-const RULES = ['number-bound', 'content', 'content', 'content', 'aside-punctuation', 'term-attested', 'defined-before-use'], BETTER = new Array(3).fill('better-sentence');
+const RULES = ['number-bound', 'content', 'content', 'content', 'aside-punctuation', 'term-attested', 'defined-before-use'];
 
 test('a call puts one rule family to the judge for many units and carries its planted texts; a missed seeded defect, or a failed passing text, leaves that rule without a verdict', async t => {
   const log = [];
-  // A sound judge: two runs for the rules, then two for the better sentence, which waits for them.
+  // A sound judge: two runs, since a pass needs two judges.
   const a = make(t), first = verify(a.project, 'paper', check);
-  assert.deepEqual([first.state.complete, first.open.length, waiting(first.state), first.questions.length, [...new Set(first.questions.map(q => q.family))].sort()], [false, 0, 19, 15, FAMILIES]);
-  assert.match(report('demo', first), /Independent verdicts: none recorded on this computer\.[\s\S]*Status: INCOMPLETE, 0 failing and 0 not judged\. Awaiting the independent verdict: 19 \(node harness\/cli\.mjs paper-judge demo paper --writer <claude\|codex>\)\./);
+  assert.deepEqual([first.state.complete, first.open.length, waiting(first.state), first.questions.length, [...new Set(first.questions.map(q => q.family))].sort()], [false, 0, 15, 11, FAMILIES]);
+  assert.match(report('demo', first), /Independent verdicts: none recorded on this computer\.[\s\S]*Status: INCOMPLETE, 0 failing and 0 not judged\. Awaiting the independent verdict: 15 \(node harness\/cli\.mjs paper-judge demo paper --writer <claude\|codex>\)\./);
   const sound = await judge(a.root, 'demo', 'paper', { writer: 'claude', ...check, runner: answerer(undefined, log) });
-  assert.deepEqual(sound.runs.map(r => [r.state, r.provider, r.calls.map(c => c.family)]), [['done', 'codex', RULES], ['done', 'codex', RULES], ['done', 'codex', BETTER], ['done', 'codex', BETTER]], '20 calls where one call for each unit and family took 58');
+  assert.deepEqual(sound.runs.map(r => [r.state, r.provider, r.calls.map(c => c.family)]), [['done', 'codex', RULES], ['done', 'codex', RULES]], '14 calls where one call for each unit and family took 46');
   assert.ok(log.every(call => new Set(call.entries.flatMap(e => e.items.map(i => i.rule))).size <= 2 && call.entries.some(e => e.planted) === (call.family !== 'defined-before-use')), 'one family in a call, with planted units among those of the manuscript');
   const content = log.filter(call => call.family === 'content').slice(0, 3);
   assert.deepEqual(content.map(call => [call.entries.filter(e => !e.planted).length, call.entries.filter(e => e.planted).length]), [[1, 6], [2, 6], [1, 6]], 'a sentence judged in its paragraph shares a call with no other paragraph of the manuscript');
   assert.deepEqual(content[0].entries.flatMap(e => e.items).filter(i => i.expect).map(i => `${i.seed}=${i.expect}`).sort(), ['in-place:fail:1=fail', 'in-place:pass:1=pass', 'scope-stated:fail:1=fail', 'scope-stated:pass:1=pass'], 'a paragraph that holds a sound and a defective sentence is planted once');
   assert.deepEqual(log.find(call => call.family === 'term-attested').entries.filter(e => !e.planted).length, 3, 'units judged without their paragraph are put together');
   assert.deepEqual(log.find(call => call.family === 'defined-before-use').entries.map(e => [e.unit, e.items.map(i => i.expect).sort()]), [['document', ['fail', null, 'pass']]], 'the planted declarations join the notation of the document');
-  assert.deepEqual(sound.runs.map(r => r.calls.flatMap(c => c.planted).filter(p => p.met).length), [22, 22, 3, 3]);
-  assert.deepEqual([sound.result.state.complete, waiting(sound.result.state), sound.result.state.independent.rest], [true, 0, 19]);
+  assert.deepEqual(sound.runs.map(r => r.calls.flatMap(c => c.planted).filter(p => p.met).length), [22, 22]);
+  assert.deepEqual([sound.result.state.complete, waiting(sound.result.state), sound.result.state.independent.rest], [true, 0, 15]);
   assert.ok(backed(sound.result.state).every(c => c.v === 'pass' && c.by.runs.length === JUDGES && new Set(c.by.runs.map(r => r[0])).size === JUDGES), 'a pass rests on two different runs');
-  assert.match(report('demo', sound.result), /Independent verdicts: writer claude\. 19 verdicts rest on the runs of the judges recorded on this computer\.[^\n]*\n- run [0-9a-f]{12} \(codex, provider default model\): 7 calls, 22 of 22 planted texts answered as registered, 15 verdicts rest on it\n[\s\S]*Status: verification complete: no failure, nothing unjudged, nothing awaiting the independent verdict\./);
+  assert.match(report('demo', sound.result), /Independent verdicts: writer claude\. 15 verdicts rest on the runs of the judges recorded on this computer\.[^\n]*\n- run [0-9a-f]{12} \(codex, provider default model\): 7 calls, 22 of 22 planted texts answered as registered, 15 verdicts rest on it\n[\s\S]*Status: verification complete: no failure, nothing unjudged, nothing awaiting the independent verdict\./);
   assert.match(summary(sound), /Run [0-9a-f]{12} of the judges \(codex, provider default model; writer claude\): 7 calls with 11 units of the manuscript\. Planted texts answered as registered: 22 of 22 \(.*term-attested 4\/4.*\)\. \d+ s of call time, input_tokens 700, output_tokens 70\./);
   assert.equal((await judge(a.root, 'demo', 'paper', { ...check, runner: () => assert.fail('nothing is left to ask') })).runs.length, 0, 'the declared writer is kept, and a verified text costs no call');
   // The catch list of this judge lacks one seeded defect: the coined label used once.
@@ -133,7 +133,7 @@ test('a verdict file is accepted only with the run metadata of the CLI: a hand-w
   fs.writeFileSync(path.join(twin.project, 'paper/VERIFY.json'), good);
   assert.equal(standing(twin.project, 'paper').verified, false);
   const bare = verify(twin.project, 'paper', check);
-  assert.deepEqual([bare.state.complete, backed(bare.state).length, waiting(bare.state)], [false, 0, 19], 'verdicts typed into the file are dropped: no run record holds them');
+  assert.deepEqual([bare.state.complete, backed(bare.state).length, waiting(bare.state)], [false, 0, 15], 'verdicts typed into the file are dropped: no run record holds them');
   // ... and with a judge of the writer's vendor: the copied run records name codex as the judge.
   fs.cpSync(ledger(project, 'paper'), ledger(twin.project, 'paper'), { recursive: true });
   assert.equal(verify(twin.project, 'paper', { ...check, writer: 'claude' }).state.complete, true, 'the run records carry the verdicts');
@@ -141,13 +141,13 @@ test('a verdict file is accepted only with the run metadata of the CLI: a hand-w
   // (c) A run record altered, removed or unreadable. What counts is computed from its calls, not from a summary in it.
   const runs = fs.readdirSync(ledger(project, 'paper')).filter(n => /^[0-9a-f]{12}$/.test(n)).map(n => JSON.parse(fs.readFileSync(path.join(ledger(project, 'paper'), n, 'run.json'), 'utf8'))).sort((x, y) => x.started < y.started ? -1 : 1);
   const record = n => path.join(ledger(project, 'paper'), runs[n].id, 'run.json'), kept = fs.readFileSync(record(0), 'utf8');
-  assert.deepEqual(runs.map(r => r.calls.length), [7, 7, 3, 3]);
+  assert.deepEqual(runs.map(r => r.calls.length), [7, 7]);
   fs.writeFileSync(record(0), kept.replace('"state": "done"', '"state": "valid"').replace('"id": "number-bound:fail:1",\n          "rule": "number-bound",\n          "want": "fail",\n          "met": true', '"id": "number-bound:fail:1",\n          "rule": "number-bound",\n          "want": "fail",\n          "met": false'));
   let r = verify(project, 'paper', check);
   assert.deepEqual([r.state.complete, verdicts(r.state, 'number-bound').filter(v => v === 'pending').length, verdicts(r.state, 'scope-stated').every(v => v === 'pass')], [false, 2, true], 'a call that did not catch its seeded defect gives no vote on that rule, whatever else the record says');
   fs.writeFileSync(record(0), kept.replace(/"want": "fail"/g, '"want": "pass"'));
   assert.equal(verify(project, 'paper', check).state.complete, false, 'a call without a seeded defect of the rule is not a tested call');
-  fs.writeFileSync(record(0), '{ not json'); for (const n of [1, 2, 3]) fs.rmSync(path.dirname(record(n)), { recursive: true });
+  fs.writeFileSync(record(0), '{ not json'); fs.rmSync(path.dirname(record(1)), { recursive: true });
   r = verify(project, 'paper', check);
   assert.deepEqual([r.state.complete, backed(r.state).length, r.state.independent.runs.length], [false, 0, 0]);
   // The hook reports, and never throws, whatever the local records hold.
@@ -194,11 +194,11 @@ test('the grounds left to a reader are judged: two passing judges pass, one fail
   const one = await judge(root, 'demo', 'paper', { writer: 'claude', ...check, runner: answerer((call, e, i) => { if (call.n === 1 && e === call.entries[0] && i === e.items[0]) runs++; return runs > 1 && i.expect === 'fail' ? 'pass' : undefined; }) });
   assert.deepEqual(one.runs.map(r => r.calls.flatMap(c => c.planted).filter(p => !p.met).length), [0, 11], 'a run that adds no vote is not repeated');
   assert.ok(backed(one.result.state).length === 15 && backed(one.result.state).every(c => c.v === 'pending' && c.by.runs.length === 1), 'one passing judge alone decides nothing');
-  assert.deepEqual([one.result.state.complete, waiting(one.result.state)], [false, 19]);
+  assert.deepEqual([one.result.state.complete, waiting(one.result.state)], [false, 15]);
   // The next judge fails the colon, the declaration of ordinary wording and the standard notation.
   const fails = (e, i) => (e.unit === at('use') && i.rule === 'aside-punctuation') || (e.unit === at('flow') && i.rule === 'term-attested') || (e.unit === 'document' && i.tag === '\\mathcal{N}');
   const two = await judge(root, 'demo', 'paper', { writer: 'claude', ...check, runner: answerer((call, e, i) => !i.expect && fails(e, i) ? 'fail' : undefined) });
-  assert.deepEqual(two.runs.map(r => r.calls.map(c => c.family)), [RULES, ['better-sentence', 'better-sentence'], ['better-sentence', 'better-sentence']], 'then the better sentence, for the two sentences that passed everything else');
+  assert.deepEqual(two.runs.map(r => r.calls.map(c => c.family)), [RULES], 'the questions one judge has passed are asked once more');
   const v = (id, rule) => two.result.state.units[id].checks[rule];
   assert.deepEqual([v(at('use'), 'aside-punctuation').v, v(at('flow'), 'term-attested').v, v('document', 'defined-before-use').v, v(at('use'), 'number-bound').v, v(at('count'), 'number-bound').v, v(at('use'), 'term-attested').v, v(at('susy'), 'term-attested').v],
     ['fail', 'fail', 'fail', 'pass', 'pass', 'pass', 'pass']);
@@ -206,31 +206,39 @@ test('the grounds left to a reader are judged: two passing judges pass, one fail
   assert.match(v(at('flow'), 'term-attested').e[0], /^"flow reaches": judge codex/);
   assert.match(v('document', 'defined-before-use').e[0], /^\\mathcal\{N\}: judge codex/);
   assert.deepEqual(v(at('use'), 'aside-punctuation').by.runs.map(r => r[2]), ['pass', 'fail'], 'the judges disagree: the unit fails');
-  assert.deepEqual([['count', 'use', 'flow', 'susy'].map(l => v(at(l), 'better-sentence').v), two.result.open.map(f => f.rule).sort(), two.result.state.complete], [['pass', 'pending', 'pending', 'pass'], ['aside-punctuation', 'defined-before-use', 'term-attested'], false], 'a sentence that has to change is not put to the search for a better one');
-  assert.match(report('demo', two.result), /Status: INCOMPLETE, 3 failing and 0 not judged\. Awaiting the independent verdict: 2 [^\n]* A unit with a failing or unjudged verdict is put to a judge only after that is settled\.\n- \[aside-punctuation\]/);
+  assert.deepEqual([two.result.open.map(f => f.rule).sort(), waiting(two.result.state), two.result.state.complete], [['aside-punctuation', 'defined-before-use', 'term-attested'], 0, false]);
+  assert.match(report('demo', two.result), /Status: INCOMPLETE, 3 failing and 0 not judged\.\n- \[aside-punctuation\]/);
   assert.equal((await judge(root, 'demo', 'paper', { ...check, runner: () => assert.fail('a failed unit is changed, not asked again') })).runs.length, 0);
 });
 
-test('a better sentence fails the unit when it gains under criteria 1 to 6 or saves a fifth of the words; a smaller saving is recorded and passes', async t => {
+test('the search for a better sentence gives advice on request and no verdict: a verification neither asks nor waits for it', async t => {
   const { root, project, at } = make(t), log = [];
+  const done = await judge(root, 'demo', 'paper', { writer: 'claude', ...check, runner: answerer(undefined, log) });
+  assert.deepEqual([done.result.state.complete, done.runs.length, log.some(call => call.family === 'better-sentence'), done.result.state.rules.some(r => r.id === 'better-sentence'), Object.values(done.result.state.units).some(u => 'better-sentence' in u.checks), done.result.advice.length],
+    [true, 2, false, false, false, 4], 'the search is no rule of the table, no check of a unit and no call of a verification');
+  assert.match(report('demo', done.result), /whether a sentence could be better \(the search for a better sentence gives advice on request, `paper-judge --advice`, and no verdict\)/);
+  const before = stored(project).units;
   const offers = { count: { sentence: 'The quiver has 2 nodes.', criterion: 7, reason: 'Two characters fewer.' }, flow: { sentence: 'The flow ends there.', criterion: 7, reason: 'Four words for six.' }, susy: { sentence: '$\\mathcal{N}$ counts supersymmetries.', criterion: 5, reason: 'The verb is enough.' } };
-  const out = await judge(root, 'demo', 'paper', { writer: 'claude', ...check, runner: answerer((call, e, i) => { const o = !e.planted && i.better && Object.entries(offers).find(([label]) => e.unit === at(label)); return o ? { verdict: 'fail', evidence: e.text.slice(0, 10), ...o[1] } : undefined; }, log) });
-  assert.deepEqual(log.map(call => call.family === 'better-sentence'), [...new Array(14).fill(false), ...new Array(5).fill(true)], 'the search waits until two judges have passed everything else');
-  const c = label => out.result.state.units[at(label)].checks['better-sentence'];
-  assert.deepEqual(['count', 'use', 'flow', 'susy'].map(l => [c(l).v, c(l).by.runs.length]), [['pass', 2], ['pass', 2], ['fail', 1], ['fail', 1]], 'writing "two" as "2" is no better sentence; a failed sentence is not asked twice');
-  assert.match(c('flow').e[0], /^judge codex, provider default model \(run [0-9a-f]{12}\) wrote a better sentence under criterion 7 \(the shorter text\): The flow ends there\. Reason: Four words for six\.$/);
-  assert.match(c('susy').e[0], /wrote a better sentence under criterion 5 \(no redundancy\): \$\\mathcal\{N\}\$ counts supersymmetries\. Reason: The verb is enough\.$/);
-  const noted = out.runs[2].calls[0].answers.find(a => a.unit === at('count')).items['better-sentence'];
-  assert.deepEqual([noted.v, noted.sentence, noted.note], ['pass', 'The quiver has 2 nodes.', 'a shorter sentence was offered, 5 words for 5: less than a fifth saved, not counted']);
-  const text = fs.readFileSync(path.join(ledger(project, 'paper'), out.runs[2].id, '0001', 'prompt.txt'), 'utf8');
-  assert.match(text, /1\. physical and mathematical correctness\n2\. the user's decisions\n[\s\S]*7\. the shorter text\n8\. on a tie, the existing sentence stays\n[^\n]*a replacement that is only shorter counts only when it has at least a fifth fewer words/);
-  assert.deepEqual(JSON.parse(fs.readFileSync(path.join(ledger(project, 'paper'), out.runs[2].id, '0001', 'schema.json'), 'utf8')).properties['u1-better-sentence'].required, ['verdict', 'reason', 'evidence', 'sentence', 'criterion']);
-  // The replaced sentences are new units: they and the rest of their paragraph are judged again, nothing else.
-  edit(project, 'There the flow reaches the endpoint.', 'The flow ends there.'); edit(project, 'The symbol $\\mathcal{N}$ counts supersymmetries.', '$\\mathcal{N}$ counts supersymmetries.');
+  const offering = (call, e, i) => { const o = !e.planted && Object.entries(offers).find(([label]) => e.unit === at(label)); return o ? { verdict: 'fail', evidence: e.text.slice(0, 10), ...o[1] } : undefined; };
   log.length = 0;
-  const next = await judge(root, 'demo', 'paper', { ...check, runner: answerer(undefined, log) });
-  assert.deepEqual([next.result.state.complete, c('count').by.runs.length], [true, 2]);
-  assert.deepEqual([...new Set(log.flatMap(call => call.entries.filter(e => !e.planted).map(e => e.unit)))].sort(), [at('use'), at('flow'), at('susy'), 'document'].sort());
+  const out = await judge(root, 'demo', 'paper', { ...check, advice: true, runner: answerer(offering, log) });
+  assert.deepEqual([out.runs.map(r => [r.advice, r.calls.map(c => c.family)]), log.map(call => call.entries.filter(e => !e.planted).length)], [[[true, new Array(3).fill('better-sentence')]], [1, 2, 1]], 'one run, a call for each paragraph');
+  assert.deepEqual(out.advice.map(a => [a.where, a.criterion, a.sentence]), [['§1 ¶2 s2', 7, 'The flow ends there.'], ['§1 ¶3 s1', 5, '$\\mathcal{N}$ counts supersymmetries.']], 'a gain named under criteria 1 to 6, or a fifth fewer words; writing "two" as "2" is neither');
+  const noted = out.runs[0].calls[0].answers.find(a => a.unit === at('count')).items['better-sentence'];
+  assert.deepEqual([noted.v, noted.sentence, noted.note], ['pass', 'The quiver has 2 nodes.', 'a shorter sentence was offered, 5 words for 5: less than a fifth saved, not counted']);
+  assert.deepEqual([stored(project).units, out.result.state.complete, out.result.state.independent.runs.length], [before, true, 2], 'advice changes no verdict, and its run is not among the runs of the judges');
+  assert.match(summary(out), /Run [0-9a-f]{12} of the judges, for advice and no verdict \([^\n]*\nAdvice, no part of the verification: 2 better sentences were written under the ranked criteria\.[^\n]*\n- §1 ¶2 s2 paper\/main\.tex:4 unit [0-9a-f]{12}, criterion 7 \(the shorter text\): The flow ends there\. Reason: Four words for six\.\n- §1 ¶3 s1 [^\n]*criterion 5 \(no redundancy\): \$\\mathcal\{N\}\$ counts supersymmetries\. Reason: The verb is enough\.\n/);
+  const text = fs.readFileSync(path.join(ledger(project, 'paper'), out.runs[0].id, '0001', 'prompt.txt'), 'utf8');
+  assert.match(text, /1\. physical and mathematical correctness\n2\. the user's decisions\n[\s\S]*7\. the shorter text\n8\. on a tie, the existing sentence stays\n[^\n]*a replacement that is only shorter counts only when it has at least a fifth fewer words/);
+  assert.deepEqual(JSON.parse(fs.readFileSync(path.join(ledger(project, 'paper'), out.runs[0].id, '0001', 'schema.json'), 'utf8')).properties['u1-better-sentence'].required, ['verdict', 'reason', 'evidence', 'sentence', 'criterion']);
+  // A call in which the judge left the planted wordy sentence as it is gives no advice.
+  const lazy = await judge(root, 'demo', 'paper', { ...check, advice: true, runner: answerer((call, e, i) => i.seed && call.entries.some(x => x.unit === at('flow')) ? 'pass' : offering(call, e, i)) });
+  assert.deepEqual(lazy.advice.map(a => a.where), ['§1 ¶3 s1']); assert.match(summary(lazy), /Missed: better-sentence:fail:1 in call 2\./);
+  // A sentence with a verdict that has not passed is not asked: here the edited one, and the one whose number it states.
+  edit(project, 'The quiver has two nodes.', 'The quiver has two nodes, as in section~\\ref{x}.');
+  log.length = 0;
+  await judge(root, 'demo', 'paper', { ...check, advice: true, runner: answerer(undefined, log) });
+  assert.deepEqual([...new Set(log.flatMap(call => call.entries.filter(e => !e.planted).map(e => e.unit)))].sort(), [at('flow'), at('susy')].sort());
   // In reading: criteria 1 to 6 count as named, criterion 7 from a fifth of the words, and a fail needs a different sentence.
   const call = { blocks: [{ headings: [], context: '', entries: [{ label: 'U1', text: 'It is the case that the coupling is marginal here.', items: [{ key: 'u1-better-sentence', show: 'better-sentence', q: 'Better?', better: true }] }] }] };
   const read = extra => reading(call, { 'u1-better-sentence': { verdict: 'fail', reason: 'Shorter.', evidence: 'the coupling is marginal', sentence: 'The coupling is marginal here.', criterion: 7, ...extra } });
@@ -253,7 +261,7 @@ test('a defect the user found is planted in every call of its family from then o
   const later = await judge(root, 'demo', 'paper', { ...check, runner: answerer(undefined, log) });
   const content = log.filter(call => call.family === 'content');
   assert.ok(content.length === 2 && content.every(call => call.entries.some(e => e.planted && e.text.startsWith('In case (3)') && e.items.some(i => i.seed === 'case-three-misplaced:fail:1' && i.expect === 'fail'))), 'the failing text is put to the judge as a unit among those of the manuscript');
-  assert.deepEqual(later.runs.map(r => r.calls.map(c => [c.family, c.units])), [[['content', 2], ['term-attested', 1]], [['content', 2], ['term-attested', 1]], [['better-sentence', 2]], [['better-sentence', 2]]], 'the questions about the other sentence alone (its number, its colon, its word pair) keep their verdicts');
+  assert.deepEqual(later.runs.map(r => r.calls.map(c => [c.family, c.units])), [[['content', 2], ['term-attested', 1]], [['content', 2], ['term-attested', 1]]], 'the questions about the other sentence alone (its number, its colon, its word pair) keep their verdicts');
   assert.deepEqual([...new Set(log.flatMap(call => call.entries.filter(e => !e.planted).map(e => e.unit)))].sort(), [at('use'), at('flow')].sort());
   for (const id of [at('count'), at('susy')]) assert.deepEqual(later.result.state.units[id], first.result.state.units[id], 'the verdicts of the other units are kept with the runs they rest on');
   assert.deepEqual(later.result.state.units.document.checks['defined-before-use'], first.result.state.units.document.checks['defined-before-use']);
@@ -265,7 +273,7 @@ test('a defect the user found is planted in every call of its family from then o
   register({ ...found, family: 'term-attested' }); assert.throws(() => rules(project), /its family term-attested is the id of a rule/);
   const shorter = { id: 'shorter', kind: 'better', source: 'fixture', fail: found.fail };
   register(shorter); assert.equal(rules(project).at(-1).id, 'shorter');
-  register({ ...shorter, pass: found.pass }); assert.throws(() => rules(project), /takes no passing text: a sentence passes when two judges fail to improve on it/);
+  register({ ...shorter, pass: found.pass }); assert.throws(() => rules(project), /takes no passing text: no text is beyond improvement by registration/);
 });
 
 test('paper-judge needs the writer, plans without a call or an enrollment, and refuses a nested or concurrent run', async t => {
@@ -278,9 +286,10 @@ test('paper-judge needs the writer, plans without a call or an enrollment, and r
     await assert.rejects(main(['paper-judge', '../demo', '--writer', 'claude'], root), /Invalid project slug/);
     const plan = async (...more) => JSON.parse(/Plan \(no model was called\): (\{.*\})/.exec(await main(['paper-judge', 'demo', 'paper', '--writer', 'claude', '--no-build', '--dry-run', ...more], root))[1]);
     assert.deepEqual((await plan()).families, { 'number-bound': 1, content: 2, 'term-attested': 1 }, 'without a corpus two sentences cannot be judged by code, and what code has to settle first is not put to a judge');
-    assert.deepEqual((await plan('--all-units', '--batch', '2')).families, { 'number-bound': 2, content: 4, 'better-sentence': 4, 'aside-punctuation': 1, 'term-attested': 1 }, 'for a trial every unit can be asked');
+    assert.deepEqual((await plan('--all-units', '--batch', '2')).families, { 'number-bound': 2, content: 4, 'aside-punctuation': 1, 'term-attested': 1 }, 'for a trial every unit can be asked');
+    assert.deepEqual([(await plan('--advice', '--all-units')).families, (await plan('--advice', '--all-units')).calls, /No sentence has passed every verdict yet/.test(await main(['paper-judge', 'demo', '--writer', 'claude', '--no-build', '--dry-run', '--advice'], root))], [{ 'better-sentence': 4 }, 3, true], 'advice is asked for sentences that have passed, or in a trial for all');
     assert.match((await plan('--batch', '2')).note, /one for every 2 units that are judged without their paragraph/); assert.match((await plan()).note, new RegExp(`one for every ${BATCH} units`));
-    assert.deepEqual([(await plan()).calls, (await plan('--all-units', '--batch', '1')).calls], [4, 10], 'count and flow, each in its paragraph and with its own open question; then three paragraphs twice and four open questions one by one');
+    assert.deepEqual([(await plan()).calls, (await plan('--all-units', '--batch', '1')).calls], [4, 7], 'count and flow, each in its paragraph and with its own open question; then three paragraphs and four open questions one by one');
     assert.equal(process.exitCode, 1); assert.ok(!fs.existsSync(file), 'a plan enrolls nothing');
   } finally { process.exitCode = saved; }
   const old = process.env.HEP_REVIEW_CHILD; process.env.HEP_REVIEW_CHILD = '1';
