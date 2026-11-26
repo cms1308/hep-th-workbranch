@@ -238,7 +238,8 @@ local edit of one needs none of these files, and no user-approval step is added.
   too (lower case, four letters or more, not a number word), with the same grounds and
   outcomes: an unattested word in two or more sentences or titles fails, one used once
   awaits the judge's verdict on whether it is ordinary English, and a pair is left out
-  when one of its words is such a finding.
+  when one of its words is such a finding, or when its second word opens a term with the
+  word after it (a modifier before a term, as in "unitary fixed point").
 - **Punctuation.** An em-dash fails. A colon before a display or at the end of its
   sentence passes. Any other colon or semicolon in running prose awaits the independent
   verdict, because [PAPER-STYLE](../PAPER-STYLE.md) keeps punctuation that clarifies.

@@ -1718,3 +1718,18 @@ flavorless, conditional), and the others await the judge.
 
 Open. Capitalized words are not compared (a name, or a word that opens a sentence), and
 British spellings are not folded into American ones.
+
+Addendum, the same day: a modifier before a term. Of the 314 failing occurrences of pairs on
+the pilot draft, 51 of the 172 that print their run were a modifier before an attested
+term ("single-node | fixed point", "unitary | fixed point"). Against a corpus wide enough to
+compare the modifier as a word, a pair is now left out when its second word opens a term
+with the word after it: an attested pair in which that word stands in at least
+`COLLOCATION` = 0.2 of its corpus occurrences. Without the share, "flow-pattern argument"
+was left out because "argument uses" is attested (a test caught it). Result on the pilot
+draft: 280 failing occurrences instead of 314. Of the pairs still failing whose next pair is
+attested, four are modifiers before terms with a smaller share ("connected | two-node
+quiver" 0.17, "five-dimensional | conformal manifold" 0.13, "supersymmetric | asymptotic
+safety" 0.07, "consistent | interacting fixed-point" 0.034) and four are not terms
+("type i" 0.024, "term comes" 0.005, "condition reads" 0.002, "invariants built" 0.001). A
+share near 0.03 would separate this sample, but it would be fitted to it, and a missed
+coinage costs more than a declaration, so the share stays at 0.2.

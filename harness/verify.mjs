@@ -18,6 +18,8 @@ export const TOOL = 1;                                   // raise when the decom
 export const JUDGE = 4;                                  // raise when a question, the prompt, the schema or the reading of an answer changes: every independent verdict is asked again
 // Corpus papers needed before single words are compared with it: a smaller corpus lacks common words, so their absence there says nothing.
 export const WORD_PAPERS = 20;
+// The share of a word's corpus occurrences that must stand in an attested pair for that pair to count as a term the word opens.
+export const COLLOCATION = 0.2;
 export const JUDGES = 1;                                 // judges that must pass a question unless the manuscript's RULES.json asks for more ("judges": n); one failing judge fails it
 export const FIT = [9, 10];                              // share of a rule's planted texts a run must answer as registered for its answers on that rule to count
 export const SHORTER = [4, 5];                           // a replacement that is only shorter counts when it has at most this share of the unit's words
@@ -298,7 +300,7 @@ function context(doc, { lexicon = {}, facts = {}, file, build: builder, baseline
       const show = t => t === run ? `"${t}"` : `"${t}" in "${run}"`;
       if (w.includes('-') && gram(w).includes(' ') && !numberWord(w)) out.set(gram(w), { text: show(w), compound: true });
       if (i && !closes(ws[i - 1])) out.set(gram(`${ws[i - 1]} ${w}`), { text: show(`${ws[i - 1]} ${w}`), parts: [ws[i - 1], w].filter(x => x.includes('-')).map(gram).filter(k => k.includes(' ')),
-        words: [ws[i - 1], w].flatMap(x => x.split('-')).filter(single).map(gram) });
+        words: [ws[i - 1], w].flatMap(x => x.split('-')).filter(single).map(gram), ...(i + 1 < ws.length && !closes(w) ? { next: gram(`${w} ${ws[i + 1]}`), second: gram(w) } : {}) });
     });
     // Single words, lower case and of four letters or more (a capital marks a name or the start of a sentence).
     for (const w of contentWords(u.prose)) for (const p of w.split('-')) if (single(p) && !out.has(gram(p))) out.set(gram(p), { text: `"${p}"`, single: true });
@@ -317,10 +319,15 @@ function context(doc, { lexicon = {}, facts = {}, file, build: builder, baseline
     return entry ? [entry.kind, entry.term, ...(entry.kind === 'ordinary' ? [entry.note] : [])] : n === null ? ['no-corpus'] : [c.single ? (occurs.get(c.key) > 1 ? 'word-recurrent' : 'word-once') : c.compound ? 'compound' : occurs.get(c.key) > 1 ? 'recurrent' : 'once', n, occurs.get(c.key)];
   };
   const wide = () => (corpus()?.papers?.length ?? 0) >= WORD_PAPERS;
+  const occurrences = k => occurs.has(k) && papers(k) !== null ? counts.get(k).count : 0;
+  const opens = c => !!c.next && occurs.has(c.next) && occurs.has(c.second) && papers(c.next) >= ATTESTED && occurrences(c.next) >= COLLOCATION * occurrences(c.second);
   const lone = k => papers(k) !== null && papers(k) < ATTESTED && !ground(k);          // a compound that is a finding by itself: the pairs containing it add nothing
   return { hash: doc.hash, unit, used, symbol: k => table.get(k), terms, uses, naming, names: u => named.filter(d => d.first && (d.standard ? d.first === u : d.site === u)), orphans, facts: facts.facts || {}, file, capitals, baseline, corpus, approved, outline: outlined(doc, plan.main ?? null, plan.seeds), grounds: grounded(doc, plan2.main ?? null, plan2.seeds, { file, bib, sources }),
     // Single words only against a corpus of WORD_PAPERS papers or more; a pair is left out when one of its words is a finding by itself.
-    term: u => candidates(u).filter(c => c.single ? wide() : c.compound || (!c.parts.some(lone) && !(wide() && c.words.some(k => occurs.has(k) && lone(k))))).map(c => [c.text, ...status(c)]),
+    // A pair whose second word opens a term with the word after it is a modifier before that term ("unitary | fixed point"), left out
+    // against a corpus wide enough to compare the modifier as a word. A term: an attested pair whose first word stands in it in at least
+    // a fifth of its corpus occurrences ("fixed point", not "argument uses").
+    term: u => candidates(u).filter(c => c.single ? wide() : c.compound || (!c.parts.some(lone) && !(wide() && c.words.some(k => occurs.has(k) && lone(k))) && !(wide() && opens(c)))).map(c => [c.text, ...status(c)]),
     standard: [...table].filter(([, e]) => e.at === undefined).map(([k, e]) => [e.symbol, k, typeof e.standard === 'string' ? e.standard : null]), symbolPapers: k => corpus() ? symbolPapers(corpus(), k) : null,
     first: k => doc.units.find(u => u.kind === 'sentence' && used(u).has(k)) ?? null, papers: () => corpus()?.documents ?? 0,
     build: () => built === undefined ? (built = builder()) : built };
