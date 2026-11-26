@@ -127,5 +127,21 @@
     "test_sufficient": false,
     "check_scheduler_classifier": true,
     "start_heavy_tier_now": false
+  },
+  "scripted-edits-reported-as-pass": {
+    "report_pass_complete": false,
+    "evidence_to_cite": "verification-table",
+    "reread_changed_sentences": true
+  },
+  "sentence-left-after-restructuring": {
+    "paragraph_keeps_to_its_role": false,
+    "action_for_last_sentence": "move-or-cut",
+    "update_outline_entry": false
+  },
+  "stale-outline-as-plan-input": {
+    "build_from_outline_file": false,
+    "source_for_claims": "current-text-and-decisions",
+    "correct_plan_line_first": true,
+    "listing_as_open_issue_suffices": false
   }
 }

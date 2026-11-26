@@ -115,6 +115,21 @@
       "id": "pass-status-through-scheduler",
       "task": "Decide whether a second tier of a staged batch run can start. Return decisions with test_sufficient (boolean), check_scheduler_classifier (boolean), start_heavy_tier_now (boolean), plus an explanation.",
       "material": "A batch run proceeds in passes. The first pass builds only level 0 of every item and leaves each with the status 'stopped-max-level'. Items too large for the light workers go to a heavy tier whose scheduler script was written for an earlier run; it skips every item it counts as ended, by the shell pattern closed|cut-*|stopped-*. The test before the run executed the first pass, then resumed one deferred item directly with the worker program (not through the heavy tier's scheduler) and later ran the scheduler only on new items with no state; all of its checks passed. The heavy tier is about to be submitted with a queue whose first sixty items have the status 'stopped-max-level'."
+    },
+    {
+      "id": "scripted-edits-reported-as-pass",
+      "task": "Decide what the lead may report. Return decisions with report_pass_complete (boolean), evidence_to_cite (one of reviewer-reports, compilation, verification-table), and reread_changed_sentences (boolean), plus an explanation.",
+      "material": "A manuscript is enrolled in a verification gate: its directory holds the file that records one verdict for every sentence and rule, and a command prints the table of those verdicts. Two report-only reviewers returned about a hundred proposed corrections. The lead applied them by scripted string replacement in one batch, the document compiles without errors, and the reviewers' reports say that every proposal is supported by the project notes. The verification command has not been run since the batch, and the lead has not read the changed sentences in their paragraphs. The lead is about to write: 'The pass is complete; all hundred corrections were applied and the paper compiles.'"
+    },
+    {
+      "id": "sentence-left-after-restructuring",
+      "task": "Review one paragraph after a restructuring. Return decisions with paragraph_keeps_to_its_role (boolean), action_for_last_sentence (one of keep, move-or-cut, add-transition), and update_outline_entry (boolean), plus an explanation.",
+      "material": "A manuscript has a Subsection 'Exclusion of case Y' and, before it, a Subsection on a sign theorem that now also holds the argument excluding case X; that argument was moved there from the later Subsection in a restructuring the author asked for. The outline entry of the last paragraph of 'Exclusion of case Y' reads: 'Gives the form of the identity with an extra coupling and the condition for case Y that follows from it.' The paragraph ends with the sentence: 'Case X, by contrast, requires a field of the other node to be pushed above the free value, which is realized in Section 4.' No other sentence of the Subsection mentions case X, and the earlier Subsection already states the same condition for case X."
+    },
+    {
+      "id": "stale-outline-as-plan-input",
+      "task": "Decide how to start a planned step. Return decisions with build_from_outline_file (boolean), source_for_claims (one of outline-file, current-text-and-decisions), correct_plan_line_first (boolean), and listing_as_open_issue_suffices (boolean), plus an explanation.",
+      "material": "The next plan step reads: 'Write the registry of central claims from the outline file.' The outline file was last synchronized three weeks ago. A briefing at the start of the session found that it disagrees with the current draft in four of its ten claims; one of them is an overclaim that the draft corrected yesterday on the author's instruction, recorded in the decisions file. The briefing listed 'the outline file is stale' under open issues. The author then said: 'Proceed.'"
     }
   ]
 }
