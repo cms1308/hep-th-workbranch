@@ -104,6 +104,10 @@ map for a difficult argument or when requested. Preserve existing detailed maps;
 the affected entries when using one, without expanding their coverage automatically.
 A useful definition, motivation, transition or derivation need not claim a new result.
 
+A manuscript enrolled in the [verification gate](#verification-gate) is the exception: its
+outline is `OUTLINE.json`, with one entry for every paragraph, and the gate holds it to
+the text. Nothing of this applies to a manuscript that is not enrolled.
+
 ## Evidence and validation
 
 - Trace scientific claims to established results or primary literature. Read the relevant
@@ -133,13 +137,14 @@ conflicts before deciding a scientific change; ordinary authorized merges can pr
 
 ## Verification gate
 
-Stages 1 to 3 of [the design](design/paper-verification.md) are implemented: the checks
-that code decides, including the comparison of terms with the literature corpus, and the
-independent verdict on what only a reader can decide. They supplement the reading duty
-above and replace none of it. A judge sees a sentence, its paragraph and its headings, so
-whether a sentence is physically correct and supported by the notes, the data or the cited
-source stays with the reading duty. The outline and the scope of central claims are
-stage 4, which does not exist yet.
+Stages 1 to 4 of [the design](design/paper-verification.md) are implemented: the checks
+that code decides, including the comparison of terms with the literature corpus, the
+independent verdict on what only a reader can decide, and the outline of the manuscript
+held to its text (one entry for every paragraph, and the scope of the central claims).
+They supplement the reading duty above and replace none of it. A judge sees a sentence
+with its paragraph, its headings and the outline, so whether a sentence is physically
+correct and supported by the notes, the data or the cited source stays with the reading
+duty. The pilot on a real manuscript is stage 5, which has not been run.
 
 `node harness/cli.mjs paper-verify <slug> [paper-dir]` splits the manuscript (literal
 `input`/`include` followed, preamble macros without arguments expanded) into titles,
@@ -153,6 +158,7 @@ local edit of one needs none of these files, and no user-approval step is added.
 | `RULES.json` | The project's rules, `{"version": 1, "rules": [...]}`, and optionally `"judges": n`. Harness-wide rules are in `harness/rules.json`. |
 | `LEXICON.json` | `symbols`: `{"symbol", "at"}` or `{"symbol", "standard"}`. `terms`: `{"term"}` with exactly one of `"at"`, `"approved"`, `"ordinary"`. |
 | `FACTS.json` | `facts`: id to `{"file", "pointer"}`, `{"file", "pattern"}` or `{"at"}`. `uses`: sentence to numeral to fact id. |
+| `OUTLINE.json` | `claims`: `{"id", "claim"}`, the central claims of the manuscript, each stated with the restrictions it holds under. `sections`: `{"title", "paragraphs"}` for every Section, Subsection and Subsubsection, with the TeX of its heading and one `{"role", "does"}` for each paragraph. |
 | `VERIFY.json` | Written by the CLI only: one verdict for each (unit, rule), bound to content hashes. It counts only together with the run metadata the CLI keeps on the same computer. |
 
 - **Rules.** An entry has `id`, `kind`, `source`, at least one `fail` text and one `pass`
@@ -160,14 +166,19 @@ local edit of one needs none of these files, and no user-approval step is added.
   its check flags every `fail` text and passes every `pass` text. A user objection supplies
   the failing text verbatim. Kinds decided by code: `banned` (`pattern`, optional `flags`,
   `roles`, `in: "tex"`), `reference-capital`, `sentence-case-title`, `aside-punctuation`,
-  `hard-wrap`, `defined-before-use`, `term-attested`, `number-bound`, `build`. Kinds decided
+  `hard-wrap`, `defined-before-use`, `term-attested`, `number-bound`, `build`, `outline`. Kinds decided
   by the independent verdict: `judge`, a rule only a reader can apply, with its `question`
   (what passes and what fails), an optional `family` (the rules asked together in one call,
-  `content` by default) and optional `roles`. And `better`, the search for a better
+  `content` by default), optional `roles`, `unit` (`sentence` by default, or `paragraph`)
+  and `shows` (what of the outline the judge is shown with the unit: `entry`, `claims`;
+  the rule then applies where the outline has it). And `better`, the search for a better
   sentence, which gives advice on request and no verdict, and has `fail` texts only (texts
   a judge must improve). The `fail` and `pass` texts of these kinds open with a `\section`
-  heading of their own, and
-  `at` names the sentence the rule is tested on (the last one otherwise). Code cannot test
+  heading of their own (or are an abstract), and
+  `at` names the sentence or paragraph the rule is tested on (the last one otherwise). A
+  text of a family whose calls show the outline carries an `outline` of its own, in the
+  form of `OUTLINE.json`, since a planted paragraph without an entry would stand out. A
+  rule that shows the outline therefore has a family apart from `content`. Code cannot test
   such a rule at registration. Instead every run of the judges plants these texts, so a
   defect the user found is registered as a `judge` rule with the failing text verbatim and
   is seeded from then on. One text may serve several registrations (a paragraph with a
@@ -225,6 +236,36 @@ local edit of one needs none of these files, and no user-approval step is added.
   on an overfull box absent at enrollment, a repeated table header left without a row, an
   undefined reference or citation, and a failed build. `--no-build`, or a missing tool,
   leaves the check not judged.
+- **Outline.** An enrolled manuscript needs `OUTLINE.json`. An entry belongs to a paragraph
+  together with the list items that follow it. The abstract, captions and footnotes have
+  none. `role` is one of motivation, setup, definition, review, derivation, result,
+  evidence, interpretation, transition and outlook, so no paragraph is forced to carry a
+  result, and `does` says in a sentence what the paragraph does for the argument. The
+  sections of the outline are matched to the headings by title (preamble macros expanded,
+  an empty title for paragraphs before the first heading), and the entries of a section to
+  its paragraphs in order. Code fails a manuscript without an outline or without a central
+  claim, a heading that the outline does not list, a section whose number of entries
+  differs from its number of paragraphs, an entry without a known role or without `does`,
+  and an outline section that matches no heading.
+  `node harness/cli.mjs paper-outline <slug> [paper-dir]` prints every heading with its
+  paragraphs and their entries, and with `--skeleton` the JSON to fill in, which keeps the
+  entries that stand. It writes nothing and enrolls nothing. The judges are then asked: for
+  a paragraph, whether it keeps to its entry (`entry-delivered`: a sentence on another case
+  than the entry fails the paragraph); for every sentence, whether it states a registered
+  central claim without one of its restrictions, or contradicts one (`claim-scope`); for a
+  sentence of the abstract, whether the registered claims cover every result it states
+  (`abstract-covered`, so that the outline cannot leave out what the abstract announces);
+  and for a heading, whether it covers what each paragraph and part under it does. The
+  first two rules form the family `outline`, in calls of their own: `scope-stated` and
+  `in-place` are asked without the outline, because an entry written by the writer would
+  otherwise sway them (measured, design record). State in `claim` the restrictions the
+  result needs, since a judge holds a sentence to every qualifier of a registered claim.
+  The writer does not attest the outline again after an edit. The key of a verdict covers the
+  paragraph, its entry and the claims that the judge was shown: an edited paragraph is
+  judged against its entry again, an edited entry asks its paragraph and its heading
+  again, and an edited claim asks every paragraph again. While code finds a fault in the
+  outline of the document, of a Section or of a paragraph, the questions that would show
+  that outline are not put to a judge.
 - **Verdicts.** Pass, fail, awaiting the independent verdict, or not judged. Verification
   is complete when no verdict fails, none is unjudged and none awaits the independent
   verdict. A verdict is judged again only when its unit, its rule or what it depends on
@@ -232,18 +273,21 @@ local edit of one needs none of these files, and no user-approval step is added.
   of its terms). A rebuilt corpus changes only the verdicts whose grounds it changes.
 - **Independent verdicts.** `node harness/cli.mjs paper-judge <slug> [paper-dir] --writer
   <claude|codex>` asks judges of the vendor that did not write the manuscript. The writer is
-  a declaration, kept after the first run and printed in every report. Asked are: for every
-  sentence the registered `judge` rules (harness-wide `scope-stated` and `in-place`), for
-  the units where code left a question a numeral bound with `at`, a colon or semicolon, a
-  word pair that occurs once, an `ordinary` declaration and the notation declared
-  `standard`. A unit that fails a code check is not put to a judge until the failure is
+  a declaration, kept after the first run and printed in every report. Asked are the
+  registered `judge` rules (harness-wide `scope-stated`, `in-place` and `claim-scope` for
+  every sentence, `entry-delivered` for every paragraph with an entry, `abstract-covered`
+  for the abstract) and, for the units where code left a question, a numeral bound with
+  `at`, a colon or semicolon, a word pair that occurs once, an `ordinary` declaration, the
+  notation declared `standard` and a heading with what the outline lists under it. A unit that fails a code check is not put to a judge until the failure is
   fixed.
-- **Calls.** One call puts one rule family to the judge. For the rules about a sentence
-  (the `judge` rules, and the better sentence when advice is asked) a call holds the sentences of one paragraph,
-  judged in that paragraph under its headings, and no other paragraph of the manuscript:
-  a judge that sees two uses the one on the other (measured, design record), and the key
-  of a verdict covers its own paragraph only. The questions that code left open are about
-  the sentence alone and are put together, up to `--batch` units a call (25 by default).
+- **Calls.** One call puts one rule family to the judge. For the `judge` rules (and the
+  better sentence when advice is asked) a call holds one paragraph with the list items
+  that belong to it: its sentences and the paragraph itself, under its headings, with its
+  entry and the central claims of the outline where a rule of the family shows them, and
+  no other paragraph of the manuscript. A judge that sees two uses the one on the other
+  (measured, design record), and the key of a verdict covers what its own call showed of
+  the manuscript. The questions that code left open are about the unit alone (a sentence,
+  a heading, the notation) and are put together, up to `--batch` units a call (25 by default).
   The schema of a call requires, for every unit and question, pass or fail, a reason and a
   quotation of the material shown. An answer is read question by question: a missing
   verdict, or evidence that is not a quotation, loses that unit's verdict on that rule and

@@ -24,20 +24,25 @@ const sample = s => typeof s === 'string' ? { tex: s } : s;
 // What one call shows the judge: blocks (a paragraph with its headings and the units to judge in it), then the questions.
 // A question's key (verify.mjs) covers every part of a question that enters here: when this wording changes, raise JUDGE.
 function material(call) {
-  const entries = call.blocks.flatMap(b => b.entries), better = entries.some(e => e.items.some(i => i.better));
+  const entries = call.blocks.flatMap(b => b.entries), better = entries.some(e => e.items.some(i => i.better)), outlined = call.blocks.some(b => b.aside?.entry || b.aside?.claims), groups = new Map();
   const same = entries.every(e => e.items.length === entries[0].items.length && e.items.every((i, k) => i.show === entries[0].items[k].show && i.q === entries[0].items[k].q));
+  // A question put to several units is printed once, with the units it is put to.
+  for (const e of entries) for (const i of e.items) { const k = `${i.show}\n${i.q}`; groups.set(k, [...(groups.get(k) || []), { e, i }]); }
   return [
     'You are an independent judge of parts of a manuscript in theoretical high-energy physics (hep-th). You did not write it and neither answer is preferred.',
     'Judge only the questions below, from the material in this message. Do not read files, run commands or search: everything you need is here.',
-    'The material comes in blocks. A block is a paragraph of the manuscript with the headings above it, or one sentence or title taken alone, or the notation the manuscript declares. Where a block has several units and prints no paragraph, its units, in their order, are the whole paragraph. The blocks do not belong together: judge each unit within its own block, use nothing from another block, and judge only the units listed.',
+    `The material comes in blocks. A block is a paragraph of the manuscript with the headings above it, or one sentence or title taken alone, or the notation the manuscript declares. Where a block has several units and prints no paragraph, its units, in their order, are the whole paragraph.${outlined ? ' A block may also print what the outline of its manuscript holds for it: the entry of the paragraph (its role, then what the paragraph does) and the central claims that the outline registers.' : ''} The blocks do not belong together: judge each unit within its own block, use nothing from another block, and judge only the units listed.`,
     ...call.blocks.map((b, k) => [`Block ${k + 1}`, ...(b.headings.length ? [`Headings above it: ${b.headings.join(' > ')}`] : []),
-      ...(b.context && bare(b.context) !== bare(b.entries.map(e => e.text).join('')) ? [`Paragraph:\n${fence(b.context)}`] : []),
-      ...b.entries.map(e => e.text ? `Unit ${e.label}:\n${fence(e.text)}` : `Unit ${e.label}: the notation that the manuscript declares standard, described in its questions.`)].join('\n')),
+      ...(b.aside?.entry ? [`Entry of the paragraph in the outline: ${b.aside.entry}`] : []),
+      ...(b.aside?.claims ? [`Central claims registered in the outline:\n${b.aside.claims.map(c => `- ${c}`).join('\n')}`] : []),
+      ...(b.context && bare(b.context) !== bare(b.entries.filter(e => !e.whole).map(e => e.text).join('')) ? [`Paragraph:\n${fence(b.context)}`] : []),
+      ...b.entries.map(e => e.whole ? `Unit ${e.label}: the paragraph of this block as a whole, with the list items that belong to it.` : e.text ? `Unit ${e.label}:\n${fence(e.text)}` : `Unit ${e.label}: the notation that the manuscript declares standard, described in its questions.`)].join('\n')),
     ...(better ? [['Ranked criteria of a better sentence. A gain under a lower criterion never justifies a loss under a higher one.',
       ...CRITERIA.map((c, i) => `${i + 1}. ${c}`), `${CRITERIA.length + 1}. on a tie, the existing sentence stays`,
       'A replacement stands in the same place of its paragraph and keeps every claim, condition, symbol, reference and citation of the unit, unless criterion 1 requires a change. A rewording that is merely different is not better, and a replacement that is only shorter counts only when it has at least a fifth fewer words: offer no smaller saving.'].join('\n')] : []),
     same ? ['Questions, each to be answered for every unit. The answer to question X about unit U7 has the key u7-X.', ...entries[0].items.map(i => `- ${i.show}: ${i.q}`)].join('\n')
-      : ['Questions, each about one unit:', ...entries.flatMap(e => e.items.map(i => `- ${i.key} (unit ${e.label}): ${i.q}`))].join('\n'),
+      : groups.size === entries.reduce((n, e) => n + e.items.length, 0) ? ['Questions, each about one unit:', ...entries.flatMap(e => e.items.map(i => `- ${i.key} (unit ${e.label}): ${i.q}`))].join('\n')
+        : ['Questions, each put to the units named with it. The answer to question X about unit U7 has the key u7-X.', ...[...groups.values()].map(g => `- ${g[0].i.show} (${g.length === 1 ? `unit ${g[0].e.label}` : `units ${g.map(x => x.e.label).join(', ')}`}): ${g[0].i.q}`)].join('\n'),
   ].join('\n\n');
 }
 // The whole message of one call: the material, then how to answer.
@@ -78,18 +83,24 @@ export function reading(call, value) {
 
 // The registered failing and passing texts of the families asked in a run, as lines and registry entries to append to a copy of the manuscript.
 function plant(list, families) {
-  const extra = { lines: [], symbols: [], terms: [], facts: {}, uses: {} }, samples = [], files = new Map();
+  const extra = { lines: [], symbols: [], terms: [], facts: {}, uses: {}, outlines: {} }, samples = [], files = new Map();
   for (const rule of list) {
     if (!families.has(family(rule))) continue;
     const check = CHECKS[rule.kind], texts = check.reader ? rule : rule.judge || {};
     for (const want of ['fail', 'pass']) (texts[want] || []).map(sample).forEach((s, i) => {
       const id = `${rule.id}:${want}:${i + 1}`;
       // A heading ends whatever precedes the text. A judge of a code rule's question sees no heading; a reader rule's text carries its own.
-      const tex = check.reader ? s.tex : `\\section{Planted text}\n\n${s.tex}`;
+      const tex = check.reader || /^\s*\\section\*?\s*\{/.test(s.tex) ? s.tex : `\\section{Planted text}\n\n${s.tex}`;
       // One text may serve several registrations (a paragraph with a sound sentence and a defective one): it is planted once.
       if (!files.has(tex)) {
         files.set(tex, `seed:${id}`);
         extra.lines.push({ file: `seed:${id}`, line: 0, text: '' }, ...tex.split('\n').map((text, n) => ({ file: `seed:${id}`, line: n + 1, text })), { file: `seed:${id}`, line: 0, text: '' });
+      }
+      // The outline of a planted text holds for the units of that text only.
+      if (s.outline) {
+        const had = extra.outlines[files.get(tex)];
+        if (had && JSON.stringify(had) !== JSON.stringify(s.outline)) throw Error(`The text of ${id} is registered elsewhere with another outline: one text has one outline.`);
+        extra.outlines[files.get(tex)] = s.outline;
       }
       extra.symbols.push(...(s.lexicon?.symbols || [])); extra.terms.push(...(s.lexicon?.terms || []));
       Object.assign(extra.facts, s.facts?.facts); Object.assign(extra.uses, s.facts?.uses);
@@ -122,8 +133,8 @@ function fixtures(copy, samples) {
 function blocks(entries) {
   const out = [];
   for (const e of entries) {
-    const k = JSON.stringify([e.q.headings, e.q.context || e.q.unit]);
-    if (out.at(-1)?.k === k) out.at(-1).entries.push(e); else out.push({ k, headings: e.q.headings, context: e.q.context, entries: [e] });
+    const k = JSON.stringify([e.q.headings, e.q.context || e.q.unit, e.q.aside ?? {}]);
+    if (out.at(-1)?.k === k) out.at(-1).entries.push(e); else out.push({ k, headings: e.q.headings, context: e.q.context, aside: e.q.aside ?? {}, entries: [e] });
   }
   return out;
 }
@@ -138,14 +149,14 @@ function compose(name, need, fx, size, salt) {
     const order = [...chunk], draw = j => parseInt(sha(`${salt}:${name}:${c}:${j}`).slice(0, 8), 16), seeds = new Map();
     planted.forEach((b, j) => order.splice(draw(j) % (order.length + 1), 0, b));
     let label = 0;
-    const laid = order.map(b => ({ headings: b.headings, context: b.context, entries: b.entries.map(e => {
+    const laid = order.map(b => ({ headings: b.headings, context: b.context, aside: b.aside, entries: b.entries.map(e => {
       const u = ++label, extra = e.real && e.q.unit === 'document' ? fx.declared : [];
       const mixed = [...e.q.items.map(i => ({ i, to: e.real ? i.id : null, plan: e.expect?.[i.id] })), ...extra.map(i => ({ i, to: null, plan: { want: i.want, seed: i.seed } }))];
       // The notation of the document is one unit: the planted declarations join its own, in an order fixed by the salt.
       const shown = extra.length ? mixed.map((m, j) => [draw(`d${j}`), m]).sort((x, y) => x[0] - y[0]).map(([, m], j) => ({ ...m, show: `item-${j + 1}` })) : mixed.map(m => ({ ...m, show: m.i.id }));
       const items = shown.map(m => ({ key: `u${u}-${m.show}`, show: m.show, to: m.to, rule: m.i.rule, tag: m.i.tag, q: m.i.q, ...(m.i.better ? { better: true } : {}), ...(m.plan ? { expect: m.plan.want, seed: m.plan.seed } : {}) }));
       for (const i of items) if (i.seed) seeds.set(i.seed, { id: i.seed, rule: i.rule, want: i.expect, keys: [...(seeds.get(i.seed)?.keys || []), i.key] });
-      return { label: `U${u}`, unit: e.q.unit, key: e.q.key, real: !!e.real, text: e.q.text, items };
+      return { label: `U${u}`, unit: e.q.unit, key: e.q.key, real: !!e.real, text: e.q.text, ...(e.q.kind === 'paragraph' ? { whole: true } : {}), items };
     }) }));
     return { family: name, blocks: laid, seeds: [...seeds.values()], units: chunk.reduce((n, b) => n + b.entries.length, 0) };
   });
@@ -173,7 +184,7 @@ async function run({ project, paper, slug, dir, writer, provider, model, need, l
       const call = invocation(provider, cdir, model, { narrow: true, schema });
       // `call` describes the questions for an injected judge (tests); the provider process receives the prompt only.
       await runner(call.command, call.args, { cwd: scratch, dir: cdir, prompt: text, timeout,
-        call: { n: c.n, family: c.family, provider, entries: entries.map(e => ({ label: e.label, unit: e.unit, planted: !e.real, text: e.text, items: e.items.map(i => ({ key: i.key, id: i.show, rule: i.rule, tag: i.tag, better: !!i.better, expect: i.expect ?? null, seed: i.seed ?? null })) })) } });
+        call: { n: c.n, family: c.family, provider, entries: entries.map(e => ({ label: e.label, unit: e.unit, planted: !e.real, text: e.text, whole: !!e.whole, items: e.items.map(i => ({ key: i.key, id: i.show, rule: i.rule, tag: i.tag, better: !!i.better, expect: i.expect ?? null, seed: i.seed ?? null })) })) } });
       const got = collect(provider, cdir);
       Object.assign(entry, { session: got.sessionId, usage: got.usage });        // a refused answer was paid for as well
       for (const m of got.models) if (!record.models.includes(m)) record.models.push(m);
@@ -209,8 +220,10 @@ async function run({ project, paper, slug, dir, writer, provider, model, need, l
 // verdicts have all passed.
 function needed(result, { families, all, advice, model }) {
   const verdicts = q => Object.values(result.state.units[q.unit].checks).map(c => c.v), named = q => !families || families.includes(q.family);
+  // A question that shows the outline waits until code finds nothing to fix in the outline of the document, of the Section and of the paragraph.
+  const grounded = q => (q.needs || []).every(([unit, rule]) => { const c = result.state.units[unit]?.checks[rule]; return !c || c.by || !['fail', 'unjudged'].includes(c.v); });
   if (advice) return result.advice.filter(q => named(q) && (all || verdicts(q).every(v => v === 'pass')));
-  return result.questions.filter(q => Object.values(q.lacks).some(passed => !passed.has(model ?? MODEL)) && named(q) && (all || q.unit === 'document' || !verdicts(q).some(v => v === 'fail' || v === 'unjudged')));
+  return result.questions.filter(q => Object.values(q.lacks).some(passed => !passed.has(model ?? MODEL)) && named(q) && (all || (grounded(q) && (q.unit === 'document' || !verdicts(q).some(v => v === 'fail' || v === 'unjudged')))));
 }
 function acquire(lock) {
   for (let attempt = 0; attempt < 2; attempt++) {

@@ -60,8 +60,8 @@ example by reading it through the shell, and has a call running at the moment an
 session edits it.
 
 **Stop.** A session that changed the manuscript must leave it verified (`paper-verify`
-complete for the current text, rules, lexicon and facts, which since stage 3 includes the
-independent verdicts of `paper-judge`) or declared work in progress
+complete for the current text, rules, lexicon, facts and outline, which since stage 3
+includes the independent verdicts of `paper-judge`) or declared work in progress
 (`paper-verify <slug> [paper-dir] --wip "<reason>"`, which records and prints the
 unverified units for the report to the user). Otherwise the hook answers
 `{"decision": "block", "reason": ...}` and the turn continues. One text is blocked at most
@@ -94,8 +94,11 @@ instruction file or hook is loaded. Codex runs with its read-only sandbox and wi
 stored session, Claude without tools. Each call uses the provider's default model and
 settings unless `--model` names one. Measured with Codex on 2026-11-26: a call takes about
 21 thousand input tokens before its question, 23 thousand with a paragraph and the planted
-texts, 3 to 4 thousand output tokens and 70 to 80 s with four at a time. A run over a
-draft of 100 paragraphs is about 106 calls, and a text that fails nothing needs one run.
+texts, 3 to 4 thousand output tokens and 70 to 85 s with four at a time. A paragraph costs
+two calls, one under the rules about a sentence in its paragraph and one with the outline.
+A run over a draft of 90 paragraphs (a list counted with the paragraph before it) is about
+190 calls, 4.3 million input and 0.6 million output tokens and an hour, and a text that
+fails nothing needs one run.
 The search for a better sentence is asked only with `--advice`, one run of one call for
 each paragraph. Run `--dry-run` first (it prints the
 calls of one run), run long jobs in the background and keep the computer awake. A run that is cut short keeps the calls it recorded, and the next run asks only
@@ -114,7 +117,8 @@ to the user, never by removing the run that gave it.
 **Commits.** `queue` appends `Manuscript-Verification: incomplete (<directory>)` to the
 commit message when a queued TeX file belongs to an enrolled manuscript that is not
 verified. Such commits are allowed and marked, with or without the hooks. Queue
-`VERIFY.json` with the manuscript.
+`VERIFY.json` and the registries that changed (`OUTLINE.json`, `LEXICON.json`,
+`FACTS.json`, `RULES.json`) with the manuscript.
 
 The provider documentation was read through a summarizing fetch on 2026-11-25: both
 describe `PreToolUse`, `PostToolUse` with `session_id`, `tool_name` and `tool_input`, and
@@ -138,7 +142,8 @@ they cannot lock another computer. A rejected push is the signal to reconcile ch
 and bare remotes, without sending research files anywhere. `tests/verify.test.mjs` covers
 the verification gate on fixture manuscripts, with the build and the corpus injected, and
 the corpus build on a fixture vault. `tests/judge.test.mjs` covers the independent
-verdicts with an injected judge (`tests/judges.mjs`) and calls no model. `node harness/cli.mjs check`
+verdicts and `tests/outline.test.mjs` the outline contract, both with an injected judge
+(`tests/judges.mjs`) and without a call of a model. `node harness/cli.mjs check`
 checks state structure, links, open verification criteria and any existing paper-review
 tracking. Paper tracking findings are advisory; an ordinary draft needs no review tracker.
 The cross-platform CI matrix runs the same tests on macOS and Windows (also Linux).

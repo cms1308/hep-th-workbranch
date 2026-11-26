@@ -1,9 +1,11 @@
-// Manuscript verification, stages 1 to 3 of harness/design/paper-verification.md: registered
+// Manuscript verification, stages 1 to 4 of harness/design/paper-verification.md: registered
 // rules with failing and passing texts, the checks decided by code (stage 2: terms and standard
 // notation against the literature corpus), hash-bound verdicts in paper/VERIFY.json and the gate
 // read by the Stop hook. Stage 3: what only a reader can decide becomes a question to independent
 // judges (harness/judge.mjs runs them); their answers count only through the run records the CLI
-// keeps under .harness-local/verdicts/, and VERIFY.json counts only as the CLI wrote it.
+// keeps under .harness-local/verdicts/, and VERIFY.json counts only as the CLI wrote it. Stage 4:
+// the outline of the manuscript (paper/OUTLINE.json: its central claims, and one entry for every
+// paragraph) is a registry that code holds to the text and that the judges are shown.
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
@@ -13,13 +15,16 @@ import { flatten, decompose, symbols, value, expand, numberWord } from './tex.mj
 import { load as storedCorpus, fromTex, attest, key as gram, symbolPapers, ATTESTED } from './corpus.mjs';
 
 export const TOOL = 1;                                   // raise when the decomposition or a check changes meaning: every verdict is judged again
-export const JUDGE = 2;                                  // raise when a question, the prompt, the schema or the reading of an answer changes: every independent verdict is asked again
+export const JUDGE = 3;                                  // raise when a question, the prompt, the schema or the reading of an answer changes: every independent verdict is asked again
 export const JUDGES = 1;                                 // judges that must pass a question unless the manuscript's RULES.json asks for more ("judges": n); one failing judge fails it
 export const FIT = [9, 10];                              // share of a rule's planted texts a run must answer as registered for its answers on that rule to count
 export const SHORTER = [4, 5];                           // a replacement that is only shorter counts when it has at most this share of the unit's words
 // Ranked criteria of "better" (user decision 2026-11-25). The eighth: on a tie the existing sentence stays. Since 2026-11-26 the
 // search for a better sentence gives advice on request and no verdict (user decision, on its measured behavior).
 export const CRITERIA = ['physical and mathematical correctness', "the user's decisions", 'harness rules', 'completeness of the information the argument needs', 'no redundancy', 'terminology attested in the literature', 'the shorter text'];
+// What a paragraph does for the argument, as its outline entry names it. No paragraph is forced to carry a result.
+export const ROLES = ['motivation', 'setup', 'definition', 'review', 'derivation', 'result', 'evidence', 'interpretation', 'transition', 'outlook'];
+export const SHOWN = ['entry', 'claims'];                // what of the outline a rule judged by a reader can show the judge with a paragraph
 const AWAIT = 'awaits the independent verdict';
 const BASE = fileURLToPath(new URL('./rules.json', import.meta.url));
 const R_MARK = '⟦R⟧', D_MARK = '⟦D⟧';
@@ -75,7 +80,67 @@ export function build(project, paper) {
   return { log: fs.readFileSync(path.join(cwd, 'main.log'), 'latin1'), pages: pages.out.split('\f') };
 }
 
-function context(doc, { lexicon = {}, facts = {}, file, build: builder, baseline = null, corpus: source = () => null }) {
+const squash = s => String(s ?? '').replace(/\s+/g, ' ').trim();
+const MAIN = 'manuscript';
+const sound = e => !!e && ROLES.includes(e.role) && typeof e.does === 'string' && !!e.does.trim();
+// The outline held against the text. An entry belongs to a block: a body paragraph with the list items after it, or a run of
+// items that follows no paragraph. The sections of an outline are matched to the headings of level 1 to 3 by title, and the
+// entries of a section to its blocks in order. `seeds`: the outlines of planted texts, each for the units of its own file.
+function outlined(doc, main, seeds = {}) {
+  const shape = (o, name) => {
+    if (o === null || o === undefined) return null;
+    const bad = why => { throw Error(`${name}: ${why}`); };
+    if (typeof o !== 'object' || Array.isArray(o)) bad('an outline is an object with "claims" and "sections"');
+    for (const key of ['claims', 'sections']) if (o[key] !== undefined && !Array.isArray(o[key])) bad(`"${key}" must be a list`);
+    for (const s of o.sections || []) if (!s || typeof s !== 'object' || (s.title !== undefined && typeof s.title !== 'string') || (s.paragraphs !== undefined && !Array.isArray(s.paragraphs))) bad('a section has "title" (the TeX of its heading, empty for the paragraphs before the first heading) and "paragraphs" (a list of entries)');
+    return o;
+  };
+  const scopes = new Map(), scopeOf = new Map(), blockOf = new Map(), sections = new Map(), byId = new Map(doc.units.map(u => [u.id, u]));
+  const enter = name => scopes.get(name) || scopes.set(name, { name, source: shape(name === MAIN ? main : seeds[name], name === MAIN ? 'OUTLINE.json' : `the outline of the planted text ${name}`), front: { unit: null, level: 0, blocks: [], subs: [] }, sections: [] }).get(name);
+  let scope = null, sec = null, cur = null;
+  for (const u of doc.units) {
+    const name = String(u.file ?? '').startsWith('seed:') ? u.file : MAIN;
+    if (scope?.name !== name) { scope = enter(name); sec = scope.sections.at(-1) ?? scope.front; cur = null; }
+    scopeOf.set(u.id, scope);
+    if (u.kind === 'title') {
+      cur = null;                                        // a heading of any level ends a block
+      if (u.level < 1 || u.level > 3) continue;
+      scope.sections.findLast(s => s.level < u.level)?.subs.push(u.text);
+      sec = { unit: u, level: u.level, blocks: [], subs: [] };
+      scope.sections.push(sec); sections.set(u.id, sec);
+    } else if (u.kind === 'paragraph' && (u.role === 'body' || u.role === 'item')) {
+      if (u.role === 'body' || !cur) { cur = { lead: u, members: [], section: sec }; sec.blocks.push(cur); }
+      cur.members.push(u); blockOf.set(u.id, cur);
+    }
+  }
+  const norm = title => squash(expand(String(title ?? ''), doc.macros)), problems = [];
+  for (const sc of scopes.values()) {
+    const src = sc.source, own = sc.name === MAIN, ids = new Set();
+    sc.claims = [];
+    if (!src) continue;
+    for (const c of src.claims || []) {
+      if (c && /^[a-z0-9-]+$/.test(c.id || '') && !ids.has(c.id) && typeof c.claim === 'string' && c.claim.trim()) { ids.add(c.id); sc.claims.push({ id: c.id, claim: squash(c.claim) }); }
+      else if (own) problems.push(`the central claim ${JSON.stringify(c?.id ?? c)} needs an id of its own (lowercase letters, digits and hyphens) and its statement in "claim"`);
+    }
+    if (own && !sc.claims.length) problems.push('the outline registers no central claim: "claims" states what the manuscript establishes, each claim with the restrictions it holds under');
+    const pool = (src.sections || []).map(s => ({ s, title: norm(s.title), used: false }));
+    for (const s of [sc.front, ...sc.sections]) {
+      if (!s.unit && !s.blocks.length) continue;         // nothing stands before the first heading
+      const hit = pool.find(p => !p.used && p.title === (s.unit ? s.unit.text : ''));
+      if (hit) hit.used = true;
+      s.listed = !!hit; s.entries = hit?.s.paragraphs ?? [];
+      s.aligned = s.listed && s.entries.length === s.blocks.length;
+      if (s.aligned) s.blocks.forEach((b, i) => { b.entry = s.entries[i]; });
+    }
+    if (own) for (const p of pool.filter(p => !p.used)) problems.push(`the outline section ${JSON.stringify(p.title || '(no title)')} matches no ${p.title ? 'Section, Subsection or Subsubsection' : 'paragraph before the first heading'} of the manuscript`);
+  }
+  const of = u => { const p = u.kind === 'paragraph' ? u : byId.get(u.paragraph), block = (p && blockOf.get(p.id)) ?? null; return { block, entry: sound(block?.entry) ? block.entry : null, claims: scopeOf.get(u.id)?.claims ?? [] }; };
+  const own = scopes.get(MAIN);
+  return { present: !!main, problems, of, has: u => !!scopeOf.get(u.id)?.source, section: u => sections.get(u.id) ?? null,
+    counts: main && own ? { claims: own.claims.length, sections: own.sections.filter(s => s.listed).length, entries: [own.front, ...own.sections].reduce((n, s) => n + s.blocks.filter(b => sound(b.entry)).length, 0) } : null };
+}
+
+function context(doc, { lexicon = {}, facts = {}, file, build: builder, baseline = null, corpus: source = () => null, outline: plan = {} }) {
   const byId = new Map(doc.units.map(u => [u.id, u]));
   const unit = ref => byId.get(typeof ref === 'string' && ref.startsWith('label:') ? doc.labels[ref.slice(6)] : ref);
   const entries = lexicon.symbols || [], names = entries.map(e => e.symbol).filter(s => /^[A-Za-z]{2,}$/.test(s)), table = new Map();
@@ -120,7 +185,7 @@ function context(doc, { lexicon = {}, facts = {}, file, build: builder, baseline
     return entry ? [entry.kind, entry.term, ...(entry.kind === 'ordinary' ? [entry.note] : [])] : n === null ? ['no-corpus'] : [c.compound ? 'compound' : occurs.get(c.key) > 1 ? 'recurrent' : 'once', n, occurs.get(c.key)];
   };
   const lone = k => papers(k) !== null && papers(k) < ATTESTED && !ground(k);          // a compound that is a finding by itself: the pairs containing it add nothing
-  return { hash: doc.hash, unit, used, symbol: k => table.get(k), terms, uses, orphans, facts: facts.facts || {}, file, capitals, baseline, corpus, approved,
+  return { hash: doc.hash, unit, used, symbol: k => table.get(k), terms, uses, orphans, facts: facts.facts || {}, file, capitals, baseline, corpus, approved, outline: outlined(doc, plan.main ?? null, plan.seeds),
     term: u => candidates(u).filter(c => c.compound || !c.parts.some(lone)).map(c => [c.text, ...status(c)]),
     standard: [...table].filter(([, e]) => e.at === undefined).map(([k, e]) => [e.symbol, k, typeof e.standard === 'string' ? e.standard : null]), symbolPapers: k => corpus() ? symbolPapers(corpus(), k) : null,
     first: k => doc.units.find(u => u.kind === 'sentence' && used(u).has(k)) ?? null, papers: () => corpus()?.documents ?? 0,
@@ -248,19 +313,60 @@ export const CHECKS = {
         ...[...b.log.matchAll(/^LaTeX Warning: ((?:Reference|Citation) `[^']*').* undefined/gm)].map(m => `undefined: ${m[1]}`)] };
     },
   },
-  // Kinds that only a reader can decide: no code verdict, one question to the independent judges for each sentence.
-  judge: { reader: true, units: (u, rule) => prose(u) && (!rule.roles || rule.roles.includes(u.role)), ask: rule => rule.question },
+  // The outline contract (stage 4). Code: the manuscript has an outline with a central claim, every Section is listed in it, and
+  // every paragraph (with the list items after it) has exactly one entry with a role. Whether a heading names what stands under
+  // it awaits the independent verdict. A paragraph gets its verdict here once its Section is listed with as many entries as paragraphs.
+  outline: {
+    units: u => u.kind === 'document' || u.kind === 'paragraph' || (u.kind === 'title' && u.level >= 1 && u.level <= 3),
+    applies(u, rule, ctx) {
+      if (u.kind === 'document') return true;
+      if (!ctx.outline.has(u)) return false;
+      if (u.kind === 'title') return true;
+      const b = ctx.outline.of(u).block;
+      return !!b && b.lead === u && (!b.section.unit || b.section.aligned);
+    },
+    inputs(u, rule, ctx) {
+      const o = ctx.outline, s = u.kind === 'title' ? o.section(u) : null;
+      return u.kind === 'document' ? [o.present, o.problems] : s ? [s.listed, s.blocks.length, s.entries.length, s.aligned ? s.blocks.map(b => b.entry ?? null) : null, s.subs] : [o.of(u).block.section.listed, o.of(u).block.entry ?? null];
+    },
+    judge(u, rule, ctx) {
+      const o = ctx.outline;
+      if (u.kind === 'document') return { fail: o.present ? o.problems : ['the manuscript has no outline: paper/OUTLINE.json registers its central claims and gives every paragraph one entry (node harness/cli.mjs paper-outline <slug> [paper-dir] --skeleton prints the Sections and paragraphs to fill in)'] };
+      if (u.kind === 'title') {
+        const s = o.section(u), n = s.blocks.length;
+        if (!s.listed) return { fail: ['the outline has no section with this title'] };
+        if (!s.aligned) return { fail: [`${n} paragraph${n === 1 ? ' stands' : 's stand'} under this heading and the outline lists ${s.entries.length}: every paragraph, with the list items after it, has exactly one entry`] };
+        if (!s.blocks.every(b => sound(b.entry))) return { fail: ['an entry under this heading is not valid (it is listed with its paragraph)'] };
+        if (!n && !s.subs.length) return {};
+        const parts = [n ? `Under it stand${n === 1 ? 's one paragraph' : ` ${n} paragraphs`}, to which the outline of the manuscript gives ${n === 1 ? 'this entry' : 'these entries'} (the role of the paragraph, then what it does): ${s.blocks.map((b, i) => `(${i + 1}) ${b.entry.role}: ${squash(b.entry.does)}`).join(' ')}` : 'No paragraph stands directly under it.',
+          ...(s.subs.length ? [`The parts under it have the headings ${s.subs.map(t => `«${t}»`).join(', ')}.`] : [])];
+        return { pending: ['whether the heading covers what stands under it needs the independent verdict'],
+          ask: [{ tag: u.text, q: `The unit is a heading of the manuscript. ${parts.join(' ')} Pass if the heading covers what each of these parts does: a part that only introduces, connects or sums up the others is covered with them. Fail if the heading promises something that none of the parts does (for example a review where nothing is reviewed, or a derivation where results are only quoted), or if a part does something else than the heading names (for example a paragraph on another case than the one in the heading).` }] };
+      }
+      const { section, entry: e } = o.of(u).block;
+      if (!e) return { fail: [section.listed ? `${section.blocks.length} paragraph${section.blocks.length === 1 ? ' stands' : 's stand'} before the first heading and the outline lists ${section.entries.length}: every paragraph has exactly one entry` : 'the paragraph has no outline entry: the paragraphs before the first heading need an outline section with an empty title'] };
+      return { fail: [...(ROLES.includes(e.role) ? [] : [`its outline entry has the role ${JSON.stringify(e.role ?? null)}: name one of ${ROLES.join(', ')}`]), ...(typeof e.does === 'string' && e.does.trim() ? [] : ['its outline entry does not say what the paragraph does ("does")'])] };
+    },
+  },
+  // Kinds that only a reader can decide: no code verdict, one question to the independent judges for each unit (a sentence, or
+  // with "unit": "paragraph" a paragraph). `shows`: what of the outline the judge is shown with the unit; the rule then applies
+  // where the outline has it (the entry of a paragraph is asked about once, on the paragraph that opens its block).
+  judge: { reader: true, units: (u, rule) => u.kind === (rule.unit ?? 'sentence') && (!rule.roles || rule.roles.includes(u.role)),
+    applies: (u, rule, ctx) => (rule.shows ?? []).every(what => { const o = ctx.outline.of(u); return what === 'entry' ? !!o.entry && (u.kind !== 'paragraph' || o.block.lead === u) : o.claims.length > 0; }),
+    ask: rule => rule.question },
   better: { reader: true, advice: true, units: (u, rule) => prose(u) && (!rule.roles || rule.roles.includes(u.role)), ask: () => 'Can you write a sentence that is strictly better than the unit under the ranked criteria stated above?' },
 };
 // The rule family of one call to a judge: a reader rule joins the family it names (default "content"); a code rule and the search for a better sentence (advice, no verdict) are families of their own.
 export const family = rule => rule.kind === 'judge' ? rule.family ?? 'content' : rule.id;
 // The items of a question that a sample or a seeded defect designates: by the numeral, the symbol, or the quoted phrase the item is about.
 export const designates = (tag, item) => item === undefined || tag === item || tag.startsWith(`"${item}"`);
-// The sentence of a sample that a reader rule is tested on: the one containing `at`, the last one without it.
+// The unit of a sample that a reader rule is tested on: the one containing `at`, the last one without it.
 export function target(units, check, rule, s) {
-  const found = units.filter(u => check.units(u, rule) && (s.at === undefined || u.text.includes(s.at) || u.prose.includes(s.at)));
+  const found = units.filter(u => check.units(u, rule) && (s.at === undefined || u.text.includes(s.at) || u.prose?.includes(s.at)));
   return s.at === undefined ? found.at(-1) ?? null : found.length === 1 ? found[0] : null;
 }
+// What of the outline the calls of each rule family show the judge: the union over the family's rules.
+const showing = list => list.reduce((m, r) => (r.kind === 'judge' && r.shows?.length ? m.set(family(r), new Set([...(m.get(family(r)) || []), ...r.shows])) : m), new Map());
 
 function outcome(check, u, rule, ctx) {
   const r = check.judge(u, rule, ctx, check.inputs?.(u, rule, ctx));
@@ -280,38 +386,57 @@ function admit(rule) {
   if (!rule.source) refuse('record where the rule comes from (document, decision or the user\'s words)');
   // The search for a better sentence has failing texts only: no text is beyond improvement by registration.
   if (rule.kind === 'better' ? !rule.fail?.length || rule.pass !== undefined : !rule.fail?.length || !rule.pass?.length) refuse(rule.kind === 'better' ? 'it needs at least one text that a judge must improve, and takes no passing text: no text is beyond improvement by registration' : 'it needs at least one text that must fail and one that must pass');
-  const probe = (s, corpus) => { const doc = decompose(lines(s.tex)); return { doc, ctx: context({ ...doc, hash: 'sample' }, { lexicon: s.lexicon, facts: s.facts, file: rel => s.files?.[rel] ?? null, build: () => s.build ?? null, baseline: s.baseline, corpus }) }; };
-  const shown = s => JSON.stringify(s.tex).slice(0, 140);
+  const shown = s => JSON.stringify(s.tex).slice(0, 140), subject = { units: u => check.units(u, rule), applies: (u, ctx) => !check.applies || check.applies(u, rule, ctx) };
   if (check.reader) {
     if (rule.kind === 'judge' && !(typeof rule.question === 'string' && rule.question.trim())) refuse('a rule judged by a reader needs its question: what passes and what fails');
     if (!/^[a-z0-9-]+$/.test(family(rule))) refuse('the family must be lowercase letters, digits and hyphens');
+    if (rule.unit !== undefined && !['sentence', 'paragraph'].includes(rule.unit)) refuse('its unit is "sentence" (the default) or "paragraph"');
+    if (rule.shows !== undefined && !(Array.isArray(rule.shows) && rule.shows.every(what => SHOWN.includes(what)))) refuse(`"shows" lists what of the outline the judge is shown with the unit: ${SHOWN.join(', ')}`);
     for (const want of ['fail', 'pass']) for (const s of (rule[want] ?? []).map(sample)) {
-      if (!/^\s*\\section\*?\s*\{/.test(s.tex ?? '')) refuse(`its ${want}ing text must open with its own \\section heading, since a judge sees the headings above every unit: ${shown(s)}`);
-      if (!target(decompose(lines(s.tex)).units, check, rule, s)) refuse(`its ${want}ing text has ${s.at === undefined ? 'no sentence the rule applies to' : `no single sentence containing ${JSON.stringify(s.at)}`}: ${shown(s)}`);
+      if (!OPENING.test(s.tex ?? '')) refuse(`its ${want}ing text must open with its own \\section heading, since a judge sees the headings above every unit (or be an abstract, which has none): ${shown(s)}`);
+      let aim, ctx;
+      try { const made = probe(s, () => null); ctx = made.ctx; aim = target(made.doc.units, check, rule, s); } catch (e) { refuse(`its ${want}ing text cannot be read (${e.message}): ${shown(s)}`); }
+      if (!aim) refuse(`its ${want}ing text has ${s.at === undefined ? `no ${rule.unit ?? 'sentence'} the rule applies to` : `no single ${rule.unit ?? 'sentence'} containing ${JSON.stringify(s.at)}`}: ${shown(s)}`);
+      if (!subject.applies(aim, ctx)) refuse(`its ${want}ing text lacks what the rule shows the judge (${rule.shows.join(', ')}): give it its own "outline", with the claims and an entry for each paragraph: ${shown(s)}`);
     }
   } else {
+    const all = (doc, ctx) => [...doc.units, DOCUMENT].filter(u => subject.units(u) && subject.applies(u, ctx));
     for (const want of ['fail', 'pass']) for (const s of rule[want].map(sample)) {
       let seen;
-      try { const { doc, ctx } = probe(s, () => s.corpus ? fromTex(s.corpus) : null); seen = [...doc.units, DOCUMENT].filter(u => check.units(u, rule)).map(u => outcome(check, u, rule, ctx).v); } catch (e) { refuse(`its check cannot run (${e.message})`); }
+      try { const { doc, ctx } = probe(s, () => s.corpus ? fromTex(s.corpus) : null); seen = all(doc, ctx).map(u => outcome(check, u, rule, ctx).v); } catch (e) { refuse(`its check cannot run (${e.message})`); }
       if (want === 'fail' ? !seen.includes('fail') : seen.some(v => v !== 'pass')) refuse(`its check ${want === 'fail' ? 'does not flag the failing text' : 'does not pass the passing text'} ${shown(s)}`);
     }
     // What the code check leaves to a reader is tested on the judges by the rule's judge samples: each must reach the independent verdict.
     if (rule.judge && (!rule.judge.fail?.length || !rule.judge.pass?.length)) refuse('its judge samples need at least one text that must fail and one that must pass');
     for (const want of ['fail', 'pass']) for (const s of (rule.judge?.[want] ?? []).map(sample)) {
       let reached;
-      try { const { doc, ctx } = probe(s, () => fromTex(s.corpus || [])); reached = [...doc.units, DOCUMENT].filter(u => check.units(u, rule)).some(u => { const o = outcome(check, u, rule, ctx); return o.v === 'pending' && o.ask.some(a => designates(a.tag, s.item)); }); } catch (e) { refuse(`its judge sample cannot be read (${e.message})`); }
+      try { const { doc, ctx } = probe(s, () => fromTex(s.corpus || [])); reached = all(doc, ctx).some(u => { const o = outcome(check, u, rule, ctx); return o.v === 'pending' && o.ask.some(a => designates(a.tag, s.item)); }); } catch (e) { refuse(`its judge sample cannot be read (${e.message})`); }
       if (!reached) refuse(`its judge sample does not reach the independent verdict (the code check must leave ${s.item === undefined ? 'a question' : JSON.stringify(s.item)} awaiting it): ${shown(s)}`);
     }
   }
   const { source, fail, pass, judge, ...effective } = rule;
   return { ...rule, hash: sha(JSON.stringify(effective)) };
 }
+// A text that a judge is shown must not inherit the headings of whatever stands before it: it opens with its own \section, or it is an abstract.
+const OPENING = /^\s*\\(?:section\*?\s*\{|begin\s*\{abstract\})/;
+// A sample of a rule as a manuscript of its own, with the registries it carries.
+const probe = (s, corpus) => { const doc = decompose(lines(s.tex)); return { doc, ctx: context({ ...doc, hash: 'sample' }, { lexicon: s.lexicon, facts: s.facts, file: rel => s.files?.[rel] ?? null, build: () => s.build ?? null, baseline: s.baseline, corpus, outline: { main: s.outline ?? null } }) }; };
 export function rules(project, paper = 'paper') {
   const all = [...json(BASE).rules, ...(optional(path.join(project, paper, 'RULES.json')).rules || [])];
   const twice = all.map(r => r.id).find((id, i, ids) => ids.indexOf(id) !== i);
   if (twice) throw Error(`Rule ${twice} is registered twice.`);
   const list = all.map(admit), own = new Set(list.filter(r => r.kind !== 'judge').map(r => r.id)), clash = list.find(r => r.kind === 'judge' && own.has(family(r)));
   if (clash) throw Error(`Rule ${clash.id} refused: its family ${family(clash)} is the id of a rule that is a family of its own.`);
+  // The calls of a family show the judge what any of its rules shows, for every unit of the call. A planted text without it
+  // would stand out among the paragraphs of the manuscript, so every text of such a family carries its own outline. A rule
+  // that shows the outline therefore joins a family whose other rules are judged with the outline as well, or has its own.
+  const shows = showing(list);
+  for (const rule of list.filter(r => r.kind === 'judge' && shows.has(family(r)))) for (const s of [...(rule.fail ?? []), ...(rule.pass ?? [])].map(sample)) {
+    const { doc, ctx } = probe(s, () => null), need = shows.get(family(rule)), leads = doc.units.filter(u => u.kind === 'paragraph' && ctx.outline.of(u).block?.lead === u);
+    const lacks = [...(need.has('entry') && leads.some(u => !ctx.outline.of(u).entry) ? ['an entry for each of its paragraphs'] : []), ...(need.has('claims') && doc.units.some(u => u.kind === 'sentence' && !ctx.outline.of(u).claims.length) ? ['its central claims'] : [])];
+    const cause = list.find(r => r.kind === 'judge' && family(r) === family(rule) && r.shows?.length && (r.id === rule.id || !rule.shows?.length));
+    if (lacks.length) throw Error(`Rule ${cause.id} refused: it shows the judge the outline in the calls of the family ${family(rule)}, so every text of that family needs an "outline" of its own with ${lacks.join(' and ')}, and a text of ${rule.id === cause.id ? 'the rule' : `the rule ${rule.id}`} has none (give the rule a family of its own, or the text its outline): ${JSON.stringify(s.tex).slice(0, 140)}`);
+  }
   return list;
 }
 
@@ -319,7 +444,7 @@ const part = (project, paper, name) => { const file = path.join(project, paper, 
 // source: the manuscript sources; gate: everything a verdict was computed from (except calculation outputs, the corpus and the run records of the judges, read at verification).
 export function fingerprint(project, paper = 'paper') {
   const flat = flatten(project, `${paper}/main.tex`);
-  return { flat, source: flat.hash, gate: sha(JSON.stringify([TOOL, JUDGE, flat.hash, read(BASE), ...['RULES.json', 'LEXICON.json', 'FACTS.json'].map(n => part(project, paper, n))])) };
+  return { flat, source: flat.hash, gate: sha(JSON.stringify([TOOL, JUDGE, flat.hash, read(BASE), ...['RULES.json', 'LEXICON.json', 'FACTS.json', 'OUTLINE.json'].map(n => part(project, paper, n))])) };
 }
 const stateFile = (project, paper) => path.join(project, paper, 'VERIFY.json');
 const serialize = ({ units, ...head }) => JSON.stringify(head, null, 2).replace(/\n}$/, `,\n  "units": {\n${Object.entries(units).map(([id, u]) => `    ${JSON.stringify(id)}: ${JSON.stringify(u)}`).join(',\n')}\n  }\n}\n`);
@@ -340,13 +465,14 @@ export function declaredWriter(project, paper) {
 // the search for a better sentence, which give no verdict and are asked on request only.
 function assess(doc, ctx, list, prior = () => undefined, run = null) {
   const units = {}, questions = [], advice = [], heads = [], byId = new Map(doc.units.map(u => [u.id, u])), reading = new Set(list.filter(r => CHECKS[r.kind].reader).map(family));
+  const shows = showing(list), contract = list.find(r => r.kind === 'outline')?.id;
   let judged = 0, total = 0;
   for (const u of [...doc.units, { ...DOCUMENT }]) {
     const above = heads.slice(1, u.kind === 'title' ? Math.max(u.level, 1) : undefined).filter(Boolean), checks = {}, asked = new Map(), wished = new Map();
     if (u.kind === 'title' && u.level > 0) { heads.length = u.level; heads[u.level] = u.prose; }
     for (const rule of list) {
       const check = CHECKS[rule.kind];
-      if (!check.units(u, rule)) continue;
+      if (!check.units(u, rule) || (check.applies && !check.applies(u, rule, ctx))) continue;
       if (check.advice) { wished.set(family(rule), [{ id: rule.id, rule: rule.id, q: check.ask(rule), better: true }]); continue; }
       const base = [TOOL, rule.hash, u.kind === 'document' ? '' : u.id.split('~')[0]], old = prior(u.id, rule.id);
       const k = sha(JSON.stringify(check.reader ? base : [...base, check.inputs?.(u, rule, ctx) ?? null])).slice(0, 16), same = old?.k === k && old.v !== 'unjudged';
@@ -358,10 +484,16 @@ function assess(doc, ctx, list, prior = () => undefined, run = null) {
       if (ask.length) asked.set(family(rule), [...(asked.get(family(rule)) || []), ...ask.map(a => ({ ...a, rule: rule.id }))]);
     }
     for (const [into, from] of [[questions, asked], [advice, wished]]) for (const [name, items] of from) {
-      // A rule about a sentence is judged in its paragraph, under its headings. A question that code left open is about the sentence alone.
-      const q = { unit: u.id, family: name, kind: u.kind, where: u.where, file: u.file ?? null, text: u.text ?? '', context: reading.has(name) && u.paragraph ? byId.get(u.paragraph).text : '', headings: reading.has(name) ? above : [],
+      // A rule of a reader is judged in the paragraph of its unit (with the list items that belong to it), under its headings, and
+      // with what the family shows of the outline: the entry of the paragraph and the central claims. A question that code left
+      // open is about the unit alone. `needs`: the code verdicts on the outline that must stand before the question is asked.
+      const read = reading.has(name), o = ctx.outline.of(u), show = shows.get(name), whole = u.kind === 'paragraph';
+      const q = { unit: u.id, family: name, kind: u.kind, where: u.where, file: u.file ?? null, text: read && whole ? '' : u.text ?? '',
+        context: !read ? '' : o.block ? o.block.members.map(m => m.text).join('\n\n') : whole ? u.text : u.paragraph ? byId.get(u.paragraph).text : '', headings: read && u.role !== 'abstract' ? above : [],
+        aside: read ? { ...(show?.has('entry') && o.entry ? { entry: `${o.entry.role}. ${squash(o.entry.does)}` } : {}), ...(show?.has('claims') && o.claims.length ? { claims: o.claims.map(c => c.claim) } : {}) } : {},
+        needs: read && show && contract ? [['document', contract], ...(o.block?.section.unit ? [[o.block.section.unit.id, contract]] : []), ...(o.block ? [[o.block.lead.id, contract]] : [])] : [],
         items: items.map((a, i) => ({ id: a.id ?? `item-${i + 1}`, rule: a.rule, tag: a.tag ?? a.id, q: a.q, ...(a.better ? { better: true } : {}) })) };
-      into.push({ ...q, key: sha(JSON.stringify([JUDGE, q.family, q.kind, q.text, q.context, q.headings, q.items.map(i => [i.id, i.q, !!i.better])])).slice(0, 16) });
+      into.push({ ...q, key: sha(JSON.stringify([JUDGE, q.family, q.kind, q.text, q.context, q.headings, q.aside, q.items.map(i => [i.id, i.q, !!i.better])])).slice(0, 16) });
     }
     if (Object.keys(checks).length) units[u.id] = { kind: u.kind, where: u.where, ...(u.file ? { at: `${u.file}:${u.line}` } : {}), checks };
   }
@@ -374,10 +506,26 @@ export function examine(project, paper = 'paper', { build: builder = () => null,
   const doc = { ...decompose(extra ? [...own.slice(0, cut), ...extra.lines, ...own.slice(cut)] : own), hash: print.source }, list = rules(project, paper);
   let lexicon = optional(path.join(project, paper, 'LEXICON.json')), facts = optional(path.join(project, paper, 'FACTS.json'));
   if (extra) { lexicon = { symbols: [...(lexicon.symbols || []), ...extra.symbols], terms: [...(lexicon.terms || []), ...extra.terms] }; facts = { facts: { ...facts.facts, ...extra.facts }, uses: { ...facts.uses, ...extra.uses } }; }
-  const ctx = context(doc, { lexicon, facts, build: builder, corpus, baseline, file: rel => { const file = safePath(project, rel); return fs.existsSync(file) ? read(file) : null; } });
+  const plan = path.join(project, paper, 'OUTLINE.json'), outline = { main: fs.existsSync(plan) ? json(plan) : null, seeds: extra?.outlines };
+  const ctx = context(doc, { lexicon, facts, outline, build: builder, corpus, baseline, file: rel => { const file = safePath(project, rel); return fs.existsSync(file) ? read(file) : null; } });
   // Enrollment: the overfull boxes of the first build are the baseline against which later ones are new.
   if (!ctx.baseline) { const first = ctx.build(); if (first?.log !== undefined) ctx.baseline = { overfull: overfull(first.log) }; }
   return { print, doc, ctx, list, ...assess(doc, ctx, list, prior, run) };
+}
+
+// The outline next to the text it is held against: every heading of level 1 to 3 with its paragraphs and their entries.
+// skeleton: the JSON of an outline for this text, with the entries that stand and an empty one where one is missing.
+export function outlineView(project, paper = 'paper', { skeleton = false } = {}) {
+  const doc = decompose(flatten(project, `${paper}/main.tex`).lines), file = path.join(project, paper, 'OUTLINE.json'), main = fs.existsSync(file) ? json(file) : null, o = outlined(doc, main);
+  const front = doc.units.filter(u => u.kind === 'paragraph' && o.of(u).block?.lead === u && !o.of(u).block.section.unit), heads = doc.units.filter(u => o.section(u)), plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+  const entries = s => s.aligned ? s.blocks.map(b => b.entry) : [...(s.entries ?? []), ...Array.from({ length: Math.max(0, s.blocks.length - (s.entries?.length ?? 0)) }, () => ({ role: '', does: '' }))];
+  if (skeleton) return JSON.stringify({ version: 1, claims: main?.claims?.length ? main.claims : [{ id: '', claim: '' }],
+    sections: [...(front.length ? [{ title: '', paragraphs: entries(o.of(front[0]).block.section) }] : []), ...heads.map(u => ({ title: u.text, paragraphs: entries(o.section(u)) }))] }, null, 2);
+  const line = u => { const b = o.of(u).block, e = b.entry, items = b.members.length - 1; return `  ${u.where}${items ? ` (with ${plural(items, 'list item', 'list items')})` : ''}: ${e ? `[${e.role ?? ''}] ${squash(e.does)}` : 'NO ENTRY'}\n      | ${u.text.slice(0, 90)}`; };
+  return [`Outline of ${path.basename(project)}/${paper}: OUTLINE.json ${main ? 'read' : 'absent'}. Roles: ${ROLES.join(', ')}.`,
+    ...(main ? ['Central claims:', ...(main.claims || []).map(c => `- (${c?.id ?? '?'}) ${squash(c?.claim)}`)] : []), ...o.problems.map(p => `PROBLEM: ${p}`),
+    ...(front.length ? ['Before the first heading:', ...front.map(line)] : []),
+    ...heads.flatMap(u => { const s = o.section(u); return [`${u.where} ${u.prose}: ${plural(s.blocks.length, 'paragraph', 'paragraphs')}${main ? `, ${s.listed ? plural(s.entries.length, 'entry', 'entries') : 'NOT IN THE OUTLINE'}${s.listed && !s.aligned ? ' (THE NUMBERS DIFFER)' : ''}` : ''}`, ...s.blocks.map(b => line(b.lead))]; })].join('\n');
 }
 
 // The answers of the judges, read from the run records the CLI wrote on this computer. Every call carries the planted texts of
@@ -454,7 +602,7 @@ export function verify(project, paper = 'paper', { build: builder = () => build(
   const state = { version: 2, tool: TOOL, paper, hash: print.gate, source_hash: print.source, run: { id, time: now.toISOString(), judged, total }, complete: !open.length && !awaiting.length,
     counts: { sentences: sentences.length, paragraphs: doc.units.filter(u => u.kind === 'paragraph').length, titles: doc.units.filter(u => u.kind === 'title').length,
       numbers: sentences.reduce((n, u) => n + u.numbers.length, 0), symbols: new Set(sentences.flatMap(u => [...ctx.used(u)])).size, terms: new Set(sentences.flatMap(u => u.terms)).size },
-    rules: tally, orphans: ctx.orphans, baseline: ctx.baseline, corpus: lit && { hash: lit.hash, cutoff: lit.cutoff, documents: lit.documents, words: lit.words, built: lit.built }, approved: [...ctx.approved].sort(),
+    rules: tally, orphans: ctx.orphans, baseline: ctx.baseline, corpus: lit && { hash: lit.hash, cutoff: lit.cutoff, documents: lit.documents, words: lit.words, built: lit.built }, approved: [...ctx.approved].sort(), outline: ctx.outline.counts,
     independent: { writer: who, judges, awaiting: awaiting.length, rest: Object.values(units).reduce((n, u) => n + Object.values(u.checks).filter(c => c.by && c.v !== 'pending').length, 0),
       runs: [...rec.runs.values()].map(r => ({ ...r, answers: used.get(r.id) || 0 })) },
     wip: wip ? { hash: print.gate, declared: now.toISOString(), note: wip, units: [...open, ...awaiting].map(({ unit, rule, where }) => ({ unit, rule, where })) } : old?.wip?.hash === print.gate ? old.wip : null, units };
@@ -465,7 +613,7 @@ export function verify(project, paper = 'paper', { build: builder = () => build(
   return { state, open, awaiting, questions, advice, list };
 }
 
-const LIMITS = 'Not judged at this stage: the meaning of a paragraph, a Section and the document, the outline and the scope of central claims (stage 4); whether a sentence is correct or supported by the notes, the data or the cited source (a judge sees the sentence, its paragraph and its headings, nothing else); whether a sentence could be better (the search for a better sentence gives advice on request, `paper-judge --advice`, and no verdict); single words and the wording of a phrase beyond its adjacent word pairs and hyphenated compounds; numerals in display equations and table cells; one, ordinals and comparisons with zero; indices of symbols.';
+const LIMITS = 'Not judged at this stage: whether a sentence is correct or supported by the notes, the data or the cited source (a judge sees a sentence with its paragraph and its headings, and under the rules of the outline its entry and the central claims, nothing else); whether the outline registers the right central claims, beyond the results that the abstract states; a restriction made once for a whole Section, which the judge of a later paragraph does not see; the headings of `\\paragraph` level and the title of the paper; whether a sentence could be better (the search for a better sentence gives advice on request, `paper-judge --advice`, and no verdict); single words and the wording of a phrase beyond its adjacent word pairs and hyphenated compounds; numerals in display equations and table cells; one, ordinals and comparisons with zero; indices of symbols.';
 // The completion report: the only evidence of verification that a report to the user may cite.
 export function report(slug, { state, open, awaiting = [] }, { pending = false } = {}) {
   const c = state.counts, ind = state.independent, rows = state.rules.map(r => `| ${r.id} | ${r.pass} | ${r.fail} | ${r.pending} | ${r.unjudged} |`);
@@ -476,6 +624,7 @@ export function report(slug, { state, open, awaiting = [] }, { pending = false }
     '| rule | pass | fail | awaiting independent verdict | not judged |', '| --- | ---: | ---: | ---: | ---: |', ...rows, '',
     state.corpus ? `Corpus: ${state.corpus.documents} hep-th papers, ${state.corpus.words} words, inspected sources dated before ${state.corpus.cutoff} (${state.corpus.hash.slice(0, 12)}).` : 'Corpus: not built (node harness/cli.mjs corpus-build).',
     ...(state.approved.length ? [`Terms that pass on the user's approval recorded in LEXICON: ${state.approved.join('; ')}.`] : []),
+    state.outline ? `Outline: ${state.outline.claims} central claim${state.outline.claims === 1 ? '' : 's'}, ${state.outline.sections} Section${state.outline.sections === 1 ? '' : 's'} and ${state.outline.entries} paragraph entr${state.outline.entries === 1 ? 'y' : 'ies'} (OUTLINE.json).` : 'Outline: none (OUTLINE.json).',
     ind.runs.length ? `Independent verdicts: writer ${ind.writer}. ${ind.rest} verdicts rest on the runs of the judges recorded on this computer. A pass needs ${ind.judges === 1 ? 'one judge' : `${ind.judges} judges of different models (named with --model)`}, and one failing judge fails the unit. The answers of a call on a rule count when the call answered all planted texts of that rule as registered, and those of a run when it answered ${FIT[0]} in ${FIT[1]} of them.`
       : `Independent verdicts: none recorded on this computer${ind.writer ? ` (writer ${ind.writer})` : ''}.`,
     ...ind.runs.map(r => `- run ${r.id} (${judgeName(r)}): ${r.calls} calls, ${r.met} of ${r.planted} planted texts answered as registered${r.missed.length ? ` (missed: ${r.missed.join(', ')})` : ''}, ${r.answers} verdicts rest on it${r.unfit.length ? `; below ${FIT[0]} in ${FIT[1]} and not used for: ${r.unfit.join(', ')}` : ''}`), LIMITS,

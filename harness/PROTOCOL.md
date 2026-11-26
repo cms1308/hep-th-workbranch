@@ -45,7 +45,7 @@ projects/<slug>/
     PUNCHLINES.md    short section outline when useful; paragraph mapping is optional
     CITATIONS.md     per-citation ledger: where in the cited paper the claim sits, and
                      whether that paper is the original source (maintained by /cite-check)
-    RULES.json, LEXICON.json, FACTS.json, VERIFY.json
+    RULES.json, LEXICON.json, FACTS.json, OUTLINE.json, VERIFY.json
                      only for a manuscript enrolled in the verification gate (PAPER-REVIEW)
   report/            plain-language TL;DR report (created by /report)
 ```
@@ -175,30 +175,34 @@ authorized multi-step work solely because of it. Include it in the normal report
   judgment within its scope and dependencies. Follow [PAPER-REVIEW](PAPER-REVIEW.md#judge-every-sentence).
   Compilation, searches, delegated reviewer reports and scripted edits do not replace
   this responsibility (user, 2026-11-25); `queue` prints a reminder for manuscript TeX.
-- **Verification gate, stages 1 to 3 of 5 implemented (user, 2026-11-25).** Rules become
+- **Verification gate, stages 1 to 4 of 5 implemented (user, 2026-11-25).** Rules become
   registered checks, verdicts come from code or an independent model, and a completion
   report requires every unit verified ([design](design/paper-verification.md)). Implemented:
   the checks that code decides, among them the comparison of terms and standard notation
   with a dated literature corpus (`corpus-build`), run by
   `node harness/cli.mjs paper-verify <slug> [paper-dir]`, and the independent verdicts of
   `node harness/cli.mjs paper-judge <slug> [paper-dir] --writer <claude|codex>`: a judge of
-  the vendor that did not write the text, tested on seeded defects in every call
-  ([PAPER-REVIEW](PAPER-REVIEW.md#verification-gate)). A manuscript is gated once it is
+  the vendor that did not write the text, tested on seeded defects in every call. The
+  outline of an enrolled manuscript is `OUTLINE.json`: its central claims with their
+  restrictions and one entry for every paragraph, held to the text by code and by the
+  judges (`paper-outline` prints it next to the text;
+  [PAPER-REVIEW](PAPER-REVIEW.md#verification-gate)). A manuscript is gated once it is
   enrolled (its directory holds `VERIFY.json`). For an enrolled manuscript the table
   printed by `paper-verify` is the only evidence of verification a report may cite, and
   the Stop hook blocks the end of a turn that changed it without a complete verification
   or a declared work in progress (once the tool hooks of
   [OPERATIONS](OPERATIONS.md#manuscript-verification-gate) are installed, which awaits the
-  user's word). A judge sees a sentence with its paragraph and headings, not the notes,
-  the data or the cited sources, and the outline and scope checks (stage 4) and the pilot
-  (stage 5) are not implemented: the reading duty above stays in full for every
-  manuscript, enrolled or not.
+  user's word). A judge sees a sentence with its paragraph, its headings and the
+  outline, not the notes, the data or the cited sources, and the pilot (stage 5) has not
+  been run: the reading duty above stays in full for every manuscript, enrolled or not.
 - Use the default explanatory prose in `PAPER-STYLE.md` for drafting and substantive prose
   edits. Shared context, authorization, validation and optional review tracking are in
   [PAPER-REVIEW.md](PAPER-REVIEW.md).
 - Plan the main argument and section roles for substantial drafting. A short outline
   normally suffices; `PUNCHLINES.md` retains its name for compatibility. No per-paragraph
-  claim map, fixed claim/evidence order or separate map for a local edit is required.
+  claim map, fixed claim/evidence order or separate map for a local edit is required
+  (a manuscript enrolled in the verification gate keeps one entry for each paragraph in
+  `OUTLINE.json`).
   Definitions, motivation and transitions are valid parts of a paper.
 - Match new calculations and primary-source reading to the claims being checked. The
   complete sentence-by-sentence judgment above remains mandatory. Preserve claims,

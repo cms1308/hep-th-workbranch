@@ -1,12 +1,13 @@
 # Manuscript verification — design
 
 Status: design and its four open choices decided by the user on 2026-11-25. **Stages 1 to
-3 of 5 implemented on 2026-11-25**, stage 3 rebuilt on 2026-11-26 for its cost
-([record](#implementation-record)); stages 4 and 5 are not. No manuscript is enrolled yet (the pilot is stage 5). [PAPER-REVIEW](../PAPER-REVIEW.md)
+4 of 5 implemented**: stages 1 to 3 on 2026-11-25, stage 3 rebuilt on 2026-11-26 for its
+cost, stage 4 on 2026-11-26 ([record](#implementation-record)); stage 5 is not. No
+manuscript is enrolled yet (the pilot is stage 5). [PAPER-REVIEW](../PAPER-REVIEW.md)
 and [PAPER-STYLE](../../PAPER-STYLE.md) remain the active policy, and the reading duty
-stays in full: the independent verdict of stage 3 sees a sentence with its paragraph and
-headings, not the notes, the data or the cited sources. This file is the specification the
-next stage starts from.
+stays in full: a judge sees a sentence with its paragraph, its headings and the outline,
+not the notes, the data or the cited sources. This file is the specification the next
+stage starts from.
 
 ## Why
 
@@ -71,6 +72,9 @@ numbers. A unit passes only with a recorded ground.
   change in the data invalidates the sentences that use it.
 - Outline. Paragraph types include definition, derivation and transition, so no
   paragraph is forced to carry a result claim.
+  (Built at stage 4 with `OUTLINE.json` in place of `PUNCHLINES.md`. An entry is bound to
+  its paragraph by the key of the independent verdict, which covers both, and not by a
+  hash that the writer renews. See [the record](#stage-4-2026-11-26).)
 - Further code-only checks: use before definition (symbols and terms), banned words,
   capitalized document references, sentence-case titles, colons and semicolons used as
   asides, hard-wrapped prose, and layout defects in the built PDF (a table header alone
@@ -879,3 +883,266 @@ second judge of another model would add. Proposed for the pilot: one Section jud
 models, and the count of verdicts on which they differ. A judge is told apart by the model
 named for its run. The provider reports no model identity, so a run with no model named
 and a run that names the default model count as two.
+
+### Stage 4 (2026-11-26)
+
+Go of the user: "하네스 관련 다음 단계 진행해" (2026-11-26). The stage is the outline
+contract and the scope check of central claims, the rows "paragraph", "Section" and
+"document" of the table "Units and grounds".
+
+Criterion and plan of checks, written before the code. The design's criterion: the
+misplaced case-(3) sentence and the unscoped main result of the origin both fail on
+fixtures. Tests use an injected judge and call no model.
+
+1. Registry. An enrolled manuscript keeps its outline in `paper/OUTLINE.json`: its central
+   claims, each with the restrictions it holds under, and for every Section one entry for
+   each paragraph (its role and what the paragraph does). Roles include definition,
+   derivation and transition, so no paragraph is forced to carry a result.
+2. Code. An enrolled manuscript without an outline fails. So do a Section that the outline
+   does not list, a Section whose number of entries differs from its number of paragraphs,
+   an entry without a known role or without a statement of what the paragraph does, an
+   outline section that matches no Section, and an outline without a central claim. The
+   rule is refused unless its check flags its failing texts and passes its passing text.
+3. Paragraph. The judge is shown a paragraph with its entry and asked whether the paragraph
+   keeps to it. A paragraph on case (5) that ends with a sentence on case (3) fails, with
+   that sentence as the quoted evidence. This text is registered as a failing text, so it
+   is planted in every call that asks the rule, and a judge that misses it gives no verdict
+   on the rule.
+4. Central claims. The judge is shown a sentence in its paragraph with the registered
+   claims and asked whether the sentence states one of them without a restriction that the
+   registered claim carries, or contradicts one. A main result stated for every case where
+   the registered claim holds for a range fails. This text is registered as a failing text
+   and planted as in item 3. A sentence of the abstract that states a result no registered
+   claim covers fails, so the registry cannot leave out a result the abstract announces.
+5. Section. The judge is shown a heading with the entries of the paragraphs and the
+   headings under it and asked whether the heading names what they do. A heading that
+   promises a review over entries that derive a new result fails (planted).
+6. Hash binding. The key of a verdict covers all that the judge is shown: the paragraph,
+   its headings, its entry and the claims. After an edit of one paragraph only its
+   questions are asked again. After an edit of one entry the questions of its paragraph and
+   of its heading are asked again. After an edit of a claim the questions that show the
+   claims are asked again. No verdict rests on the outline being re-attested by the writer.
+7. A question that shows the outline is not put to a judge while the code check of the
+   outline fails for the document, the Section or the paragraph concerned.
+8. Unnecessary gates. A manuscript that is not enrolled gets no outline file, no verdict
+   and no block, and the two evaluation cases on unnecessary gates are untouched.
+9. The 51 earlier tests pass. An assertion changes only where it states what stage 4
+   replaces, and each such change is listed in the record.
+10. Live, with Codex, on scratch copies with no project file written: the planted texts of
+    the new rules are answered as registered, and the two origin texts of the pilot project
+    (the sentence on case (3) at the end of the Section on case (5), from the commit before
+    df5e17f, and the main result without its restriction, from the commit before d089c83)
+    fail under an outline written for the purpose. Calls, tokens and time are reported, with
+    the estimate for one pass over the pilot draft.
+
+Code: in `harness/verify.mjs` the outline held against the text (`outlined`), the kind
+`outline` with the rule `outline-contract`, `unit` and `shows` for a rule judged by a
+reader, what a question shows of the outline and which code verdicts it waits for,
+`outlineView`, `ROLES`, and `JUDGE` raised to 3; in `harness/judge.mjs` the entry and the
+claims printed with a paragraph, the paragraph as a unit of a call, a question put to
+several units printed once, and the outline of a planted text; in `harness/rules.json` the
+rules `outline-contract`, `entry-delivered`, `claim-scope` and `abstract-covered` with their
+texts; the `paper-outline` entry of `harness/cli.mjs`; `tests/outline.test.mjs`. Use:
+[PAPER-REVIEW](../PAPER-REVIEW.md#verification-gate) and
+[OPERATIONS](../OPERATIONS.md#manuscript-verification-gate).
+
+Result. `tests/outline.test.mjs` has four tests with an injected judge, and all 55 tests of
+the repository pass. By the numbers of the plan above:
+
+1. Done. `OUTLINE.json` holds `claims` and, for every heading of level 1 to 3, a section
+   with one entry (`role`, `does`) for each paragraph. A paragraph and the list items after
+   it have one entry together. The abstract, captions and footnotes have none. The ten
+   roles are motivation, setup, definition, review, derivation, result, evidence,
+   interpretation, transition and outlook.
+2. Passed. Each of the listed faults fails where it stands: the document (no outline, no
+   central claim, an outline section that matches no heading), the heading (not listed, or
+   2 paragraphs under it and 1 entry) and the paragraph (a role that is not known, no
+   `does`, or no entry before the first heading). The rule `outline-contract` is registered
+   with six failing texts and one passing text, and is refused when its check misses one.
+   A malformed file stops the verification with its reason.
+3. Passed. The fixture's paragraph on the fifth case ends with a sentence on the third
+   case: the judge is shown the paragraph, its headings, its entry and the claims, and its
+   failing answer fails the paragraph with the misplaced sentence as evidence. The planted
+   paragraph of `entry-delivered` is the one of the origin, and a judge that passes it
+   gives no verdict on the rule.
+4. Passed. The main result of the fixture's introduction lacks "without a superpotential":
+   the failing answer on `claim-scope` fails that sentence and leaves the later Section's
+   sentence, which has a superpotential, passed. A sentence of the abstract that states a
+   result no registered claim covers fails `abstract-covered`. Both rules have planted
+   texts, and a judge that misses them gives no verdict on the rule.
+5. Passed, with a wider question than planned. The origin text turned out to be a whole
+   paragraph on case (3) at the end of the Section on case (5), not a sentence inside a
+   paragraph on case (5). Such a paragraph keeps to an honest entry of its own, so what it
+   contradicts is the heading. The question therefore holds the heading to every part
+   under it in both directions: it fails when it promises what no part does, and when a
+   part does something else than it names. Three headings are planted: a review over a
+   derivation and a Section on case (5) with a paragraph on case (3), which must fail, and
+   a Section with a derivation and a transition, which must pass.
+6. Passed. On the fixture (16 calls for the whole text): after one sentence changed, 2
+   calls, its paragraph with the outline and the sentence in its paragraph. After one entry
+   changed, 2 calls, its paragraph with the outline and its heading. After the claim
+   changed, 8 calls, the abstract and every paragraph with the outline, and no call under
+   the rules about a sentence or about a heading. With the outline put back as it first
+   was, no call: the recorded verdicts are found again.
+7. Passed. While a Section has fewer entries than paragraphs, the questions that would
+   show the outline to a judge (its paragraphs against their entries and the claims, its
+   heading) are not asked, and the rest of the manuscript is.
+8. Passed. `paper-outline` on a manuscript that is not enrolled writes nothing, and its
+   Stop hook returns nothing. The evaluation cases are untouched.
+9. Ten of the 51 earlier tests changed, each in what stage 4 replaces. In
+   `tests/judge.test.mjs` (six tests) the fixture has an outline (one claim, one heading,
+   three entries), so that it awaits 23 verdicts instead of 15 and has 19 questions instead
+   of 11, and a run is 11 calls instead of 7 (one for the heading, three with the outline)
+   with 37 planted texts instead of 22. The call whose schema is asserted is the seventh
+   and no longer the third. The plans of the dry run count the new families. In
+   `tests/verify.test.mjs` (four tests) three fixtures get an
+   outline before they are verified to the end, the Stop test asserts that an enrolled
+   manuscript without an outline, and a paragraph added without an entry, are reported
+   (14 verdicts await the judges instead of 8, and the work in progress lists 5 instead of
+   3), and the table of `paper-verify` on a manuscript without an outline counts 3 failures
+   instead of 2.
+10. Done, below. Both origin texts fail.
+
+Measured, live with Codex (CLI 0.171.0-alpha.13.2, provider default, gpt-6.2-astra at
+reasoning effort xhigh in this computer's configuration), on a scratch copy with no project
+file written. The manuscript is made of two passages of the pilot project before their
+corrections: the abstract and the introduction of a09e65a, whose main result is stated
+without its restriction, and the Section on case (5) of fbd38a8, which ends with the
+paragraph on case (3). It has 59 sentences, 11 paragraphs and 3 headings. Its outline was
+written for the run: four claims with the restrictions the project has since fixed, and an
+entry for each of the 10 paragraphs that describes what the paragraph does, the misplaced
+one included ("transition: says that a superpotential constraint is the only way around the
+exclusion of case (3) and points to the Section on Seiberg duality"). Both runs used
+`--all-units`, since the manuscript has no registry of numbers or symbols.
+
+- The form that is built: 24 calls in 489 s with four at a time, 561,646 input and 78,896
+  output tokens, 93 of 93 planted texts answered as registered, no answer refused.
+
+  | calls of | calls | input tokens a call | output tokens a call | mean time of a call |
+  | --- | ---: | ---: | ---: | ---: |
+  | the rules about a sentence in its paragraph | 11 | 23,209 | 3,721 | 85 s |
+  | the rules that show the outline | 11 | 23,720 | 2,999 | 71 s |
+  | the abstract against the claims | 1 | 22,737 | 3,072 | 75 s |
+  | the three headings | 1 | 22,693 | 1,901 | 54 s |
+
+- The origin texts. The main result fails `claim-scope`: "The opening sentence omits the
+  connected $SU(N)\times SU(N)$ setting, the fixed-flavor large-$N$ limit, and the
+  assumption that no superpotential coupling is relevant at a single-node fixed point."
+  The heading "Exact exclusion of case (5) without superpotential" fails: "The closing
+  transition also makes a claim about how case (3) can evade exclusion, which falls outside
+  the heading's scope of case (5)." The two sentences of that paragraph also fail
+  `in-place`, the rule of stage 3. `entry-delivered` passes all 10 paragraphs, as it
+  should: each does what its entry says.
+- What else failed. `claim-scope` fails 12 of 59 sentences. Among them are the statements
+  of the exclusion of case (5) without $W=0$ in the introduction, which the project
+  corrected in d089c83, and the two sentences of the abstract that repeat the main result.
+  `abstract-covered` fails 6 of the 10 sentences of the abstract, each for a result that
+  the four claims written for the run do not cover (the positivity of the multiplier, the
+  corrected relevance condition, the conformal manifold of the conifold): the registry was
+  incomplete, and the rule says so. `scope-stated` fails 4.
+- What a failure of `claim-scope` means depends on the wording of the claim. Four of the
+  12 hold a sentence to "with at least one bifundamental", a qualifier of a claim as it
+  was written for this run, which the connected quivers of the manuscript satisfy. A judge
+  holds a sentence to every qualifier of a registered claim.
+- The other form, measured on the same manuscript: the rules that show the outline in the
+  family `content`, one call for a paragraph instead of two. 13 calls in 436 s, 324,146
+  input and 71,164 output tokens, 93 of 93 planted texts. It costs 42 % fewer input tokens,
+  and it changes the verdicts of the two rules of stage 3: `scope-stated` fails 14
+  sentences instead of 4 (2 in common), with reasons that cite the registered claims (one
+  holds a sentence to "at any finite $N$", which widens a claim and restricts nothing), and
+  `in-place` passes the two sentences on case (3), which it fails when the judge is not
+  shown the entry that the writer gave their paragraph. On the four rules of this stage
+  the two forms agree on 81 of 82 verdicts. An entry written by the writer must not excuse
+  a sentence under a rule that does not concern the outline (principle 2), so the rules
+  that show the outline are a family of their own.
+- In all on this stage: 37 calls, 885,792 input and 150,060 output tokens.
+
+Estimated from these calls for one pass over the pilot draft at 2a4d45a (82 paragraphs
+with their list items, the abstract, 5 captions and a footnote, 18 headings of level 1 to
+3): 89 calls under the rules about a sentence, 89 with the outline, one for the abstract,
+one for the headings and about six for the questions that code leaves open, 186 calls,
+4.3 million input and 0.6 million output tokens and about an hour with four calls at a
+time. Stage 3 alone was estimated at 106 calls, 2.5 million input tokens and 35 minutes.
+Nearly nine tenths of the input are the 21 thousand tokens that the provider's CLI adds to
+every call. After an edit of one paragraph, two calls are asked again.
+
+Choices made in the implementation, each the lead's and open to the user's correction.
+
+1. `OUTLINE.json`, a registry like the three others, in place of the Markdown file
+   `PUNCHLINES.md` that the design names. `PUNCHLINES.md` stays the optional outline of a
+   manuscript that is not enrolled, and the gate does not read it.
+2. No anchors and no hash that the writer renews. A section of the outline is matched to
+   its heading by title, and its entries to the paragraphs in order. The binding the
+   design asks for is in the key of the independent verdict, which covers the paragraph and
+   its entry. An edit asks the judge again and asks nothing of the writer, unless a
+   paragraph was added or removed. The origin, an outline that was neither read nor
+   updated, now fails: a count that differs fails by code, and an entry that no longer
+   describes its paragraph fails by the judge.
+3. A list belongs to the paragraph before it, in the outline and in every call of a rule
+   judged by a reader. This changes stage 3 for list items, which were judged in calls of
+   their own: the pilot draft has 89 such calls where it had 100.
+4. The roles are a fixed list of ten. A role outside it fails by code.
+5. The scope of a central claim is checked sentence by sentence against the registered
+   claim, not by one call over the whole text. The key of the verdict is then the
+   paragraph and the claims, and a statement of the claim in any Section, a caption or a
+   footnote is held to the same registered restrictions. The design's "abstract,
+   introduction, body and conclusion" is not enforced as a list of places where the claim
+   must stand.
+6. The registry of claims is held to the abstract (`abstract-covered`). Without this an
+   empty or thin registry would pass every sentence.
+7. A heading is judged against the entries of the paragraphs under it and the headings of
+   its parts, not against their text, which the paragraph verdicts cover. Headings are put
+   together in a call, like the other units that are judged alone.
+8. The rules that show the outline have the family `outline`, apart from `content`, by the
+   measurement above and against the cost. The calls of a family show every unit what one
+   of its rules shows, and every text of such a family carries an outline of its own, since
+   a planted paragraph without an entry would stand out. A rule that shows the outline is
+   therefore refused in a family whose texts have none.
+9. A third planted paragraph, which keeps to its entry, was added for `entry-delivered`.
+   The two planted paragraphs of stage 3 each hold a defective sentence and would not be a
+   safe passing text.
+10. A question that shows the outline waits while the code verdict on the outline fails
+    for the document, its Section or its paragraph. Otherwise calls would be spent on
+    entries that are about to move.
+11. Headings of level 1 to 3 are sections of the outline. A `\paragraph` heading ends a
+    paragraph's list but has no section and no verdict of its own.
+12. `paper-outline` prints the outline next to the text, and with `--skeleton` the file to
+    fill in, which keeps every entry that stands. The lead writes the entries. Code cannot.
+
+Open after stage 4.
+
+- The pilot (stage 5) needs the outline of the susu-quiver draft: its central claims and 82
+  entries. The project's `PUNCHLINES.md` holds a claim for most paragraphs and a list of
+  ten claims, from which they can be written. Proposed: write it with the registries of
+  numbers and symbols, which the pilot needs first in any case (402 of 448 sentences fail
+  a code check today), then one Section through the judges before the whole draft.
+- Qualifiers of a registered claim. A judge holds a sentence to every qualifier of the
+  claim (4 of the 12 failures here). Proposed for the pilot: state in `claim` the
+  restrictions that the result needs beyond the setting of the paper, and count the
+  `claim-scope` failures that are not defects before changing the question.
+- A restriction made once for a Section ("throughout this Section $W=0$") is not seen by
+  the judge of a later paragraph. `scope-stated` failed one sentence here whose condition
+  stands in its heading and not in its paragraph, as its question requires, and
+  `claim-scope` accepts a restriction in the headings but not one in an earlier paragraph.
+  Not built: a place in the outline for the standing assumptions of a Section, shown with
+  each of its paragraphs. It would let a writer state there what the text does not say, so
+  it would need its own check against the text.
+- `scope-stated` and `claim-scope` are asked in different calls and overlap little: here
+  1 sentence fails both and 14 fail one of them.
+- Whether the registry holds the right claims is checked through the abstract only. A
+  result that the abstract omits can be left out of the registry.
+- Several headings share a call, with the entries under each in its own question. Whether
+  a judge uses the entries of one heading on another is not measured (three headings here).
+- The sentence row of the table "Units and grounds" (a type, and a link to an equation, an
+  evidence run or a CITATIONS row) is still not built, and no judge reads the notes, the
+  data or a cited paper. A physically wrong sentence passes the gate when it is scoped,
+  placed and worded well. Proposed, as its own stage after the pilot: a registry of links
+  for the sentences that state a result, and a family whose call shows the linked passage.
+  Its cost depends on the length of the passages and is not estimated.
+- The fixed 21 thousand input tokens of every call are nearly nine tenths of the input. A
+  provider interface without them would cut a pass to about half a million input tokens.
+  Not built.
+- The tool hooks are still not installed and no manuscript is enrolled, so the gate has
+  not yet held a live session. The items open after stage 3 stand otherwise (local run
+  records, the limits of the seal, a Claude judge never launched live, planted texts that
+  are fixed fixtures).

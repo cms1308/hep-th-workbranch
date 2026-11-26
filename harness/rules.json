@@ -144,6 +144,31 @@
       ]
     },
     {
+      "id": "outline-contract",
+      "kind": "outline",
+      "source": "design/paper-verification (user, 2026-11-25): a paragraph has exactly one outline entry, and the title of a Section covers the roles of its paragraphs (origins: an outline that was neither read nor updated, and a paragraph on case (3) left at the end of the Section on case (5)). PAPER-STYLE, Voice and register: calling a section a review requires an actual review.",
+      "fail": [
+        {"tex": "\\section{The model}\n\nWe study SQCD with $N_f$ flavors."},
+        {"tex": "\\section{The model}\n\nWe study SQCD.\n\nIt has $N_f$ flavors.", "outline": {"claims": [{"id": "theory", "claim": "SQCD with $N_f$ flavors is asymptotically free for $N_f<3N_c$."}], "sections": [{"title": "The model", "paragraphs": [{"role": "setup", "does": "States the theory."}]}]}},
+        {"tex": "\\section{The model}\n\nWe study SQCD.", "outline": {"claims": [], "sections": [{"title": "The model", "paragraphs": [{"role": "setup", "does": "States the theory."}]}]}},
+        {"tex": "\\section{The model}\n\nWe study SQCD.", "outline": {"claims": [{"id": "theory", "claim": "SQCD with $N_f$ flavors is asymptotically free for $N_f<3N_c$."}], "sections": [{"title": "The model", "paragraphs": [{"role": "punchline", "does": "States the theory."}]}]}},
+        {"tex": "\\section{The model}\n\nWe study SQCD.", "outline": {"claims": [{"id": "theory", "claim": "SQCD with $N_f$ flavors is asymptotically free for $N_f<3N_c$."}], "sections": [{"title": "The theory", "paragraphs": [{"role": "setup", "does": "States the theory."}]}]}},
+        {"tex": "We study SQCD.", "outline": {"claims": [{"id": "theory", "claim": "SQCD with $N_f$ flavors is asymptotically free for $N_f<3N_c$."}], "sections": [{"title": "", "paragraphs": [{"role": "setup", "does": "States the theory."}]}, {"title": "Results", "paragraphs": []}]}}
+      ],
+      "pass": [
+        {"tex": "We study SQCD with $N_f$ flavors.", "outline": {"claims": [{"id": "theory", "claim": "SQCD with $N_f$ flavors is asymptotically free for $N_f<3N_c$."}], "sections": [{"title": "", "paragraphs": [{"role": "setup", "does": "States the theory."}]}]}}
+      ],
+      "judge": {
+        "fail": [
+          {"tex": "\\section{Review of Seiberg duality}\n\nWe derive a bound on the number of flavors from the cancellation of the gauge anomaly. The bound has not appeared in the literature.", "outline": {"claims": [{"id": "flavor-bound", "claim": "The cancellation of the gauge anomaly bounds the number of flavors."}], "sections": [{"title": "Review of Seiberg duality", "paragraphs": [{"role": "derivation", "does": "Derives a new bound on the number of flavors from the cancellation of the gauge anomaly."}]}]}, "item": "Review of Seiberg duality"},
+          {"tex": "\\section{Exclusion of case (5)}\n\nIn case (5) each gauge coupling is irrelevant at the fixed point of the other node. The sum of the two one-loop coefficients is non-negative, so that both cannot be negative, and case (5) does not occur.\n\nIn case (3) a coupling that is irrelevant at the free fixed point becomes relevant at the fixed point of the other node. A superpotential is the only way to realize it.", "outline": {"claims": [{"id": "no-case-five", "claim": "Without a superpotential, case (5) does not occur."}], "sections": [{"title": "Exclusion of case (5)", "paragraphs": [{"role": "derivation", "does": "Shows that case (5) cannot occur, from the sign of the sum of the two one-loop coefficients."}, {"role": "result", "does": "States that only a superpotential realizes case (3)."}]}]}, "item": "Exclusion of case (5)"}
+        ],
+        "pass": [
+          {"tex": "\\section{Anomaly cancellation}\n\nEvery chiral multiplet contributes to the cubic anomaly of the gauge group $SU(N)$ through its representation. A multiplet in the fundamental representation and one in the antifundamental representation contribute with opposite signs. A theory with equal numbers of the two is therefore free of the gauge anomaly.\n\nThe theories that satisfy this condition are listed in the next Section.", "outline": {"claims": [{"id": "anomaly-free", "claim": "An $SU(N)$ gauge theory with equal numbers of fundamental and antifundamental chiral multiplets is free of the gauge anomaly."}], "sections": [{"title": "Anomaly cancellation", "paragraphs": [{"role": "derivation", "does": "Shows that equal numbers of fundamental and antifundamental chiral multiplets leave $SU(N)$ free of the gauge anomaly."}, {"role": "transition", "does": "Points to the list of the theories without gauge anomaly in the next Section."}]}]}, "item": "Anomaly cancellation"}
+        ]
+      }
+    },
+    {
       "id": "scope-stated",
       "kind": "judge",
       "question": "Does the sentence state its claim with the restrictions it holds under (assumptions, matter content, parameter ranges, limits, exceptions), in the sentence itself or earlier in its paragraph? Pass if it does, or if it makes no claim that needs one. Fail if it claims more than the restrictions stated in the paragraph allow, for example with \"all\", \"every\" or \"always\" where the paragraph establishes the statement for a range or a case only.",
@@ -165,6 +190,50 @@
       ],
       "pass": [
         {"tex": "\\section{Case (5): two asymptotically free nodes}\n\nIn case (5) both gauge couplings are asymptotically free at the free fixed point. Both couplings grow toward the infrared, and the flow ends at the fixed point where both are nonzero. In case (3) the first node has no flavors, so that its one-loop coefficient is fixed by the bifundamental fields alone.", "at": "Both couplings grow"}
+      ]
+    },
+    {
+      "id": "entry-delivered",
+      "kind": "judge",
+      "family": "outline",
+      "unit": "paragraph",
+      "shows": ["entry"],
+      "question": "The block prints the entry that the outline of the manuscript gives this paragraph: its role, then what the paragraph does. Does the paragraph keep to its entry? Pass if it does what the entry states and each of its sentences serves that. Fail if a sentence concerns another case, object or question than the entry and draws no connection to it, if the paragraph leaves out something the entry states, or if its role is plainly another than the one named (for example the entry says review and the paragraph derives a new result).",
+      "source": "design/paper-verification (user, 2026-11-25): a paragraph has exactly one outline entry, checked by code and by the independent verdict. The failing text is the origin incident: a sentence about case (3) left at the end of the Section on case (5).",
+      "fail": [
+        {"tex": "\\section{Case (5): two asymptotically free nodes}\n\nIn case (5) both gauge couplings are asymptotically free at the free fixed point. Both couplings grow toward the infrared, and the flow ends at the fixed point where both are nonzero. In case (3) the first node has no flavors, so that its one-loop coefficient is fixed by the bifundamental fields alone.", "at": "In case (3)", "outline": {"claims": [{"id": "case-five", "claim": "In case (5), where both gauge couplings are asymptotically free at the free fixed point, the flow ends at the fixed point where both couplings are nonzero."}], "sections": [{"title": "Case (5): two asymptotically free nodes", "paragraphs": [{"role": "result", "does": "States where the flow ends in case (5), in which both gauge couplings are asymptotically free."}]}]}}
+      ],
+      "pass": [
+        {"tex": "\\section{Anomaly cancellation}\n\nEvery chiral multiplet contributes to the cubic anomaly of the gauge group $SU(N)$ through its representation. A multiplet in the fundamental representation and one in the antifundamental representation contribute with opposite signs. A theory with equal numbers of the two is therefore free of the gauge anomaly.", "at": "Every chiral multiplet", "outline": {"claims": [{"id": "anomaly-free", "claim": "An $SU(N)$ gauge theory with equal numbers of fundamental and antifundamental chiral multiplets is free of the gauge anomaly."}], "sections": [{"title": "Anomaly cancellation", "paragraphs": [{"role": "derivation", "does": "Shows that equal numbers of fundamental and antifundamental chiral multiplets leave $SU(N)$ free of the gauge anomaly."}]}]}}
+      ]
+    },
+    {
+      "id": "claim-scope",
+      "kind": "judge",
+      "family": "outline",
+      "shows": ["claims"],
+      "question": "The block prints the central claims that the outline of the manuscript registers, each with the restrictions it holds under. Does the sentence agree with them? Pass if it states none of these claims, or states one with its restrictions, which may stand in the sentence itself, earlier in its paragraph or in the headings above it. Fail if it states one of them, or a result that one of them covers, without a restriction that the registered claim carries, or if it contradicts one of them.",
+      "source": "design/paper-verification (user, 2026-11-25): each central claim is stated with the same scope in abstract, introduction, body and conclusion. Origin: a main result whose scope contradicted a later Section.",
+      "fail": [
+        {"tex": "\\section{Conformal window of SQCD}\n\nFor $3N_c/2<N_f<3N_c$ the gauge coupling of SQCD flows to an interacting fixed point. In this range of $N_f$ the theory is an interacting conformal theory in the infrared. SQCD is therefore an interacting conformal theory in the infrared for every number of flavors.", "at": "for every number of flavors", "outline": {"claims": [{"id": "window", "claim": "For $3N_c/2<N_f<3N_c$ SQCD flows to an interacting fixed point in the infrared."}], "sections": [{"title": "Conformal window of SQCD", "paragraphs": [{"role": "result", "does": "States the infrared behavior of SQCD for $3N_c/2<N_f<3N_c$."}]}]}}
+      ],
+      "pass": [
+        {"tex": "\\section{Conformal window of SQCD}\n\nFor $3N_c/2<N_f<3N_c$ the gauge coupling of SQCD flows to an interacting fixed point. In this range of $N_f$ the theory is an interacting conformal theory in the infrared. SQCD is therefore an interacting conformal theory in the infrared for every number of flavors.", "at": "In this range", "outline": {"claims": [{"id": "window", "claim": "For $3N_c/2<N_f<3N_c$ SQCD flows to an interacting fixed point in the infrared."}], "sections": [{"title": "Conformal window of SQCD", "paragraphs": [{"role": "result", "does": "States the infrared behavior of SQCD for $3N_c/2<N_f<3N_c$."}]}]}}
+      ]
+    },
+    {
+      "id": "abstract-covered",
+      "kind": "judge",
+      "family": "abstract",
+      "roles": ["abstract"],
+      "shows": ["claims"],
+      "question": "The unit is a sentence of an abstract, and the block prints the central claims that the outline of the manuscript registers. Pass if the sentence states no result, or only results that the registered claims cover. Fail if it states a result that none of the registered claims covers.",
+      "source": "design/paper-verification, stage 4 (2026-11-26): the registered central claims cover every result that the abstract states, so that the scope check cannot be emptied by leaving a claim out of the outline.",
+      "fail": [
+        {"tex": "\\begin{abstract}\nWe show that SQCD flows to an interacting fixed point for $3N_c/2<N_f<3N_c$. We also find that the theory confines without chiral symmetry breaking for $N_f=N_c+1$.\n\\end{abstract}", "at": "We also find", "outline": {"claims": [{"id": "window", "claim": "For $3N_c/2<N_f<3N_c$ SQCD flows to an interacting fixed point in the infrared."}], "sections": []}}
+      ],
+      "pass": [
+        {"tex": "\\begin{abstract}\nWe show that SQCD flows to an interacting fixed point for $3N_c/2<N_f<3N_c$. We also find that the theory confines without chiral symmetry breaking for $N_f=N_c+1$.\n\\end{abstract}", "at": "We show that", "outline": {"claims": [{"id": "window", "claim": "For $3N_c/2<N_f<3N_c$ SQCD flows to an interacting fixed point in the infrared."}], "sections": []}}
       ]
     },
     {
