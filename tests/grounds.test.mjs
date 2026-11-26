@@ -8,7 +8,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { load } from '../harness/tex.mjs';
 import { verify, report, rules, standing, ledger, TYPES, citedKeys, bibliography } from '../harness/verify.mjs';
-import { judge } from '../harness/judge.mjs';
+import { judge, summary, reversed } from '../harness/judge.mjs';
 import { fromTex } from '../harness/corpus.mjs';
 import { hook, main } from '../harness/cli.mjs';
 import { answerer } from './judges.mjs';
@@ -163,4 +163,60 @@ test('a verdict is bound to the passages it was shown: an edit of a note asks ag
   edit(project, 'is non-negative.\\label{sum}', 'is never negative.\\label{sum}');
   assert.deepEqual((await ask())[0].map(run => run.filter(([f]) => f === 'sentence-grounds')), [[['sentence-grounds', 2], ['sentence-grounds', 1]]]);
   assert.deepEqual([...asked(log)].filter(id => [at('sum'), at('five'), at('only')].includes(id)).sort(), [at('sum'), at('five'), at('only')].sort());
+});
+
+// Defects made from the manuscript's own sentences (design record, "Defects from the manuscript's own sentences").
+const OWN_TEX = String.raw`\documentclass{article}
+\begin{document}
+\section{First part}
+The coefficient of the first node is never negative at its fixed point.\label{a}
+
+The second coupling grows at the fixed point of the first node.\label{b}
+
+\section{Second part}
+The ratio of the anomalies is larger than the other ratio in every example.\label{c}
+\end{document}
+`;
+const OWN_NOTES = { 'notes/01-first.md': '# First\n\nThe coefficient of the first node is never negative at its fixed point, by the positivity of the multiplier.\n\nThe second coupling grows at the fixed point of the first node, since its coefficient rises there.\n',
+  'notes/02-second.md': '# Second\n\nThe ratio of the anomalies is larger than the other ratio in every example of the table.\n' };
+const OWN_GROUNDS = { version: 1, sentences: [
+  { at: 'label:a', type: 'result', links: [{ file: 'notes/01-first.md', quote: 'is never negative at its fixed point' }] },
+  { at: 'label:b', type: 'result', links: [{ file: 'notes/01-first.md', quote: 'The second coupling grows at' }] },
+  { at: 'label:c', type: 'derivation', links: [{ file: 'notes/02-second.md', quote: 'ratio of the anomalies is larger' }] }] };
+const ownCheck = { ...check, corpus: () => fromTex([OWN_TEX, OWN_TEX, ...Object.values(OWN_NOTES)]) };
+
+test('the judges are also tested on defects made from the manuscript: a sentence given the passages of another, and a passed sentence reversed, each kept out of the call of its own paragraph', async t => {
+  assert.deepEqual([reversed('The coefficient is never negative.'), reversed('For $N_f<N_c$ it is positive.'), reversed('Take $a\\le b$ here.'), reversed('Take $a\\leq b$ here.'), reversed('It is impossible here.'), reversed('A plain $\\left(x\\right)$ sentence.')],
+    ['The coefficient is always negative.', 'For $N_f>N_c$ it is positive.', 'Take $a\\ge b$ here.', 'Take $a\\geq b$ here.', 'It is possible here.', null], 'the first sign in math or direction word in prose');
+  const { root, project, at } = make(t, { 'paper/main.tex': OWN_TEX, 'paper/GROUNDS.json': OWN_GROUNDS, 'paper/OUTLINE.json': null, 'notes/01-fifth-case.md': null, ...OWN_NOTES }), log = [];
+  const first = await judge(root, 'demo', 'paper', { writer: 'claude', ...ownCheck, runner: answerer(undefined, log) });
+  const calls = log.filter(call => call.family === 'sentence-grounds'), own = call => call.entries.filter(e => e.planted && e.items.some(i => i.seed?.includes(':own-')));
+  assert.equal(calls.length, 3, 'a call for each paragraph');
+  const made = [...new Set(calls.flatMap(call => own(call).flatMap(e => e.items.map(i => i.seed))))];
+  assert.equal(made.length, 1, 'the first run has no passed sentence to reverse, so one defect: a sentence with the passages of another');
+  assert.match(made[0], /^sentence-grounds:own-passages:/);
+  const source = calls.find(call => !own(call).length), text = own(calls.find(call => own(call).length))[0].text;
+  assert.ok(source.entries.some(e => !e.planted && e.text.replace(/\\label\{[^}]*\}/g, '').trim() === text), 'it is left out of the call of its own paragraph');
+  assert.deepEqual(calls.filter(call => own(call).length).length, 2, 'and stands in the other calls');
+  assert.ok(!/\\label/.test(text), 'without its label');
+  const prompt = fs.readFileSync(path.join(ledger(project, 'paper'), first.runs[0].id, String(calls.find(call => own(call).length).n).padStart(4, '0'), 'prompt.txt'), 'utf8');
+  assert.ok(!/seed|plant|own-/i.test(prompt), 'nothing names it');
+  assert.deepEqual(['a', 'b', 'c'].map(l => first.result.state.units[at(l)].checks['sentence-grounds'].v), ['pass', 'pass', 'pass']);
+  // After an edit of the second sentence, its paragraph is asked again, with a passed sentence reversed among the planted texts.
+  edit(project, 'The second coupling grows at the fixed point of the first node.', 'The second coupling grows at the fixed point of the first node, as its coefficient rises.');
+  log.length = 0;
+  const second = await judge(root, 'demo', 'paper', { writer: 'claude', ...ownCheck, runner: answerer(undefined, log) });
+  const sources = second.runs[0].seeds.filter(x => x.id.includes(':own-')).map(x => x.id.split(':')[2]);
+  assert.deepEqual([sources.length, new Set(sources).size], [2, 2], 'the two defects come from different sentences');
+  const again = log.filter(call => call.family === 'sentence-grounds');
+  assert.equal(again.length, 1);
+  const turned = own(again[0]).find(e => e.items.some(i => i.seed.includes(':own-reversed:')));
+  assert.ok(turned && ['The coefficient of the first node is always negative at its fixed point.', 'The ratio of the anomalies is smaller than the other ratio in every example.'].includes(turned.text), turned?.text);
+  assert.deepEqual(turned.items.map(i => i.expect), ['fail']);
+  // A judge that passes such a defect is not used for the rule in the calls that carried it.
+  const blind = make(t, { 'paper/main.tex': OWN_TEX, 'paper/GROUNDS.json': OWN_GROUNDS, 'paper/OUTLINE.json': null, 'notes/01-fifth-case.md': null, ...OWN_NOTES });
+  const lapse = await judge(blind.root, 'demo', 'paper', { writer: 'claude', ...ownCheck, runner: answerer((call, e, i) => i.seed?.includes(':own-') ? 'pass' : undefined) });
+  assert.match(summary(lapse), /Missed: sentence-grounds:own-passages:[0-9a-f]+ in call \d+; sentence-grounds:own-passages:[0-9a-f]+ in call \d+\./);
+  assert.match(summary(lapse), /Below 9 in 10, so none of this run's answers is used for: sentence-grounds\./, 'and with 12 of 14 planted texts, not for the rule in any call');
+  assert.deepEqual(['a', 'b', 'c'].map(l => lapse.result.state.units[blind.at(l)].checks['sentence-grounds'].v), ['pending', 'pending', 'pending']);
 });

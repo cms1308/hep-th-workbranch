@@ -343,6 +343,10 @@ local edit of one needs none of these files, and no user-approval step is added.
   planted text of that rule as registered, a seeded defect among them. And the answers of a
   run on a rule count only if the run answered nine in ten of that rule's planted texts as
   registered. A rule for which no defect can be planted in this manuscript is not asked.
+  For the grounds of a sentence the planted texts also include two defects made from the
+  manuscript itself, which read like it: one of its sentences shown with the passages of a
+  sentence under another top heading, and a sentence that a judge has passed with one sign
+  or direction word reversed. Neither stands in the call of the paragraph it comes from.
 - **One judge.** A run is one judge, and a (unit, rule) passes when a judge passes it and
   fails when a run fails it (user, 2026-11-26: two runs of one model read alike, so a
   second run was no second reader). A manuscript can ask for more with `"judges": n` in its

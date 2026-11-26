@@ -245,7 +245,7 @@ function grounded(doc, main, seeds = {}, { file = () => null, bib = new Map(), s
     return { error: `the quote ${cut(l.quote)} is not in the source of arXiv:${id} (${l.cite})` };
   };
   const of = u => cache.get(u.id) || cache.set(u.id, (entries.get(u.id) || []).map(e => ({ at: e.at, type: e.type ?? null, links: (e.links || []).map(l => link(l, u, e.scope)) }))).get(u.id);
-  return { present: !!main, problems, of, has: u => scoped.has(scopeName(u)),
+  return { present: !!main, problems, of, has: u => scoped.has(scopeName(u)), entry: u => { const es = entries.get(u.id) || []; return es.length === 1 ? es[0] : null; },
     counts: main ? [...entries].filter(([id]) => scopeName(byId.get(id)) === MAIN).reduce((c, [, es]) => { for (const e of es) c[e.type] = (c[e.type] || 0) + 1; return c; }, {}) : null };
 }
 

@@ -786,7 +786,8 @@ Open after the second form.
 - The planted texts are too easy to grade a judge: 209 of 209 live. They show that a call
   was read and that a rule is applied at all. Proposed for stage 5: defects made from the
   manuscript's own sentences (its own number changed, its own sentence moved), which a
-  judge cannot tell from the text around them.
+  judge cannot tell from the text around them. (Built on 2026-11-26 for the grounds of a
+  sentence: [record](#defects-from-the-manuscripts-own-sentences-2026-11-26).)
 - The planted paragraphs of a call are foreign text that the judge sees next to the
   paragraph of the manuscript, and they are not part of the key of a verdict. A changed
   planted text changes the gate hash but not the keys.
@@ -1570,3 +1571,64 @@ Choices made in the implementation, each the lead's and open to the user's corre
 3. The tools that no setting removes from a Codex call (code mode and sub-agents, 5.9
    thousand tokens) stay. Removing them needs the provider's interface without the CLI,
    with its own authentication.
+
+### Defects from the manuscript's own sentences (2026-11-26)
+
+Why. The registered planted texts read unlike the manuscript and state their defects
+plainly: live judges answered 209 of 209 of them as registered (record of the second form),
+so they show that a call was read and a rule applied, not that a judge catches a defect in
+text that reads like the rest. Proposed in the records of stages 3 and 4 and left for
+stage 5; built now on the user's instruction to stop leaving such items open (same day).
+
+Criterion, set before the live run.
+
+1. For the grounds of a sentence, two defects made from the manuscript, each a defect by
+   construction: a sentence of type result or derivation shown with the passages of a
+   sentence under another top heading, which rest on files of the project and share no
+   passage with its own (whatever the sentence states, those passages do not establish it);
+   and a sentence whose every judge vote passed, with its first sign in math (`<`, `>`,
+   `\le`, `\ge`) or direction word in prose (never/always, impossible/possible,
+   positive/negative, increase(s)/decrease(s), higher/lower, larger/smaller) reversed, its
+   passages kept (what they establish, it now denies).
+2. Each stands alone under the headings of its paragraph, without its labels, and is kept
+   out of the call of the paragraph it comes from. One of each kind in a run, drawn by the
+   run's id, the two from different sentences when there are two.
+3. They count like the registered planted texts: a call that passes one gives no verdict on
+   the rule, and a run below nine in ten on the rule gives none at all.
+4. Live with Codex on the scratch manuscript of the sentence-grounds record: both defects
+   are made, stand in every call but the one of their paragraph, and are answered as
+   registered; the cost of a call is reported.
+
+Code: `own`, `reversed` and the `made` texts of `plant` in `harness/judge.mjs`, the
+`avoid` of a planted block in `compose`; `entry` of the grounds registry in
+`harness/verify.mjs`; a test in `tests/grounds.test.mjs`.
+
+Result. 62 tests pass, none of the earlier ones changed: their manuscripts have one top
+heading or grounds typed as transitions, so no such defect can be made for them.
+
+1. Done. The test checks the reversal of each kind of sign and word, a sentence without
+   one (none made), and both kinds on a fixture of three sentences.
+2. Done. The test checks that a defect is absent from the call of its paragraph and present
+   in the other two, without its label, that the prompt names no planted text, and that the
+   two defects come from different sentences.
+3. Done. A judge that passes both made defects answers 12 of 14 planted texts as
+   registered, and none of its answers on the rule is used.
+4. Passed. With `"judges": 2` in the scratch copy's `RULES.json`, so that the 12 sentences
+   passed by the earlier run were asked again of gpt-6.2-astra: 4 calls, 22 of 22 planted
+   texts as registered, 6 of them made from the manuscript (2 in each of 3 calls, none in
+   the call of their paragraph). The reversed sentence was the introduction's statement (i):
+   "the Lagrange multiplier of a single interacting node is negative if and only if its
+   one-loop coefficient is positive", from "is positive if and only if". 44,145 input
+   tokens, 11.0 thousand a call against 10.5 thousand without them. In this run both came
+   from one sentence; the code now draws them from different sentences.
+
+Open.
+
+- Only the grounds of a sentence have such defects. For the families `content` and
+  `outline` (a sentence placed in the wrong Section, a claim without its scope) a defect by
+  construction is harder to make: a sentence moved to another Section may fit there, and a
+  qualifier dropped may be one the setting already imposes. Not built.
+- A reversed sentence needs a sentence that a judge has passed, so the first run on a
+  manuscript has only the defect of passages.
+- Sentences with a link to a place of the manuscript (`at`) are not used: in the planted
+  copy that place does not exist.

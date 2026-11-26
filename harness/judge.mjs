@@ -85,13 +85,10 @@ export function reading(call, value) {
 }
 
 // The registered failing and passing texts of the families asked in a run, as lines and registry entries to append to a copy of the manuscript.
-function plant(list, families) {
+function plant(list, families, made = []) {
   const extra = { lines: [], symbols: [], terms: [], facts: {}, uses: {}, outlines: {}, grounds: {} }, samples = [], files = new Map();
-  for (const rule of list) {
-    if (!families.has(family(rule))) continue;
-    const check = CHECKS[rule.kind], texts = check.reader ? rule : rule.judge || {};
-    for (const want of ['fail', 'pass']) (texts[want] || []).map(sample).forEach((s, i) => {
-      const id = `${rule.id}:${want}:${i + 1}`;
+  const add = (id, rule, want, s) => {
+      const check = CHECKS[rule.kind];
       // A heading ends whatever precedes the text. A judge of a code rule's question sees no heading; a reader rule's text carries its own.
       const tex = check.reader || /^\s*\\section\*?\s*\{/.test(s.tex) ? s.tex : `\\section{Planted text}\n\n${s.tex}`;
       // One text may serve several registrations (a paragraph with a sound sentence and a defective one): it is planted once.
@@ -110,9 +107,59 @@ function plant(list, families) {
       extra.symbols.push(...(s.lexicon?.symbols || [])); extra.terms.push(...(s.lexicon?.terms || []));
       Object.assign(extra.facts, s.facts?.facts); Object.assign(extra.uses, s.facts?.uses);
       samples.push({ id, rule, want, s, file: files.get(tex) });
-    });
+  };
+  for (const rule of list) {
+    if (!families.has(family(rule))) continue;
+    const texts = CHECKS[rule.kind].reader ? rule : rule.judge || {};
+    for (const want of ['fail', 'pass']) (texts[want] || []).map(sample).forEach((s, i) => add(`${rule.id}:${want}:${i + 1}`, rule, want, s));
   }
+  for (const m of made) { const rule = list.find(r => r.id === m.rule); if (rule && families.has(family(rule))) add(m.id, rule, m.want, m.s); }
   return { extra, samples };
+}
+// Defects made from the manuscript's own sentences, for the grounds of a sentence (design record, "Defects from the manuscript's
+// own sentences"). A registered planted text reads unlike the manuscript; these read like it, and each is a defect by construction:
+// a sentence that needs a ground, given the passages of a sentence under another top heading that rest on other passages, and a
+// sentence that a judge has passed, with one sign or direction reversed. Each stands alone under the headings of its paragraph,
+// without its labels, and is kept out of the call of the paragraph it comes from, where the difference would show. One of each
+// kind in a run, drawn by the run's id, since a passage shown costs about a thousand tokens in every call of the family.
+const REVERSED = [['never', 'always'], ['impossible', 'possible'], ['positive', 'negative'], ['increases', 'decreases'], ['increase', 'decrease'], ['higher', 'lower'], ['larger', 'smaller']]
+  .flatMap(([a, b]) => [[new RegExp(`\\b${a}\\b`), b], [new RegExp(`\\b${b}\\b`), a]]);
+const SIGNS = [[/\\leq?(?![A-Za-z])/, m => m.replace('le', 'ge')], [/\\geq?(?![A-Za-z])/, m => m.replace('ge', 'le')], [/(?<!\\)</, '>'], [/(?<!\\)>/, '<']];
+// The sentence with its first sign (in math) or direction word (in prose) reversed, or null.
+export function reversed(tex) {
+  const hits = [];
+  for (const [re, to] of REVERSED) { const m = re.exec(tex.replace(/\$[^$]*\$/g, x => ' '.repeat(x.length))); if (m) hits.push([m.index, m[0].length, to]); }
+  for (const m of tex.matchAll(/\$[^$]*\$/g)) for (const [re, to] of SIGNS) { const h = re.exec(m[0]); if (h) hits.push([m.index + h.index, h[0].length, typeof to === 'function' ? to(h[0]) : to]); }
+  if (!hits.length) return null;
+  const [at, len, to] = hits.sort((x, y) => x[0] - y[0])[0];
+  return tex.slice(0, at) + to + tex.slice(at + len);
+}
+function own(copy, state, salt) {
+  const g = copy.ctx.grounds, byId = new Map(copy.doc.units.map(u => [u.id, u])), made = [], used = new Set();
+  const all = copy.questions.filter(q => q.family === 'sentence-grounds' && byId.get(q.unit)?.kind === 'sentence').map(q => {
+    const u = byId.get(q.unit), e = g.entry(u), shown = g.of(u)[0];
+    return e && shown && { q, u, e, links: shown.links };
+  }).filter(Boolean).map(x => [sha(`${salt}:${x.u.id}`), x]).sort((a, b) => a[0] < b[0] ? -1 : 1).map(([, x]) => x);
+  const sound = x => x.links.length && x.links.every(l => !l.error && !l.unjudged) && (x.e.links || []).every(l => l.at === undefined);
+  const text = u => u.text.replace(/\\label\s*\{[^}]*\}/g, '').trim(), pointer = t => t.split(' ').slice(0, 6).join(' ');
+  const piece = (kind, x, tex, links) => ({ id: `sentence-grounds:own-${kind}:${x.u.id}`, rule: 'sentence-grounds', want: 'fail', s: {
+    tex: [...x.q.headings.slice(0, 3).map((h, i) => `\\${['section', 'subsection', 'subsubsection'][i]}{${h}}`), '', tex].join('\n'),
+    grounds: { sentences: [{ at: pointer(tex), type: x.e.type, links }] }, item: pointer(tex), avoid: x.q.context ?? null } });
+  const overlap = (a, b) => a.some(p => b.some(q => p.from === q.from && (p.passage.includes(q.passage) || q.passage.includes(p.passage))));
+  // The passages of another sentence: they rest on files of the project, under another top heading, and share no passage with the sentence's own.
+  for (const x of all.filter(x => ['result', 'derivation'].includes(x.e.type) && x.links.every(l => !l.error))) {
+    const donor = all.find(d => d !== x && sound(d) && d.links.every(l => l.kind === 'file') && (d.q.headings[0] ?? '') !== (x.q.headings[0] ?? '') && !overlap(d.links, x.links));
+    if (donor) { made.push(piece('passages', x, text(x.u), donor.e.links)); used.add(x.u.id); break; }
+  }
+  // A sentence a judge has passed, reversed: what its passages establish, it now denies.
+  const passed = x => { const runs = state?.units?.[x.u.id]?.checks?.['sentence-grounds']?.by?.runs ?? []; return runs.length > 0 && runs.every(r => r[2] === 'pass'); };
+  // Another sentence than the first defect's when there is one: one sentence shown twice would stand out.
+  const sources = all.filter(x => sound(x) && passed(x));
+  for (const x of [...sources.filter(x => !used.has(x.u.id)), ...sources.filter(x => used.has(x.u.id))]) {
+    const turned = reversed(text(x.u));
+    if (turned) { made.push(piece('reversed', x, turned, x.e.links)); break; }
+  }
+  return made;
 }
 // The planted texts as they stand in the copy, by family: the units to mix into every call of the family (`entries`), the
 // declarations to add to the notation of the document (`declared`), and what a sound judge answers about each (`expect`).
@@ -125,7 +172,7 @@ function fixtures(copy, samples) {
     let planted = false;
     // A reader rule's text is shown whole, each of its sentences a unit like any other. A code rule's text shows the units it is about.
     for (const q of check.reader ? mine : mine.filter(x => x.items.some(i => designates(i.tag, s.item)))) {
-      const entry = fx.entries.get(q.unit) || fx.entries.set(q.unit, { q, expect: {} }).get(q.unit);
+      const entry = fx.entries.get(q.unit) || fx.entries.set(q.unit, { q, expect: {}, ...(s.avoid ? { avoid: s.avoid } : {}) }).get(q.unit);
       for (const i of q.items) if (check.reader ? q.unit === aim?.id && i.rule === rule.id : designates(i.tag, s.item)) { entry.expect[i.id] = { want, seed: id }; planted = true; }
     }
     if (!check.reader && s.item !== undefined) for (const q of copy.questions.filter(x => x.family === name && x.unit === 'document')) for (const i of q.items.filter(x => designates(x.tag, s.item))) { fx.declared.push({ ...i, want, seed: id }); planted = true; }
@@ -139,7 +186,7 @@ function blocks(entries) {
   const out = [];
   for (const e of entries) {
     const k = JSON.stringify([e.q.headings, e.q.context || e.q.unit, e.q.aside ?? {}]);
-    if (out.at(-1)?.k === k) out.at(-1).entries.push(e); else out.push({ k, headings: e.q.headings, context: e.q.context, aside: e.q.aside ?? {}, entries: [e] });
+    if (out.at(-1)?.k === k) out.at(-1).entries.push(e); else out.push({ k, headings: e.q.headings, context: e.q.context, aside: e.q.aside ?? {}, entries: [e], ...(e.avoid ? { avoid: e.avoid } : {}) });
   }
   return out;
 }
@@ -152,7 +199,8 @@ function compose(name, need, fx, size, salt) {
   for (const b of real) { const last = chunks.at(-1); if (last && !b.context && !last[0].context && last.reduce((n, x) => n + x.entries.length, 0) + b.entries.length <= size) last.push(b); else chunks.push([b]); }
   return chunks.map((chunk, c) => {
     const order = [...chunk], draw = j => parseInt(sha(`${salt}:${name}:${c}:${j}`).slice(0, 8), 16), seeds = new Map();
-    planted.forEach((b, j) => order.splice(draw(j) % (order.length + 1), 0, b));
+    // A text made from a paragraph of the manuscript is not shown next to that paragraph.
+    planted.forEach((b, j) => { if (!b.avoid || !chunk.some(x => x.context === b.avoid)) order.splice(draw(j) % (order.length + 1), 0, b); });
     let label = 0;
     const laid = order.map(b => ({ headings: b.headings, context: b.context, aside: b.aside, entries: b.entries.map(e => {
       const u = ++label, extra = e.real && e.q.unit === 'document' ? fx.declared : [];
@@ -172,9 +220,10 @@ async function pool(items, size, work) {
   await Promise.all(Array.from({ length: Math.max(1, Math.min(size, items.length)) }, async () => { while (next < items.length) await work(items[next++]); }));
 }
 // One run of one judge over the questions in `need`.
-async function run({ project, paper, slug, dir, writer, provider, model, settings = {}, need, list, check, batch, parallel, timeout, runner, gate, advice = false }) {
-  const id = crypto.randomBytes(6).toString('hex'), base = path.join(dir, id), asked = [...new Set(need.map(q => q.family))];
-  const planted = plant(list, new Set(asked)), fx = fixtures(examine(project, paper, { corpus: check.corpus, ...(check.sources ? { sources: check.sources } : {}), extra: planted.extra }), planted.samples);
+async function run({ project, paper, slug, dir, writer, provider, model, settings = {}, need, list, check, batch, parallel, timeout, runner, gate, state, advice = false }) {
+  const id = crypto.randomBytes(6).toString('hex'), base = path.join(dir, id), asked = [...new Set(need.map(q => q.family))], sources = check.sources ? { sources: check.sources } : {};
+  const made = asked.includes('sentence-grounds') ? own(examine(project, paper, { corpus: check.corpus, ...sources }), state, id) : [];
+  const planted = plant(list, new Set(asked), made), fx = fixtures(examine(project, paper, { corpus: check.corpus, ...(check.sources ? { sources: check.sources } : {}), extra: planted.extra }), planted.samples);
   // A family is asked only if a seeded defect of it can be planted in this manuscript: without one no call could be trusted.
   const covered = asked.filter(name => fx.by.get(name)?.defects), queue = covered.flatMap(name => compose(name, need.filter(q => q.family === name), fx.by.get(name), batch, id)).map((c, n) => ({ ...c, n: n + 1 }));
   const record = { version: 2, tool: JUDGE, id, slug, paper, writer, provider, requestedModel: model || null, ...(settings.model || settings.effort ? { configured: settings } : {}), models: [], gate, batch, ...(advice ? { advice: true } : {}), started: new Date().toISOString(), finished: null, state: 'running',
@@ -275,7 +324,7 @@ export async function judge(root, slug, paper = 'paper', { writer, models = [], 
           note: `the calls of one run of a judge: one for each paragraph and rule family, and one for every ${batch} units that are judged without their paragraph; each call carries the planted texts of its family${advice ? '; advice is one run and gives no verdict' : `, and a question needs ${judges === 1 ? 'one passing judge' : `${judges} passing judges of different models`}`}` };
         break;
       }
-      out.runs.push(await run({ project, paper, slug, dir, writer: who, provider, model, settings, need, list: result.list, check, batch, parallel, timeout, runner, gate: result.state.hash, advice }));
+      out.runs.push(await run({ project, paper, slug, dir, writer: who, provider, model, settings, need, list: result.list, check, batch, parallel, timeout, runner, gate: result.state.hash, state: result.state, advice }));
     }
     out.result = verify(project, paper, { ...check, dry });
     // The replacements a judge wrote, from the calls in which it also improved the planted wordy sentence.
