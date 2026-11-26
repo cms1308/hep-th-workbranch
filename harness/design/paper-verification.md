@@ -1476,7 +1476,10 @@ Open.
   it) need the papers ingested, after which `corpus-build` counts them. A ground of a term
   in a source outside the wiki is not built.
 - Martin:2000cr has to be ingested before the pilot (the harness launches the Codex
-  ingest, as recorded in the user's working rules).
+  ingest, as recorded in the user's working rules). (Done on 2026-11-26: hep-ph/0011382,
+  Martin and Wells on ultraviolet fixed points of supersymmetric gauge theories, wiki
+  commit 3c9ca35b, with its TeX source. The lead's prompt described the paper wrongly as
+  one on two simple factors in the infrared; the ingest followed the arXiv id.)
 - Single words are still not compared, and the items open after stage 4 stand.
 
 ### The fixed input of a call (2026-11-26)
