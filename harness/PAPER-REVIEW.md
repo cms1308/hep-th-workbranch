@@ -137,7 +137,7 @@ conflicts before deciding a scientific change; ordinary authorized merges can pr
 
 ## Verification gate
 
-Stages 1 to 4 of [the design](design/paper-verification.md) are implemented: the checks
+Stages 1 to 5 of [the design](design/paper-verification.md) are implemented: the checks
 that code decides, including the comparison of terms with the literature corpus, the
 independent verdict on what only a reader can decide, the outline of the manuscript
 held to its text (one entry for every paragraph, and the scope of the central claims),
@@ -147,7 +147,9 @@ supplement the reading duty above and replace none of it. A judge sees a sentenc
 its paragraph, its headings, the passages its entry quotes and the outline, so whether
 those records are themselves right, and anything in them beyond the quoted passages,
 stays with the reading duty, the review of the calculations and cite-check. The pilot on
-a real manuscript is stage 5, which has not been run.
+a real manuscript (stage 5) was run on susu-quiver on 2026-11-26: the gate reached a complete
+verification, and the other vendor's review of the verified text then found errors in the
+calculations behind it ([record](design/paper-verification.md#stage-5-the-pilot-on-susu-quiver-2026-11-26)).
 
 `node harness/cli.mjs paper-verify <slug> [paper-dir]` splits the manuscript (literal
 `input`/`include` followed, preamble macros without arguments expanded) into titles,

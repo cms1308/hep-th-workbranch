@@ -179,7 +179,7 @@ authorized multi-step work solely because of it. Include it in the normal report
   judgment within its scope and dependencies. Follow [PAPER-REVIEW](PAPER-REVIEW.md#judge-every-sentence).
   Compilation, searches, delegated reviewer reports and scripted edits do not replace
   this responsibility (user, 2026-11-25); `queue` prints a reminder for manuscript TeX.
-- **Verification gate, stages 1 to 4 of 5 implemented (user, 2026-11-25).** Rules become
+- **Verification gate, implemented and piloted (user, 2026-11-25; pilot 2026-11-26).** Rules become
   registered checks, verdicts come from code or an independent model, and a completion
   report requires every unit verified ([design](design/paper-verification.md)). Implemented:
   the checks that code decides, among them the comparison of terms and standard notation
@@ -200,8 +200,10 @@ authorized multi-step work solely because of it. Include it in the normal report
   or a declared work in progress (the tool hooks of
   [OPERATIONS](OPERATIONS.md#manuscript-verification-gate), installed 2026-11-26). A judge sees a sentence with its paragraph, its headings, the
   passages it rests on and the outline, not the rest of the notes, the data or the cited
-  sources, and the pilot (stage 5) has not been run: the reading duty above stays in full
-  for every manuscript, enrolled or not.
+  sources. In the pilot (stage 5, susu-quiver, 2026-11-26) the gate reached a complete
+  verification, and the other vendor's review of the verified text then found errors in the
+  calculations behind it: the reading duty above and the review stay in full for every
+  manuscript, enrolled or not.
 - Use the default explanatory prose in `PAPER-STYLE.md` for drafting and substantive prose
   edits. Shared context, authorization, validation and optional review tracking are in
   [PAPER-REVIEW.md](PAPER-REVIEW.md).

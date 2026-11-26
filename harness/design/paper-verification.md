@@ -1,9 +1,11 @@
 # Manuscript verification — design
 
 Status: design and its four open choices decided by the user on 2026-11-25. **Stages 1 to
-4 of 5 implemented**: stages 1 to 3 on 2026-11-25, stage 3 rebuilt on 2026-11-26 for its
+5 implemented**: stages 1 to 3 on 2026-11-25, stage 3 rebuilt on 2026-11-26 for its
 cost, stage 4 and the sentence grounds (4a) on 2026-11-26 ([record](#implementation-record));
-stage 5 is not. No manuscript is enrolled yet (the pilot is stage 5).
+stage 5, the pilot on susu-quiver, on 2026-11-26 ([record](#stage-5-the-pilot-on-susu-quiver-2026-11-26)): the
+gate reached a complete verification of that manuscript, and the other vendor's review of the
+verified text then found errors in the calculations behind it. One manuscript is enrolled.
 [PAPER-REVIEW](../PAPER-REVIEW.md) and [PAPER-STYLE](../../PAPER-STYLE.md) remain the active
 policy, and the reading duty stays in full: a judge sees a sentence with its paragraph,
 its headings, the passages it rests on and the outline, not the rest of the notes, the
@@ -1812,20 +1814,40 @@ draft from what the gate finds, not to write it again. The project record is
    | 3 | 104 | 6,141 s | 1.54 M | 0.25 M | 8 |
    | 4 | 40 | 2,219 s | 0.65 M | 0.09 M | 1 |
    | 5 | 1 | 36 s | 0.01 M | 0.00 M | 0 |
+   | 6 to 8 (after two corrections from the review) | 58 | 2,516 s | 0.80 M | 0.10 M | 0 |
+   | 9 (after the review was recorded) | 26 | 1,169 s | 0.52 M | 0.05 M | 6 |
 
-   With a trial call, 691 calls, 14.5 hours of call time (about 3.1 hours of wall time), 9.3
-   million input and 2.0 million output tokens. Planted texts answered as registered: 3606 of
-   3611. The five misses voided the answers of their calls on that rule (five verdicts stayed
+   With a trial call, 775 calls, 15.6 hours of call time (about 3.7 hours of wall time), 10.7
+   million input and 2.2 million output tokens. Planted texts answered as registered: 4095 of
+   4100. The five misses voided the answers of their calls on that rule (five verdicts stayed
    open until the next pass), and one run of four calls fell below nine in ten on the grounds
-   and was not used for them.
+   and was not used for them. Pass 7 was run by mistake on registries that had not been
+   rebuilt after an edit, and none of its answers is used.
 4. After each pass the lead compared every failing verdict with the manuscript and the
    records and changed the unit: 112 sentences after pass 1, 18 after pass 2, 4 after pass 3,
    none after pass 4. The rest were registry corrections (24, 8, 3 and 1 sentences).
 
-Result. `paper-verify` reports no failing verdict, none awaiting and none unjudged, with the
-build passing (source 65f3cba92b8a). The three origin incidents are in `evals/`
+Result. After pass 5 `paper-verify` reported no failing verdict, none awaiting and none
+unjudged, with the build passing (source 65f3cba92b8a), and again after pass 8 (source
+4f05ec51f40c). The three origin incidents are in `evals/`
 (`scripted-edits-reported-as-pass`, `sentence-left-after-restructuring`,
-`stale-outline-as-plan-input`) and the 65 tests pass.
+`stale-outline-as-plan-input`) and the 65 tests pass. The criterion of the stage was met at
+that point.
+
+The review. The other vendor then reviewed the verified manuscript (one report-only run of
+ten minutes) and returned corrections required, with seven blocking findings. The first: one
+of the 17 theories counted as reaching the fixed point along a conformal manifold cannot do
+so, because the audit that decided it did not impose the moment maps of the anomalous phase
+rotations; the lead's check by hand of a necessary condition fails for four of the 17. The
+others concern a count that rests on uncorrected signs, the description of the main count,
+the strength of one exclusion, and three passages of the Sections on the dual description and
+on the finite-rank tests. One of them was a regression of the pilot itself: the lead had
+removed an exception from a cited criterion because neither source words it as the draft
+did, and the exception is needed. No judge could have given these verdicts, since the
+sentences agree with the records they quote and the records were wrong or contested. When
+the review was written into the two result entries concerned, the 47 sentences that quote
+those blocks were asked again and six failed (pass 9). The manuscript is therefore not
+verified at the end of the pilot, and it should not be: the gate follows the records.
 
 What the pilot found that the complete reading of the day before had not, in writing the
 grounds and from the judge (details in the project note). An equation that kept one term of order one and dropped another of the same
@@ -1852,8 +1874,8 @@ Failures that were no defect of the manuscript, and what was changed for them.
   entries were pointed to current records, and the result entry was given the current labels.
 - 17 grounds entries had a type that did not fit or lacked the passage that carries the step.
 
-What the gate cannot see, measured here. The judge compares a sentence with the passages its
-entry quotes. That nine of the 208 theories of the census are free in the infrared, while the
+What the gate cannot see, measured here. Besides the review above: the judge compares a
+sentence with the passages its entry quotes. That nine of the 208 theories of the census are free in the infrared, while the
 draft gives all 208 an interacting candidate, was found by a subagent that read the census
 output, and no judge failed those sentences: no entry quotes the passage that says so. The
 writer of an entry chooses what the judge is shown.
