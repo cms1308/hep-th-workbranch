@@ -14,7 +14,7 @@ import { load as storedCorpus, fromTex, attest, key as gram, symbolPapers, ATTES
 
 export const TOOL = 1;                                   // raise when the decomposition or a check changes meaning: every verdict is judged again
 export const JUDGE = 2;                                  // raise when a question, the prompt, the schema or the reading of an answer changes: every independent verdict is asked again
-export const JUDGES = 2;                                 // independent runs that must pass a question; one failing run fails it
+export const JUDGES = 1;                                 // judges that must pass a question unless the manuscript's RULES.json asks for more ("judges": n); one failing judge fails it
 export const FIT = [9, 10];                              // share of a rule's planted texts a run must answer as registered for its answers on that rule to count
 export const SHORTER = [4, 5];                           // a replacement that is only shorter counts when it has at most this share of the unit's words
 // Ranked criteria of "better" (user decision 2026-11-25). The eighth: on a tie the existing sentence stays. Since 2026-11-26 the
@@ -399,7 +399,7 @@ export function recorded(project, paper, writer) {
       const kept = Object.fromEntries(Object.entries(a.items || {}).filter(([, x]) => fit(x.rule) && sound(c, x.rule)));
       if (!Object.keys(kept).length) continue;
       const key = `${a.unit}|${c.family}|${a.key}`;
-      index.set(key, [...(index.get(key) || []), { run: run.id, n: c.n, answers: kept }]);
+      index.set(key, [...(index.get(key) || []), { run: run.id, n: c.n, model: run.requestedModel ?? MODEL, answers: kept }]);
     }
     const sum = pick => Object.values(tally).reduce((n, t) => n + t[pick], 0);
     runs.set(run.id, { id: run.id, time: run.started, provider: run.provider, model: run.requestedModel ?? null, models: run.models || [], calls: run.calls.length, planted: sum('planted'), met: sum('met'),
@@ -407,18 +407,21 @@ export function recorded(project, paper, writer) {
   }
   return { index, runs };
 }
+export const MODEL = 'default';                          // how a judge is told apart when no model was named for its run
 const judgeName = r => `${r.provider}, ${r.model ? `model ${r.model}` : 'provider default model'}${r.models?.length ? ` (reported: ${r.models.join(', ')})` : ''}`;
-// The independent verdicts into the checks: one failing judge fails a (unit, rule), JUDGES passing judges pass it, fewer leave it
-// awaiting. A judge is one run, and a run gives a question one vote. q.open: some rule of the question still needs a judge.
-function settle(units, questions, rec) {
+// The independent verdicts into the checks: one failing run fails a (unit, rule), `judges` passing judges pass it, fewer leave it
+// awaiting. Judges are told apart by model: the runs of one model give one passing vote, since they read alike (measured: design
+// record). q.lacks: for each rule of the question that still needs a judge, the models that have passed it.
+function settle(units, questions, rec, judges) {
   const used = new Map();
   for (const q of questions) {
     const records = rec.index.get(`${q.unit}|${q.family}|${q.key}`) || [];
-    q.open = false;
+    q.lacks = {};
     for (const rule of new Set(q.items.map(i => i.rule))) {
       const c = units[q.unit].checks[rule], items = q.items.filter(i => i.rule === rule), seen = new Set();
-      const votes = records.filter(b => items.every(i => b.answers[i.id]) && !seen.has(b.run) && seen.add(b.run)).map(b => ({ ...b, bad: items.filter(i => b.answers[i.id].v === 'fail') })), failed = votes.filter(b => b.bad.length);
-      if (!failed.length && votes.length < JUDGES) q.open = true;
+      const read = records.filter(b => items.every(i => b.answers[i.id])).map(b => ({ ...b, bad: items.filter(i => b.answers[i.id].v === 'fail') })), failed = read.filter(b => b.bad.length);
+      const votes = read.filter(b => b.bad.length || (!seen.has(b.model) && seen.add(b.model)));
+      if (!failed.length && seen.size < judges) q.lacks[rule] = seen;
       if (!votes.length) continue;
       c.by = { q: q.key, runs: votes.map(b => [b.run, b.n, b.bad.length ? 'fail' : 'pass']) };
       for (const b of votes) used.set(b.run, (used.get(b.run) || 0) + 1);
@@ -426,10 +429,17 @@ function settle(units, questions, rec) {
         c.v = 'fail';
         c.e = failed.flatMap(b => b.bad.map(i => { const a = b.answers[i.id], who = `judge ${judgeName(rec.runs.get(b.run))} (run ${b.run})`;
           return `${i.tag === i.id ? '' : `${i.tag}: `}${who} fails it: ${a.reason} Evidence: "${a.evidence}"`; }));
-      } else if (votes.length >= JUDGES) { c.v = 'pass'; delete c.e; }
+      } else if (seen.size >= judges) { c.v = 'pass'; delete c.e; }
     }
+    q.open = Object.keys(q.lacks).length > 0;
   }
   return used;
+}
+// The judges a manuscript requires for a pass: one, or the number its RULES.json asks for.
+function required(project, paper) {
+  const n = optional(path.join(project, paper, 'RULES.json')).judges ?? JUDGES;
+  if (!Number.isInteger(n) || n < 1) throw Error(`RULES.json: "judges" must be a whole number of judges, at least 1 (it is ${JSON.stringify(n)}).`);
+  return n;
 }
 
 // Judge every (unit, rule) pair whose content or dependencies changed; keep the other verdicts; take the independent verdicts from the run records.
@@ -437,7 +447,7 @@ function settle(units, questions, rec) {
 export function verify(project, paper = 'paper', { build: builder = () => build(project, paper), corpus = () => storedCorpus(path.resolve(project, '..', '..')), wip, writer, dry = false, now = new Date() } = {}) {
   const old = sealed(project, paper) ? json(stateFile(project, paper)) : null, id = crypto.randomBytes(4).toString('hex');
   const { print, doc, ctx, list, units, questions, advice, judged, total } = examine(project, paper, { build: builder, corpus, baseline: old?.baseline ?? null, prior: (unit, rule) => old?.units?.[unit]?.checks?.[rule], run: id });
-  const who = writer ?? declaredWriter(project, paper), rec = recorded(project, paper, who), used = settle(units, questions, rec);
+  const who = writer ?? declaredWriter(project, paper), rec = recorded(project, paper, who), judges = required(project, paper), used = settle(units, questions, rec, judges);
   const tally = list.filter(rule => !CHECKS[rule.kind].advice).map(rule => Object.values(units).reduce((c, u) => (u.checks[rule.id] && c[u.checks[rule.id].v]++, c), { id: rule.id, kind: rule.kind, pass: 0, fail: 0, pending: 0, unjudged: 0 }));
   const pick = (...which) => Object.entries(units).flatMap(([unit, u]) => Object.entries(u.checks).filter(([, c]) => which.includes(c.v)).map(([rule, c]) => ({ unit, rule, where: u.where, at: u.at, verdict: c.v, evidence: c.e })));
   const sentences = doc.units.filter(prose), lit = ctx.corpus(), open = pick('fail', 'unjudged'), awaiting = pick('pending');
@@ -445,7 +455,7 @@ export function verify(project, paper = 'paper', { build: builder = () => build(
     counts: { sentences: sentences.length, paragraphs: doc.units.filter(u => u.kind === 'paragraph').length, titles: doc.units.filter(u => u.kind === 'title').length,
       numbers: sentences.reduce((n, u) => n + u.numbers.length, 0), symbols: new Set(sentences.flatMap(u => [...ctx.used(u)])).size, terms: new Set(sentences.flatMap(u => u.terms)).size },
     rules: tally, orphans: ctx.orphans, baseline: ctx.baseline, corpus: lit && { hash: lit.hash, cutoff: lit.cutoff, documents: lit.documents, words: lit.words, built: lit.built }, approved: [...ctx.approved].sort(),
-    independent: { writer: who, judges: JUDGES, awaiting: awaiting.length, rest: Object.values(units).reduce((n, u) => n + Object.values(u.checks).filter(c => c.by && c.v !== 'pending').length, 0),
+    independent: { writer: who, judges, awaiting: awaiting.length, rest: Object.values(units).reduce((n, u) => n + Object.values(u.checks).filter(c => c.by && c.v !== 'pending').length, 0),
       runs: [...rec.runs.values()].map(r => ({ ...r, answers: used.get(r.id) || 0 })) },
     wip: wip ? { hash: print.gate, declared: now.toISOString(), note: wip, units: [...open, ...awaiting].map(({ unit, rule, where }) => ({ unit, rule, where })) } : old?.wip?.hash === print.gate ? old.wip : null, units };
   const text = serialize(state);
@@ -466,7 +476,7 @@ export function report(slug, { state, open, awaiting = [] }, { pending = false }
     '| rule | pass | fail | awaiting independent verdict | not judged |', '| --- | ---: | ---: | ---: | ---: |', ...rows, '',
     state.corpus ? `Corpus: ${state.corpus.documents} hep-th papers, ${state.corpus.words} words, inspected sources dated before ${state.corpus.cutoff} (${state.corpus.hash.slice(0, 12)}).` : 'Corpus: not built (node harness/cli.mjs corpus-build).',
     ...(state.approved.length ? [`Terms that pass on the user's approval recorded in LEXICON: ${state.approved.join('; ')}.`] : []),
-    ind.runs.length ? `Independent verdicts: writer ${ind.writer}. ${ind.rest} verdicts rest on the runs of the judges recorded on this computer. A pass needs ${ind.judges} judges, and one failing judge fails the unit. The answers of a call on a rule count when the call answered all planted texts of that rule as registered, and those of a run when it answered ${FIT[0]} in ${FIT[1]} of them.`
+    ind.runs.length ? `Independent verdicts: writer ${ind.writer}. ${ind.rest} verdicts rest on the runs of the judges recorded on this computer. A pass needs ${ind.judges === 1 ? 'one judge' : `${ind.judges} judges of different models (named with --model)`}, and one failing judge fails the unit. The answers of a call on a rule count when the call answered all planted texts of that rule as registered, and those of a run when it answered ${FIT[0]} in ${FIT[1]} of them.`
       : `Independent verdicts: none recorded on this computer${ind.writer ? ` (writer ${ind.writer})` : ''}.`,
     ...ind.runs.map(r => `- run ${r.id} (${judgeName(r)}): ${r.calls} calls, ${r.met} of ${r.planted} planted texts answered as registered${r.missed.length ? ` (missed: ${r.missed.join(', ')})` : ''}, ${r.answers} verdicts rest on it${r.unfit.length ? `; below ${FIT[0]} in ${FIT[1]} and not used for: ${r.unfit.join(', ')}` : ''}`), LIMITS,
     ...(state.orphans.length ? [`FACTS uses that match no sentence of the manuscript: ${state.orphans.join(', ')}`] : []),

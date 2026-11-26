@@ -130,7 +130,7 @@ Ranked criteria (user decision 2026-11-25, as recommended):
 | --- | --- |
 | criteria ranking | the eight-step order above |
 | approval of a new term | automatic when the literature attests it, the user otherwise |
-| judging models | a model from a different vendor than the writer, two judges in agreement |
+| judging models | a model from a different vendor than the writer, two judges in agreement (changed by the user on 2026-11-26 to one judge, [record](#stage-3-one-judge-2026-11-26)) |
 | commits of unverified manuscript sources | allowed and marked, only the completion report is blocked |
 
 ## What the gate establishes
@@ -833,3 +833,49 @@ first form.
 
 Still open from the second form: whether two runs of one model count as two judges, the
 nine-in-ten threshold, and planted texts that are too easy to grade a judge.
+
+### Stage 3, one judge (2026-11-26)
+
+Decision of the user ("하나로 바꿔"), on the measurement of the second form: two runs of one
+model gave the same verdict on 357 of 360 questions under the rules about a sentence and on
+59 of 59 word pairs, so the second run doubled the cost and was no second reader. The row
+"judging models" of the decisions above read "two judges in agreement". It now reads: one
+judge of a vendor other than the writer's, and more only where a manuscript asks for them,
+of different models. The writer still cannot pass its own text, and what tells whether a
+call was read is the planted text in it, not a second run.
+
+Criterion and plan of checks, written before the code. Tests use an injected judge.
+
+1. Without a setting one passing judge passes a question, and one failing judge fails it.
+   A manuscript whose rules pass is complete after one run.
+2. A manuscript can require more judges with `"judges": n` in its `RULES.json`, which is
+   part of the gate hash. Judges are told apart by model: the runs of one model give one
+   passing vote however many they are, and a failing run of any model fails the unit. A
+   run asks a question only if its model has not passed it yet.
+3. The earlier tests pass, with the counts that change listed in the record.
+
+Code: `JUDGES` is 1 in `harness/verify.mjs`, a manuscript's `RULES.json` may set
+`"judges"`, votes are counted by the model of their run, and `harness/judge.mjs` asks a
+run only what its model has not passed.
+
+Result. All 51 tests pass. By the numbers of the plan above:
+
+1. Passed. The fixture is complete after one run of seven calls, and the judge that fails
+   the colon, the declaration of ordinary wording and the standard notation fails those
+   three units in that run.
+2. Passed. With `"judges": 2` a run of the default model leaves all 15 verdicts awaiting
+   with one vote, a second invocation with the same model makes no call, and a run named
+   `model-b` completes what it passes and fails the unit whose colon it fails. A value that
+   is not a whole number of at least 1 is refused.
+3. The counts that changed: a verification of a text that passes is one run where it was
+   two, and the call with a missed planted text is asked once more in the same invocation.
+
+Estimated from the calls measured in the second form: one pass over the pilot draft is 106
+calls, 2.5 million input and 0.4 million output tokens and 35 minutes with four calls at a
+time, against 43 million input tokens and 11 hours for the first form.
+
+Open. How much two different models disagree is not measured, so nothing here says what a
+second judge of another model would add. Proposed for the pilot: one Section judged by two
+models, and the count of verdicts on which they differ. A judge is told apart by the model
+named for its run. The provider reports no model identity, so a run with no model named
+and a run that names the default model count as two.

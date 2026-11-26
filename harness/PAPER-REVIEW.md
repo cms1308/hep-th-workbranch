@@ -150,7 +150,7 @@ local edit of one needs none of these files, and no user-approval step is added.
 
 | File in the paper directory | Content |
 | --- | --- |
-| `RULES.json` | The project's rules, `{"version": 1, "rules": [...]}`. Harness-wide rules are in `harness/rules.json`. |
+| `RULES.json` | The project's rules, `{"version": 1, "rules": [...]}`, and optionally `"judges": n`. Harness-wide rules are in `harness/rules.json`. |
 | `LEXICON.json` | `symbols`: `{"symbol", "at"}` or `{"symbol", "standard"}`. `terms`: `{"term"}` with exactly one of `"at"`, `"approved"`, `"ordinary"`. |
 | `FACTS.json` | `facts`: id to `{"file", "pointer"}`, `{"file", "pattern"}` or `{"at"}`. `uses`: sentence to numeral to fact id. |
 | `VERIFY.json` | Written by the CLI only: one verdict for each (unit, rule), bound to content hashes. It counts only together with the run metadata the CLI keeps on the same computer. |
@@ -255,11 +255,14 @@ local edit of one needs none of these files, and no user-approval step is added.
   planted text of that rule as registered, a seeded defect among them. And the answers of a
   run on a rule count only if the run answered nine in ten of that rule's planted texts as
   registered. A rule for which no defect can be planted in this manuscript is not asked.
-- **Two judges.** A run is one judge. A (unit, rule) passes when two different runs pass it
-  and fails when one fails it. A failed unit is changed, not asked again: the writer cannot
-  overrule a judge, and a disputed verdict goes to the user. `paper-judge` makes runs one
-  after another while a question is open and a run still adds a vote, four at most. A text
-  that passes needs two.
+- **One judge.** A run is one judge, and a (unit, rule) passes when a judge passes it and
+  fails when a run fails it (user, 2026-11-26: two runs of one model read alike, so a
+  second run was no second reader). A manuscript can ask for more with `"judges": n` in its
+  `RULES.json`. Judges are then told apart by model (`--model a,b`): the runs of one model
+  give one passing vote, and a failing run of any model fails the unit. A failed unit is
+  changed, not asked again: the writer cannot overrule a judge, and a disputed verdict goes
+  to the user. `paper-judge` makes runs one after another while a question is open and a
+  run still adds a vote, at most two for each judge required.
 - **Better sentence (advice).** The search for a sentence that is better under the ranked
   criteria of the design is no part of a verification (user, 2026-11-26): it gives no
   verdict, and no manuscript waits for it. `paper-judge <slug> [paper-dir] --advice` asks
