@@ -4,7 +4,7 @@
 import path from 'node:path';
 import { write, writeJSON } from '../harness/core.mjs';
 import { judge } from '../harness/judge.mjs';
-import { outlineView } from '../harness/verify.mjs';
+import { outlineView, groundsView } from '../harness/verify.mjs';
 
 export const answerer = (decide = () => undefined, log = []) => async (command, args, options) => {
   const { call } = options, value = {};
@@ -19,8 +19,12 @@ export const answerer = (decide = () => undefined, log = []) => async (command, 
     write(path.join(options.dir, 'stdout.jsonl'), '{"type":"thread.started","thread_id":"fixture"}\n{"type":"turn.completed","usage":{"input_tokens":100,"output_tokens":10}}\n');
   } else writeJSON(path.join(options.dir, 'stdout.jsonl'), { subtype: 'success', is_error: false, session_id: 'fixture', structured_output: value, modelUsage: { 'fixture-model': {} }, usage: { input_tokens: 100, output_tokens: 10 }, total_cost_usd: 0.01 });
 };
-// An outline that fits the manuscript as it stands: the entries it has are kept, and a paragraph without one gets a plain entry.
+// Registries that fit the manuscript as it stands: an outline whose entries are kept and a paragraph without one gets a plain entry,
+// and grounds in which a sentence without an entry is typed as a transition.
 export function sketch(project, paper = 'paper') {
+  const grounds = JSON.parse(groundsView(project, paper, { skeleton: true }));
+  for (const e of grounds.sentences) if (!e.type) e.type = 'transition';
+  writeJSON(path.join(project, paper, 'GROUNDS.json'), grounds);
   const outline = JSON.parse(outlineView(project, paper, { skeleton: true }));
   if (!outline.claims[0].id) outline.claims = [{ id: 'fixture', claim: 'The fixture states what it establishes.' }];
   for (const s of outline.sections) for (const e of s.paragraphs) if (!e.role) Object.assign(e, { role: 'setup', does: 'States a sentence of the fixture.' });

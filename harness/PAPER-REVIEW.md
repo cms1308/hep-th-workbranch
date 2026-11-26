@@ -139,12 +139,15 @@ conflicts before deciding a scientific change; ordinary authorized merges can pr
 
 Stages 1 to 4 of [the design](design/paper-verification.md) are implemented: the checks
 that code decides, including the comparison of terms with the literature corpus, the
-independent verdict on what only a reader can decide, and the outline of the manuscript
-held to its text (one entry for every paragraph, and the scope of the central claims).
-They supplement the reading duty above and replace none of it. A judge sees a sentence
-with its paragraph, its headings and the outline, so whether a sentence is physically
-correct and supported by the notes, the data or the cited source stays with the reading
-duty. The pilot on a real manuscript is stage 5, which has not been run.
+independent verdict on what only a reader can decide, the outline of the manuscript
+held to its text (one entry for every paragraph, and the scope of the central claims),
+and the grounds of every sentence (the passages of the manuscript, the notes, the
+calculation outputs or the cited sources that it rests on, judged against it). They
+supplement the reading duty above and replace none of it. A judge sees a sentence with
+its paragraph, its headings, the passages its entry quotes and the outline, so whether
+those records are themselves right, and anything in them beyond the quoted passages,
+stays with the reading duty, the review of the calculations and cite-check. The pilot on
+a real manuscript is stage 5, which has not been run.
 
 `node harness/cli.mjs paper-verify <slug> [paper-dir]` splits the manuscript (literal
 `input`/`include` followed, preamble macros without arguments expanded) into titles,
@@ -159,6 +162,7 @@ local edit of one needs none of these files, and no user-approval step is added.
 | `LEXICON.json` | `symbols`: `{"symbol", "at"}` or `{"symbol", "standard"}`. `terms`: `{"term"}` with exactly one of `"at"`, `"approved"`, `"ordinary"`. |
 | `FACTS.json` | `facts`: id to `{"file", "pointer"}`, `{"file", "pattern"}` or `{"at"}`. `uses`: sentence to numeral to fact id. |
 | `OUTLINE.json` | `claims`: `{"id", "claim"}`, the central claims of the manuscript, each stated with the restrictions it holds under. `setting` (optional): pointers to the sentences of the manuscript that state its setting. `sections`: `{"title", "paragraphs"}` for every Section, Subsection and Subsubsection, with the TeX of its heading, one `{"role", "does"}` for each paragraph and an optional `setting` of the section. |
+| `GROUNDS.json` | `sentences`: one entry for every sentence, `{"at", "type", "links"}`, with `type` one of result, derivation, cited, definition, transition and `links` the passages it rests on. |
 | `VERIFY.json` | Written by the CLI only: one verdict for each (unit, rule), bound to content hashes. It counts only together with the run metadata the CLI keeps on the same computer. |
 
 - **Rules.** An entry has `id`, `kind`, `source`, at least one `fail` text and one `pass`
@@ -259,6 +263,29 @@ local edit of one needs none of these files, and no user-approval step is added.
   it would be shown with. An edited sentence of the setting asks again the paragraphs that
   are shown it. The setting is shown under `claim-scope` only: a reader who has read it
   does not need a restriction it imposes repeated in every sentence (user, 2026-11-26).
+- **Grounds.** Every sentence (abstract, body, list items, captions, footnotes; not titles)
+  has exactly one entry in `GROUNDS.json` (user, 2026-11-25 and 2026-11-26). `at` points
+  to it (`label:`, a unit id or a passage that stands in that sentence only). `type` is
+  `result`, `derivation` or `cited`, which need at least one link, or `definition` or
+  `transition`, which need none. A link is `{"at"}` (a place in the manuscript; the judge
+  is shown its paragraph), `{"file", "quote"}` (a passage of a project file: a note, a
+  calculation output, RESULTS) or `{"cite", "quote"}` (a passage of a source the sentence
+  cites, read from the wiki's copy through the eprint of the key in the bibliography). A
+  quote is copied from the file, at least four words, and the judge is shown the block
+  between blank lines that holds it, so the qualifications beside it are seen. Code fails
+  a sentence without an entry or with several, an unknown type, a type without the link it
+  needs, a quote that does not stand where it says, a `cited` sentence without a passage
+  of a source it cites, a cited source missing from the wiki (it is ingested first), and an
+  entry that points to no sentence or to several; without the wiki on a computer, a cited
+  sentence is not judged. The judge (`sentence-grounds`, calls of its own, one for each
+  paragraph) is shown the sentence in its paragraph under its headings with its type and
+  passages, and fails a sentence that states more, less or other than its passages
+  establish, and a definition or transition that states a result, a step or an attributed
+  claim. An edited passage asks again the sentences that quote it.
+  `node harness/cli.mjs paper-grounds <slug> [paper-dir]` prints every sentence with its
+  entry and what code finds wrong, and with `--skeleton` the JSON to fill in, which keeps
+  the entries that stand. Writing the entries is the comparison of every sentence with its
+  record that the reading duty asks for.
   `node harness/cli.mjs paper-outline <slug> [paper-dir]` prints every heading with its
   paragraphs and their entries, and with `--skeleton` the JSON to fill in, which keeps the
   entries that stand. It writes nothing and enrolls nothing. The judges are then asked: for
@@ -288,6 +315,7 @@ local edit of one needs none of these files, and no user-approval step is added.
 - **Independent verdicts.** `node harness/cli.mjs paper-judge <slug> [paper-dir] --writer
   <claude|codex>` asks judges of the vendor that did not write the manuscript. The writer is
   a declaration, kept after the first run and printed in every report. Asked are the
+  grounds of every sentence with a sound entry (`sentence-grounds`), the
   registered `judge` rules (harness-wide `scope-stated`, which accepts a restriction in
   the sentence, earlier in its paragraph or in the headings above it, `in-place` and
   `claim-scope` for every sentence, `entry-delivered` for every paragraph with an entry, `abstract-covered`

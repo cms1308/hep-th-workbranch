@@ -2,11 +2,12 @@
 
 Status: design and its four open choices decided by the user on 2026-11-25. **Stages 1 to
 4 of 5 implemented**: stages 1 to 3 on 2026-11-25, stage 3 rebuilt on 2026-11-26 for its
-cost, stage 4 on 2026-11-26 ([record](#implementation-record)); stage 5 is not. No
-manuscript is enrolled yet (the pilot is stage 5). [PAPER-REVIEW](../PAPER-REVIEW.md)
-and [PAPER-STYLE](../../PAPER-STYLE.md) remain the active policy, and the reading duty
-stays in full: a judge sees a sentence with its paragraph, its headings and the outline,
-not the notes, the data or the cited sources. This file is the specification the next
+cost, stage 4 and the sentence grounds (4a) on 2026-11-26 ([record](#implementation-record));
+stage 5 is not. No manuscript is enrolled yet (the pilot is stage 5).
+[PAPER-REVIEW](../PAPER-REVIEW.md) and [PAPER-STYLE](../../PAPER-STYLE.md) remain the active
+policy, and the reading duty stays in full: a judge sees a sentence with its paragraph,
+its headings, the passages it rests on and the outline, not the rest of the notes, the
+data or the cited sources. This file is the specification the next
 stage starts from.
 
 ## Why
@@ -162,6 +163,11 @@ Each stage has its criterion before work starts.
 4. Outline contract and the scope check of central claims.
    verify: the misplaced case-(3) sentence and the unscoped main result of the origin
    both fail on fixtures.
+4a. Sentence grounds: the row "sentence" of the table "Units and grounds". It was assigned
+   to no stage when these stages were written, and was added on 2026-11-26 after the user
+   found it missing ([record](#sentence-grounds-2026-11-26)).
+   verify: the sentence on cases (3) and (5) that the user found, grounded by the passages
+   it rests on, fails; a sentence typed as needing no ground that states a result fails.
 5. The origin incidents added to `evals/`; pilot on susu-quiver.
    verify: all existing evaluation cases still pass, including the two on unnecessary
    gates, and the pilot report lists zero unverified units.
@@ -1299,3 +1305,163 @@ Open.
   run for restrictions that stand later in its paragraph. Whether it should also be shown
   the setting is a question for the pilot, by its count of failures that are not defects.
 - The items open after stage 4 stand otherwise.
+
+### Sentence grounds (2026-11-26)
+
+Why. The user's instruction of 2026-11-25 was that every word and sentence has explicit
+grounds. The table "Units and grounds" gave a sentence its ground: a type and a link to an
+equation, a note or evidence run, or a cited source, judged independently. The stage list
+above assigned that row to no stage, and the records of stages 3 and 4 listed it as open
+without saying that the central requirement was missing. The user asked why it was not
+built ("내가 이 하네스 다시 구축하라고 했을 때 부터 모든 단어 문장을 근거있게 써야한다고
+했는데 왜 구현이 안되어있는거야?") and gave the go ("문장 근거 연결 진행해", 2026-11-26).
+The incident it answers: the user, and not the lead, found the sentence "The only way
+around the exclusions of cases (3) and (5) is a superpotential constraint …" (susu-quiver,
+HISTORY), which the derivation of case (5) with a superpotential contradicts.
+
+Criterion and plan of checks, written before the code. Tests use an injected judge.
+
+1. `paper/GROUNDS.json` gives every sentence of an enrolled manuscript (abstract, body,
+   list items, captions, footnotes; not titles) exactly one entry: the sentence (`at`: a
+   label, a unit id or a passage that stands in exactly one sentence), its `type` and its
+   `links`. Types: `result`, `derivation`, `cited`, which need at least one link, and
+   `definition`, `transition`, which need none.
+2. A link is a passage that the judge is shown in its own words: a place in the manuscript
+   (`at`, the paragraph that holds it), a passage of a project file (`file` and `quote`:
+   notes, calculation outputs, RESULTS), or a passage of a cited source (`cite`, a key of
+   the bibliography, and `quote`, read from the wiki's copy of the source by the key's
+   eprint). Code fails a sentence without an entry or with several, an unknown type, a
+   type that needs a link and has none, a quote that does not stand where it says, a
+   `cited` sentence without a link to a key it cites, a cited source absent from the wiki,
+   and an entry that points to no sentence or to several.
+3. The judge is shown the sentence in its paragraph under its headings, its type and the
+   passages. For a sentence that needs a ground: pass if the passages establish what the
+   sentence states (subject, direction, conditions, range), fail if the sentence states
+   more, less or other. For `definition` and `transition`: fail if the sentence states a
+   result, a derivation step or an attributed claim.
+4. Planted texts in every call: the sentence on cases (3) and (5), linked to a passage
+   that gives the condition for case (5) and calls its realization open, must fail; a
+   sentence on case (3) alone with the same link must pass; a sentence typed `transition`
+   that states a result must fail, and a real transition must pass.
+5. The key of a verdict covers the sentence, its paragraph and headings, its type and
+   every passage shown. A changed note passage asks the sentences that link to it again.
+6. Not enrolled manuscripts get no file and no verdict, and the 56 earlier tests pass
+   with the counts that change listed.
+7. Live with Codex, on a scratch manuscript made of the introduction and the Section on
+   case (5) of the pilot draft before its correction (a09e65a), grounded by the lead in
+   the project's notes: the sentence the user found fails, and calls, tokens and time are
+   reported with the estimate for the pilot draft.
+
+Code: in `harness/verify.mjs` the registry of grounds (`grounded`: entries, links and the
+passages around their quotes), the check kind `grounds` with the flags `reads` (its
+questions are shown with the paragraph and headings) and `asks` (a passing text may await
+the judge), `bibliography`, `citedKeys`, `wikiSources`, `groundsView`, the grounds in the
+report and in the gate hash; in `harness/judge.mjs` the grounds of planted texts and the
+sources passed through; the rule `sentence-grounds` in `harness/rules.json`; the
+`paper-grounds` entry of `harness/cli.mjs`; `tests/grounds.test.mjs`. Use:
+[PAPER-REVIEW](../PAPER-REVIEW.md#verification-gate).
+
+Result. `tests/grounds.test.mjs` has three tests with an injected judge, and all 59 tests
+pass. By the numbers of the plan above:
+
+1. Done. Every sentence of an enrolled manuscript needs one entry; titles need none.
+2. Passed. Each fault listed in the plan fails with its reason on the fixture, among them
+   a quote that is not in the note, a quote of fewer than four words, a sentence that links
+   to itself, a link that stands in three places, a cite link to a key the sentence does
+   not cite, a key without an eprint, a source missing from the wiki, and on a computer
+   without the wiki the cited sentence is not judged. The rule is registered with eight
+   failing texts, two passing texts and four planted texts.
+3. Passed. The prompt prints, for each unit, its type and every passage with the file or
+   source it comes from, a cited passage read from the wiki's copy of the source.
+4. Passed. The four planted texts stand in every call of the family. A judge that passes
+   the planted sentence on cases (3) and (5) gives no verdict on the rule in any call.
+5. Passed. An edit of a note block that two sentences quote asks those two again in one
+   call; an edit of a block that one sentence quotes asks that one; a line no sentence
+   quotes asks nothing; an edit of a manuscript sentence that others link to asks those
+   that link to it.
+6. Passed. Fourteen of the 56 earlier tests changed (seven in `tests/judge.test.mjs`, all
+   five in `tests/outline.test.mjs`, two in `tests/verify.test.mjs`), by their fixtures
+   getting grounds (each sentence typed as a transition, or written out; `sketch` in
+   `tests/judges.mjs` now writes grounds too) and by the counts that follow: one more
+   question for each sentence, one more call for each paragraph, four more planted texts
+   for each call of the family. In `tests/judge.test.mjs` a run of the fixture is 14 calls
+   instead of 11 with 55 planted texts instead of 43; in `tests/outline.test.mjs` the
+   fixture awaits 65 verdicts instead of 52 and a run is 23 calls instead of 16; in
+   `tests/verify.test.mjs` the table of a manuscript enrolled without registries counts
+   four failures instead of three, and the Stop test gives its edited text new grounds as
+   a writer would.
+7. Done, below, on a narrower manuscript than the plan names: the paragraph of the
+   introduction that states the two exact results, not the whole introduction, and the
+   Section on case (5). 19 sentences.
+
+Measured, live with Codex (provider default, gpt-6.2-astra at reasoning effort xhigh in
+this computer's configuration), on a scratch copy with no project file written. The lead
+grounded the 19 sentences in notes 01, 04 and 05, RESULTS and three cited sources in the
+wiki, quoting for each the passage it rests on. The sentence the user found was grounded in
+its own origin, the Interpretation of note 05, whose block goes on to say that case (5)
+resists even that, and in the case-(5) result of note 04.
+
+- Code, before any call: 2 of 19 sentences fail. The sentence that calls case (3) the
+  flow of supersymmetric asymptotic safety rests on Bond–Litim and does not cite it, and
+  Martin:2000cr (hep-ph/0011382), cited for the impossibility at weak coupling, is not in
+  the wiki.
+- First run: 4 calls, 97,490 input and 9,058 output tokens, 85 s with four at a time,
+  16 of 16 planted texts as registered. The judge failed 7 sentences:
+  - The sentence the user found fails: the passages leave the charges of the field
+    unspecified, and note 04 excludes case (5) for a class of superpotentials.
+  - Statement (ii) of the introduction ("Case (5) … never occurs"), for the restriction
+    to $W=0$ that the proposition carries. The project added "At $W=0$" in d089c83.
+  - The sentence on $b_0^{(2)}(\mathcal A)+\rho\,b_0^{(1)}(\mathcal B)\ge0$ "for any
+    two-node quiver", and the opening of the Section on case (5), for the restriction of
+    Proposition 5 to fund-type bifundamentals, which the current draft does not state.
+    The note calls the restriction true of the whole paper's scope. Whether the text needs
+    it is the user's question.
+  - Three for the lead's grounding: two derivation steps linked to a block of note 05
+    that does not hold the formula they use, and a sentence typed as a definition that the
+    judge reads as a step of the derivation.
+- Second run, after the two links were added: 2 calls for the 3 changed questions,
+  47,997 input and 2,503 output tokens, 8 of 8 planted texts. The two derivation steps
+  pass, and the sentence on the inequality fails for $W=0$ and the fund-type restriction.
+- In all on this record: 6 calls, 145,487 input and 11,561 output tokens.
+
+Estimated for the pilot draft from these calls: one call of the family for each
+paragraph, about 96, at 24 thousand input and 2.3 thousand output tokens, so one pass of
+the gate rises to about 280 calls, 6.6 million input and 0.8 million output tokens and an
+hour and a half with four calls at a time. Writing the entries is the lead's work: here 19
+sentences needed three notes, RESULTS and three sources, and the pilot draft has 448.
+
+Choices made in the implementation, each the lead's and open to the user's correction.
+
+1. Every sentence has an entry, transitions and definitions included, and the judge is
+   asked whether they need none. Otherwise a sentence could escape its ground by its type.
+2. A link quotes the passage verbatim, and the judge is shown the block of the file around
+   it (up to 4000 characters), not a pointer to a section. The writer has to find the
+   exact support, and the judge sees the qualifications beside it: in the live run the
+   sentence on cases (3) and (5) was quoted from its own source, whose next sentence
+   contradicts it.
+3. A cited passage is read from the wiki's copy of the source, through the eprint of the
+   key in the bibliography. A source outside the wiki fails until it is ingested; a quote
+   from a source that nobody can read is not accepted.
+4. A cite link must name a key that the sentence cites, so a claim cannot rest on a
+   source it does not credit (the asymptotic-safety sentence of the live run).
+5. The grounds are a family of their own, shown with the paragraph and headings and
+   without the outline.
+6. A passing text of the rule may await the judge, since every sound entry does; the code
+   part of the rule is still tested by its failing and passing texts.
+7. `JUDGE` is not raised: no existing question or prompt changed.
+
+Open.
+
+- The writer chooses the links. A sentence grounded in a passage that a later record
+  supersedes passes when the passage supports it. In the live run the defect was caught
+  because the same block held its correction. Proposed for the pilot: link the latest
+  record (RESULTS, whose entries carry their supersession), and count how often a grounded
+  sentence passes on a superseded note.
+- The records themselves are not judged: a note that is wrong grounds a wrong sentence.
+  That is the review of the calculations, and of the sources, cite-check.
+- Terms attested only outside the wiki (the reference for "connected quiver" is outside
+  it) need the papers ingested, after which `corpus-build` counts them. A ground of a term
+  in a source outside the wiki is not built.
+- Martin:2000cr has to be ingested before the pilot (the harness launches the Codex
+  ingest, as recorded in the user's working rules).
+- Single words are still not compared, and the items open after stage 4 stand.

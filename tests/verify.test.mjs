@@ -397,8 +397,8 @@ test('the Stop hook blocks the session that changed an enrolled manuscript, no o
   assert.match(failing(verify(project, 'paper', built), 'outline-contract').join(), /^the manuscript has no outline/, 'an enrolled manuscript needs its outline');
   sketch(project); verify(project, 'paper', built);
   out = stop(root); assert.equal(out.decision, 'block'); assert.match(out.reason, /1 failing or unjudged verdicts.*block 2 of 3/s);
-  edit(project, 'section~', 'Section~'); verify(project, 'paper', built);
-  assert.match(stop(root).reason, /\(0 failing or unjudged verdicts, 14 awaiting the independent verdict\).*paper-judge demo paper --writer/s, 'what awaits the independent verdict holds the turn as a failure does');
+  edit(project, 'section~', 'Section~'); sketch(project); verify(project, 'paper', built);
+  assert.match(stop(root).reason, /\(0 failing or unjudged verdicts, 17 awaiting the independent verdict\).*paper-judge demo paper --writer/s, 'what awaits the independent verdict holds the turn as a failure does');
   assert.equal((await settle(root, built)).result.state.complete, true);
   assert.deepEqual(stop(root), {}, 'verified: released'); assert.deepEqual(stop(root), {});
   call(root, 'session-a', { file_path: '/scratch/fix.py', content: 'open("projects/demo/paper/main.tex")' });      // a script that names the manuscript
@@ -407,8 +407,8 @@ test('the Stop hook blocks the session that changed an enrolled manuscript, no o
   assert.match(failing(verify(project, 'paper', built), 'outline-contract')[0], /^4 paragraphs stand before the first heading and the outline lists 3: every paragraph has exactly one entry$/, 'a paragraph added without an entry');
   sketch(project);
   const wip = verify(project, 'paper', { ...built, wip: 'Section 3 is being rewritten' });
-  assert.deepEqual(wip.state.wip.units.map(u => u.rule), ['reference-capital', 'entry-delivered', 'scope-stated', 'in-place', 'claim-scope'], 'the failure and what awaits the judges for the added paragraph and its sentence');
-  assert.match(report('demo', wip), /Work in progress declared .*Section 3 is being rewritten \(5 unverified verdicts.*\(pending\): awaits the independent verdict/s);
+  assert.deepEqual(wip.state.wip.units.map(u => u.rule), ['reference-capital', 'entry-delivered', 'sentence-grounds', 'scope-stated', 'in-place', 'claim-scope'], 'the failure and what awaits the judges for the added paragraph and its sentence');
+  assert.match(report('demo', wip), /Work in progress declared .*Section 3 is being rewritten \(6 unverified verdicts.*\(pending\): awaits the independent verdict/s);
   out = stop(root); assert.equal(out.decision, undefined); assert.match(out.systemMessage, /projects\/demo\/paper: work in progress declared/);
   assert.deepEqual(stop(root), {}, 'released until the session changes the manuscript again');
   call(root, 'session-a', { command: 'cd projects/demo && sed -i s/a/b/ paper/main.tex' }, text('gamma'), { end: false });  // a call that fails reports no end
@@ -450,7 +450,7 @@ test('paper-verify prints the completion table and fails its exit status while a
     const text = await main(['paper-verify', 'demo', '--no-build'], root);
     assert.equal(process.exitCode, 1);
     assert.match(text, /\| rule \| pass \| fail \| awaiting independent verdict \| not judged \|/); assert.match(text, /\| number-bound \| 0 \| 1 \| 0 \| 0 \|/);
-    assert.match(text, /Status: INCOMPLETE, 3 failing and 1 not judged\./); assert.match(text, /\nOutline: none \(OUTLINE\.json\)\.\n/);
+    assert.match(text, /Status: INCOMPLETE, 4 failing and 1 not judged\./); assert.match(text, /\nGrounds: none \(GROUNDS\.json\)\.\nOutline: none \(OUTLINE\.json\)\.\n/);
     assert.match(text, /- \[outline-contract\] document unit document \(fail\): the manuscript has no outline: paper\/OUTLINE\.json registers its central claims and gives every paragraph one entry/); assert.match(text, /- \[number-bound\] front ¶1 s1 paper\/main\.tex:1 unit [0-9a-f]{12} \(fail\): "204" is not bound to a fact/);
     assert.match(text, /Independent verdicts: none recorded on this computer\./); assert.match(text, /Awaiting the independent verdict: 2 \(node harness\/cli\.mjs paper-judge demo paper/);
     const units = await main(['paper-units', 'demo', 'theories'], root);

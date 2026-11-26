@@ -45,7 +45,7 @@ projects/<slug>/
     PUNCHLINES.md    short section outline when useful; paragraph mapping is optional
     CITATIONS.md     per-citation ledger: where in the cited paper the claim sits, and
                      whether that paper is the original source (maintained by /cite-check)
-    RULES.json, LEXICON.json, FACTS.json, OUTLINE.json, VERIFY.json
+    RULES.json, LEXICON.json, FACTS.json, OUTLINE.json, GROUNDS.json, VERIFY.json
                      only for a manuscript enrolled in the verification gate (PAPER-REVIEW)
   report/            plain-language TL;DR report (created by /report)
 ```
@@ -185,16 +185,20 @@ authorized multi-step work solely because of it. Include it in the normal report
   the vendor that did not write the text, tested on seeded defects in every call. The
   outline of an enrolled manuscript is `OUTLINE.json`: its central claims with their
   restrictions, one entry for every paragraph and the sentences that state its setting,
-  held to the text by code and by the judges (`paper-outline` prints it next to the text;
+  held to the text by code and by the judges (`paper-outline` prints it next to the text).
+  Every sentence has an entry in `GROUNDS.json`: its type and the passages of the
+  manuscript, the notes, the calculation outputs or the cited sources it rests on, quoted
+  and judged against it (`paper-grounds`;
   [PAPER-REVIEW](PAPER-REVIEW.md#verification-gate)). A manuscript is gated once it is
   enrolled (its directory holds `VERIFY.json`). For an enrolled manuscript the table
   printed by `paper-verify` is the only evidence of verification a report may cite, and
   the Stop hook blocks the end of a turn that changed it without a complete verification
   or a declared work in progress (once the tool hooks of
   [OPERATIONS](OPERATIONS.md#manuscript-verification-gate) are installed, which awaits the
-  user's word). A judge sees a sentence with its paragraph, its headings and the
-  outline, not the notes, the data or the cited sources, and the pilot (stage 5) has not
-  been run: the reading duty above stays in full for every manuscript, enrolled or not.
+  user's word). A judge sees a sentence with its paragraph, its headings, the
+  passages it rests on and the outline, not the rest of the notes, the data or the cited
+  sources, and the pilot (stage 5) has not been run: the reading duty above stays in full
+  for every manuscript, enrolled or not.
 - Use the default explanatory prose in `PAPER-STYLE.md` for drafting and substantive prose
   edits. Shared context, authorization, validation and optional review tracking are in
   [PAPER-REVIEW.md](PAPER-REVIEW.md).

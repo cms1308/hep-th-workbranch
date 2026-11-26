@@ -59,9 +59,11 @@ const OUTLINE = { version: 1, claims: [{ id: 'no-third-case', claim: 'Without a 
   { title: 'With a superpotential', paragraphs: [entry('result', 'States that Seiberg duality realizes the third case when a superpotential is present.')] }] };
 // Every wording of the manuscript is attested, so that no question about a term stands between a unit and its judges.
 const check = { build: () => ({ log: '', pages: ['text'] }), corpus: () => fromTex([TEX, TEX]) };
+// Its grounds: every sentence has an entry that needs no link, so that grounds put no question in the way of the outline.
+const GROUNDS = { version: 1, sentences: ['We study the flows', 'Without a superpotential, the third', 'In every case both', 'The quivers of this paper', 'Our main result', 'In the fifth case both', 'The flow ends where', 'In the third case the first', 'The other cases are', 'In the first case a node', 'In the second case no node', 'We derive a new bound', 'With a superpotential, Seiberg'].map(at => ({ at, type: 'transition' })) };
 function make(t, extra = {}) {
   const root = temp(t), project = path.join(root, 'projects', 'demo');
-  for (const [name, content] of Object.entries({ 'paper/main.tex': TEX, 'paper/OUTLINE.json': OUTLINE, ...extra })) if (content !== null) put(project, name, content);
+  for (const [name, content] of Object.entries({ 'paper/main.tex': TEX, 'paper/OUTLINE.json': OUTLINE, 'paper/GROUNDS.json': GROUNDS, ...extra })) if (content !== null) put(project, name, content);
   const units = () => load(project, 'paper/main.tex').units, one = (kind, text) => { const found = units().filter(u => u.kind === kind && u.text.includes(text)); assert.equal(found.length, 1, text); return found[0].id; };
   return { root, project, at: label => load(project, 'paper/main.tex').labels[label], para: text => one('paragraph', text), head: text => one('title', text), sentence: text => one('sentence', text) };
 }
@@ -80,12 +82,12 @@ test('an enrolled manuscript needs its outline, and code holds the outline to th
   assert.deepEqual([r.state.outline, tally(r, 'outline-contract'), ...NAMES.slice(0, 3).map(rule => verdicts(r.state, rule).length)], [null, [0, 1, 0, 0], 0, 0, 0], 'without an outline nothing else can be held to it');
   assert.match(report('demo', r), /\nOutline: none \(OUTLINE\.json\)\.\n/);
   const held = await judge(bare.root, 'demo', 'paper', { writer: 'claude', ...check, runner: answerer(undefined, log) });
-  assert.deepEqual([held.runs.map(r => [...new Set(r.calls.map(c => c.family))]), log.length, waiting(held.result.state), held.result.state.complete], [[['content']], 7, 0, false], 'the rules about a sentence in its paragraph do not need the outline, and nothing that would show it exists to ask');
+  assert.deepEqual([held.runs.map(r => [...new Set(r.calls.map(c => c.family))]), log.length, waiting(held.result.state), held.result.state.complete], [[['sentence-grounds', 'content']], 14, 0, false], 'the grounds of the sentences and the rules about a sentence in its paragraph do not need the outline, and nothing that would show it exists to ask');
   // The outline of the fixture: four headings, and six entries for nine paragraphs, since a list belongs to the paragraph before it.
   const { project, para, head } = make(t);
   r = verify(project, 'paper', check);
   assert.deepEqual([open(r), r.state.outline, tally(r, 'outline-contract')], [[], { claims: 1, setting: 0, sections: 4, entries: 6 }, [7, 0, 4, 0]], 'the document and six paragraphs pass, and four headings await the verdict on what they name');
-  assert.deepEqual(NAMES.map(rule => verdicts(r.state, rule).length), [13, 6, 3, 13, 13]); assert.equal(waiting(r.state), 52);
+  assert.deepEqual(NAMES.map(rule => verdicts(r.state, rule).length), [13, 6, 3, 13, 13]); assert.equal(waiting(r.state), 65);
   assert.match(report('demo', r), /\nOutline: 1 central claim, 4 Sections and 6 paragraph entries \(OUTLINE\.json\)\.\n/);
   for (const item of ['In the first case', 'In the second case']) assert.deepEqual(['outline-contract', 'entry-delivered'].map(rule => r.state.units[para(item)].checks[rule]), [undefined, undefined], 'a list item has no entry of its own');
   assert.equal(standing(project, 'paper').verified, false);
@@ -143,18 +145,18 @@ test('the judge is shown a paragraph with its entry and the registered claims: t
         : e.unit === sentence('In every case both') && i.rule === 'abstract-covered' ? quote('No registered claim is about every case.', 'In every case both gauge couplings are asymptotically free.')
           : e.unit === head('Review') && i.rule === 'outline-contract' ? quote('Nothing under it is a review.', '(1) derivation: Derives a new bound on the flavors.') : undefined;
   const out = await judge(root, 'demo', 'paper', { writer: 'claude', ...check, runner: answerer(defects, log) });
-  assert.deepEqual(out.runs.map(r => r.calls.map(c => [c.family, c.units])), [[['content', 3], ['content', 1], ['content', 1], ['content', 3], ['content', 3], ['content', 1], ['content', 1], ['outline', 3], ['outline', 2], ['outline', 2], ['outline', 4], ['outline', 4], ['outline', 2], ['outline', 2], ['abstract', 3], ['outline-contract', 4]]],
-    'for the abstract and for each paragraph (a list with the paragraph before it) a call under the rules about a sentence and a call with the outline, which also holds the paragraph itself; one call for the abstract against the claims, and one for the four headings');
-  assert.deepEqual(out.runs.map(r => r.calls.flatMap(c => c.planted).filter(p => p.met).length), [75]);
+  assert.deepEqual(out.runs.map(r => r.calls.map(c => [c.family, c.units])), [[['sentence-grounds', 3], ['sentence-grounds', 1], ['sentence-grounds', 1], ['sentence-grounds', 3], ['sentence-grounds', 3], ['sentence-grounds', 1], ['sentence-grounds', 1], ['content', 3], ['content', 1], ['content', 1], ['content', 3], ['content', 3], ['content', 1], ['content', 1], ['outline', 3], ['outline', 2], ['outline', 2], ['outline', 4], ['outline', 4], ['outline', 2], ['outline', 2], ['abstract', 3], ['outline-contract', 4]]],
+    'for the abstract and for each paragraph (a list with the paragraph before it) a call for the grounds of its sentences, one under the rules about a sentence and one with the outline, which also holds the paragraph itself; one call for the abstract against the claims, and one for the four headings');
+  assert.deepEqual(out.runs.map(r => r.calls.flatMap(c => c.planted).filter(p => p.met).length), [103]);
   const text = n => fs.readFileSync(path.join(ledger(project, 'paper'), out.runs[0].id, String(n).padStart(4, '0'), 'prompt.txt'), 'utf8');
   for (const part of ['A block may also print what the outline of its manuscript holds for it', 'Headings above it: The fifth case\nEntry of the paragraph in the outline: result. States where the flow ends in the fifth case.\nCentral claims registered in the outline:\n- Without a superpotential, the third case never occurs.\nUnit U',
-    ': the paragraph of this block as a whole, with the list items that belong to it.', 'In the third case the first node has no flavors.\\label{three}\n>>>', 'Headings above it: Case (5): two asymptotically free nodes\nEntry of the paragraph in the outline: result. States where the flow ends in case (5), in which both gauge couplings are asymptotically free.']) assert.ok(text(11).includes(part), part);
-  assert.ok(!/seed|plant/i.test(text(11)) && !text(11).includes('Paragraph:\n'), 'nothing names a planted text, and a paragraph whose sentences are all units is not printed twice');
-  for (const asked of [/\n- claim-scope \(units U\d+(?:, U\d+){15}\): The block prints the central claims/, /\n- entry-delivered \(units U\d+(?:, U\d+){5}\): The block prints the entry/]) assert.match(text(11), asked, 'a question put to several units is printed once');
-  assert.ok(text(4).includes('In the third case the first node has no flavors.') && !/Entry of the paragraph|Central claims|outline/.test(text(4)), 'the same paragraph under the rules about a sentence is shown without the outline: an entry written by the writer cannot excuse a sentence there');
-  assert.deepEqual(log[11].entries.filter(e => !e.planted).map(e => [e.whole, e.text.replace(/\\label\{\w+\}/, '')]), [[true, ''], [false, 'The other cases are the following.'], [false, 'In the first case a node is free.'], [false, 'In the second case no node is free.']], 'the paragraph that opens a list is judged with its items');
-  assert.ok(text(15).includes('The unit is a sentence of an abstract') && !text(15).includes('Headings above it') && text(15).includes('We also find that the theory confines'), 'the abstract stands under no heading, and neither does the planted one');
-  assert.ok(text(16).includes('(1) derivation: Derives a new bound on the flavors.') && text(16).includes('Review of Seiberg duality') && text(16).includes('Exclusion of case (5)') && !text(16).includes('Headings above it'), 'a heading is judged alone, with the entries under it in its question, next to the planted headings');
+    ': the paragraph of this block as a whole, with the list items that belong to it.', 'In the third case the first node has no flavors.\\label{three}\n>>>', 'Headings above it: Case (5): two asymptotically free nodes\nEntry of the paragraph in the outline: result. States where the flow ends in case (5), in which both gauge couplings are asymptotically free.']) assert.ok(text(18).includes(part), part);
+  assert.ok(!/seed|plant/i.test(text(18)) && !text(18).includes('Paragraph:\n'), 'nothing names a planted text, and a paragraph whose sentences are all units is not printed twice');
+  for (const asked of [/\n- claim-scope \(units U\d+(?:, U\d+){15}\): The block prints the central claims/, /\n- entry-delivered \(units U\d+(?:, U\d+){5}\): The block prints the entry/]) assert.match(text(18), asked, 'a question put to several units is printed once');
+  assert.ok(text(11).includes('In the third case the first node has no flavors.') && !/Entry of the paragraph|Central claims|outline/.test(text(11)), 'the same paragraph under the rules about a sentence is shown without the outline: an entry written by the writer cannot excuse a sentence there');
+  assert.deepEqual(log[18].entries.filter(e => !e.planted).map(e => [e.whole, e.text.replace(/\\label\{\w+\}/, '')]), [[true, ''], [false, 'The other cases are the following.'], [false, 'In the first case a node is free.'], [false, 'In the second case no node is free.']], 'the paragraph that opens a list is judged with its items');
+  assert.ok(text(22).includes('The unit is a sentence of an abstract') && !text(22).includes('Headings above it') && text(22).includes('We also find that the theory confines'), 'the abstract stands under no heading, and neither does the planted one');
+  assert.ok(text(23).includes('(1) derivation: Derives a new bound on the flavors.') && text(23).includes('Review of Seiberg duality') && text(23).includes('Exclusion of case (5)') && !text(23).includes('Headings above it'), 'a heading is judged alone, with the entries under it in its question, next to the planted headings');
   const v = (unit, rule) => out.result.state.units[unit].checks[rule];
   assert.deepEqual([v(para('In the fifth case'), 'entry-delivered').v, v(at('main'), 'claim-scope').v, v(sentence('In every case both'), 'abstract-covered').v, v(head('Review'), 'outline-contract').v], ['fail', 'fail', 'fail', 'fail']);
   assert.match(v(para('In the fifth case'), 'entry-delivered').e[0], /^judge codex, provider default model \(run [0-9a-f]{12}\) fails it: The last sentence is about the third case\. Evidence: "In the third case the first node has no flavors\."$/, 'the misplaced sentence is the evidence');
@@ -173,13 +175,13 @@ test('a verdict is bound to what the judge was shown: an edit of a paragraph, of
   const { root, project, at, para, head } = make(t), log = [];
   const ask = async () => { log.length = 0; const out = await judge(root, 'demo', 'paper', { writer: 'claude', ...check, runner: answerer(undefined, log) }); return [out.runs.map(r => r.calls.map(c => [c.family, c.units])), out.result.state.complete, out.result.state.units]; };
   let [calls, complete, first] = await ask();
-  assert.deepEqual([calls.map(run => run.length), complete, standing(project, 'paper').verified], [[16], true, true]);
+  assert.deepEqual([calls.map(run => run.length), complete, standing(project, 'paper').verified], [[23], true, true]);
   assert.deepEqual(await ask(), [[], true, first], 'a verified text costs no call');
   // One sentence of the last Section: its paragraph and its sentence with the outline, the sentence in its paragraph, not its heading and nothing of another Section.
   edit(project, 'Seiberg duality realizes the third case.', 'Seiberg duality then realizes the third case.');
   let units;
   [calls, complete, units] = await ask();
-  assert.deepEqual([calls, complete, [...asked(log)].sort()], [[[['outline', 2], ['content', 1]]], true, [para('Seiberg duality then realizes'), at('w')].sort()]);
+  assert.deepEqual([calls, complete, [...asked(log)].sort()], [[[['outline', 2], ['sentence-grounds', 1], ['content', 1]]], true, [para('Seiberg duality then realizes'), at('w')].sort()]);
   for (const id of [head('With a superpotential'), head('Introduction'), at('main'), at('three'), para('In the fifth case')]) assert.deepEqual(units[id], first[id], 'the other verdicts are kept with the runs they rest on');
   assert.deepEqual(units.document.checks['outline-contract'], first.document.checks['outline-contract']);
   // One entry of the outline: the paragraph it belongs to with its sentences, and the heading above it. The rules about a sentence
@@ -203,7 +205,7 @@ test('a verdict is bound to what the judge was shown: an edit of a paragraph, of
 });
 
 test('paper-outline prints the outline next to the text and the skeleton to fill in, and enrolls nothing; a manuscript that is not enrolled is not gated', async t => {
-  const { root, project } = make(t, { 'paper/OUTLINE.json': null });
+  const { root, project } = make(t, { 'paper/OUTLINE.json': null, 'paper/GROUNDS.json': null });
   let view = await main(['paper-outline', 'demo'], root);
   assert.match(view, new RegExp(`^Outline of demo/paper: OUTLINE\\.json absent\\. Roles: ${ROLES.join(', ')}\\.\\n§1 Introduction: 2 paragraphs\\n  §1 ¶1: NO ENTRY\\n      \\| The quivers of this paper`));
   assert.match(view, /§2 The fifth case: 2 paragraphs\n  §2 ¶1: NO ENTRY\n      \| In the fifth case both gauge couplings[^\n]*\n  §2 ¶2 \(with 2 list items\): NO ENTRY\n/);
@@ -245,7 +247,7 @@ test('the setting of the manuscript and of a Section is shown, in its own words,
   edit(project, 'In the fifth case both gauge couplings are asymptotically free.', 'In the fifth case both gauge couplings are asymptotically free at the origin.');
   log.length = 0;
   const again = await judge(root, 'demo', 'paper', { ...check, runner: answerer(undefined, log) });
-  assert.deepEqual(again.runs.map(run => run.calls.map(c => [c.family, c.units])), [[['outline', 4], ['outline', 4], ['outline', 2], ['content', 3]]]);
+  assert.deepEqual(again.runs.map(run => run.calls.map(c => [c.family, c.units])), [[['outline', 4], ['outline', 4], ['outline', 2], ['sentence-grounds', 3], ['content', 3]]]);
   assert.deepEqual([...new Set(log.flatMap(call => call.entries.filter(e => !e.planted).map(e => e.unit)))].length, 10, 'the edited paragraph with its three sentences, the list with its sentence and its two items, and the Subsection with its sentence');
   for (const p of ['Our main result', 'Seiberg duality realizes']) assert.deepEqual(again.result.state.units[para(p)], out.result.state.units[para(p)]);
   assert.equal(again.result.state.complete, true);

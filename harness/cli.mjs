@@ -7,7 +7,7 @@ import { scanPaper, attest } from './paper.mjs';
 import { runEvidence } from './evidence.mjs';
 import { request, status } from './dispatch.mjs';
 import { load } from './tex.mjs';
-import { verify, report, stopGate, toolEvent, outlineView } from './verify.mjs';
+import { verify, report, stopGate, toolEvent, outlineView, groundsView } from './verify.mjs';
 import { judge, summary } from './judge.mjs';
 import { build as buildCorpus, load as loadCorpus, attest as attestCorpus, key as phraseKey } from './corpus.mjs';
 
@@ -78,6 +78,11 @@ export async function main(args = process.argv.slice(2), root = ROOT) {
     if (!result.state.complete) process.exitCode = 1;
     return report(slug, result, { pending: options.includes('--pending') });
   }
+  if (cmd === 'paper-grounds') {
+    const [slug, ...options] = rest, paper = options[0]?.startsWith('paper') ? options.shift() : 'paper';
+    if (!slug || options.some(o => o !== '--skeleton')) throw Error('Expected paper-grounds <slug> [paper-dir] [--skeleton]');
+    return groundsView(safePath(root, `projects/${slug}`), paper, { skeleton: options.includes('--skeleton') });
+  }
   if (cmd === 'paper-outline') {
     const [slug, ...options] = rest, paper = options[0]?.startsWith('paper') ? options.shift() : 'paper';
     if (!slug || options.some(o => o !== '--skeleton')) throw Error('Expected paper-outline <slug> [paper-dir] [--skeleton]');
@@ -118,7 +123,7 @@ export async function main(args = process.argv.slice(2), root = ROOT) {
     return result;
   }
   if (cmd === 'hook') return hook(root, jsonInput());
-  throw Error('Commands: review-request <slug> --target <plan|step-N|paper> --reviewer <codex|claude> [--model <model>] | review-status <slug> [id] | review-resume <slug> <id> | paths | check [slug...] | queue <repo> <message> <files...> | flush [--local-only] | paper-scan <slug> | paper-verify <slug> [paper-dir] [--no-build] [--pending] [--wip <reason>] | paper-judge <slug> [paper-dir] --writer <claude|codex> [--model <model[,model]>] [--batch <n>] [--parallel <n>] [--limit <n>] [--family <id[,id]>] [--all-units] [--advice] [--no-build] [--dry-run] | paper-units <slug> [paper-dir] [filter] | paper-outline <slug> [paper-dir] [--skeleton] | corpus-build [--cutoff <YYYY-MM-DD>] | corpus-count <phrase...> | attest <slug> <map|citations> <reviewer> <note> <ids...> | run <slug> <spec.json> | hook');
+  throw Error('Commands: review-request <slug> --target <plan|step-N|paper> --reviewer <codex|claude> [--model <model>] | review-status <slug> [id] | review-resume <slug> <id> | paths | check [slug...] | queue <repo> <message> <files...> | flush [--local-only] | paper-scan <slug> | paper-verify <slug> [paper-dir] [--no-build] [--pending] [--wip <reason>] | paper-judge <slug> [paper-dir] --writer <claude|codex> [--model <model[,model]>] [--batch <n>] [--parallel <n>] [--limit <n>] [--family <id[,id]>] [--all-units] [--advice] [--no-build] [--dry-run] | paper-units <slug> [paper-dir] [filter] | paper-outline <slug> [paper-dir] [--skeleton] | paper-grounds <slug> [paper-dir] [--skeleton] | corpus-build [--cutoff <YYYY-MM-DD>] | corpus-count <phrase...> | attest <slug> <map|citations> <reviewer> <note> <ids...> | run <slug> <spec.json> | hook');
 }
 // Never throws: a gate error must not break the provider's hook.
 const guarded = action => { try { return action(); } catch (e) { return { block: '', notes: [`Verification gate error: ${e.message}`] }; } };

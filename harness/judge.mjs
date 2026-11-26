@@ -84,7 +84,7 @@ export function reading(call, value) {
 
 // The registered failing and passing texts of the families asked in a run, as lines and registry entries to append to a copy of the manuscript.
 function plant(list, families) {
-  const extra = { lines: [], symbols: [], terms: [], facts: {}, uses: {}, outlines: {} }, samples = [], files = new Map();
+  const extra = { lines: [], symbols: [], terms: [], facts: {}, uses: {}, outlines: {}, grounds: {} }, samples = [], files = new Map();
   for (const rule of list) {
     if (!families.has(family(rule))) continue;
     const check = CHECKS[rule.kind], texts = check.reader ? rule : rule.judge || {};
@@ -103,6 +103,8 @@ function plant(list, families) {
         if (had && JSON.stringify(had) !== JSON.stringify(s.outline)) throw Error(`The text of ${id} is registered elsewhere with another outline: one text has one outline.`);
         extra.outlines[files.get(tex)] = s.outline;
       }
+      // So do its grounds: the entries of the samples that share a text are merged.
+      if (s.grounds) { const had = extra.grounds[files.get(tex)]?.sentences ?? []; extra.grounds[files.get(tex)] = { sentences: [...had, ...(s.grounds.sentences || []).filter(e => !had.some(x => JSON.stringify(x) === JSON.stringify(e)))] }; }
       extra.symbols.push(...(s.lexicon?.symbols || [])); extra.terms.push(...(s.lexicon?.terms || []));
       Object.assign(extra.facts, s.facts?.facts); Object.assign(extra.uses, s.facts?.uses);
       samples.push({ id, rule, want, s, file: files.get(tex) });
@@ -170,7 +172,7 @@ async function pool(items, size, work) {
 // One run of one judge over the questions in `need`.
 async function run({ project, paper, slug, dir, writer, provider, model, need, list, check, batch, parallel, timeout, runner, gate, advice = false }) {
   const id = crypto.randomBytes(6).toString('hex'), base = path.join(dir, id), asked = [...new Set(need.map(q => q.family))];
-  const planted = plant(list, new Set(asked)), fx = fixtures(examine(project, paper, { corpus: check.corpus, extra: planted.extra }), planted.samples);
+  const planted = plant(list, new Set(asked)), fx = fixtures(examine(project, paper, { corpus: check.corpus, ...(check.sources ? { sources: check.sources } : {}), extra: planted.extra }), planted.samples);
   // A family is asked only if a seeded defect of it can be planted in this manuscript: without one no call could be trusted.
   const covered = asked.filter(name => fx.by.get(name)?.defects), queue = covered.flatMap(name => compose(name, need.filter(q => q.family === name), fx.by.get(name), batch, id)).map((c, n) => ({ ...c, n: n + 1 }));
   const record = { version: 2, tool: JUDGE, id, slug, paper, writer, provider, requestedModel: model || null, models: [], gate, batch, ...(advice ? { advice: true } : {}), started: new Date().toISOString(), finished: null, state: 'running',
@@ -243,13 +245,13 @@ function acquire(lock) {
 // first so many open questions, in this run and the following ones. all: also the units that a code check fails (for
 // trials). dry: the plan without a call. advice: instead of a verification, one run of the search for a better sentence,
 // whose replacements are returned and printed and change no verdict.
-export async function judge(root, slug, paper = 'paper', { writer, models = [], batch = BATCH, parallel = 4, limit = Infinity, families, all = false, advice = false, dry = false, timeout = 1800000, runner = execute, build, corpus } = {}) {
+export async function judge(root, slug, paper = 'paper', { writer, models = [], batch = BATCH, parallel = 4, limit = Infinity, families, all = false, advice = false, dry = false, timeout = 1800000, runner = execute, build, corpus, sources } = {}) {
   if (process.env.HEP_REVIEW_CHILD) throw Error('Nested judge dispatch is prohibited');
   if (typeof slug !== 'string' || !/^[a-zA-Z0-9_-]+$/.test(slug) || !/^paper[A-Za-z0-9_-]*$/.test(paper)) throw Error('Invalid project slug or paper directory');
   const project = safePath(root, `projects/${slug}`), who = writer ?? declaredWriter(project, paper);
   if (!VENDORS.includes(who)) throw Error('Name the vendor whose model wrote the manuscript with --writer claude or --writer codex: the judges are taken from the other vendor.');
   const provider = VENDORS.find(v => v !== who), dir = ledger(project, paper), lit = corpus ? corpus() : storedCorpus(root);
-  const check = { ...(build ? { build } : {}), corpus: () => lit, writer: who }, out = { slug, paper, writer: who, provider, runs: [], plan: null };
+  const check = { ...(build ? { build } : {}), ...(sources ? { sources } : {}), corpus: () => lit, writer: who }, out = { slug, paper, writer: who, provider, runs: [], plan: null };
   fs.mkdirSync(dir, { recursive: true });
   const lock = path.join(dir, 'active.lock');
   acquire(lock);
