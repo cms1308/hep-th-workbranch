@@ -56,7 +56,7 @@ projects/<slug>/
 /new-project   formulate & plan → scaffold projects/<slug>/
 /import-project onboard pre-existing material (draft, calculations, data) into a project
 /solve         execute next step(s): calculate → verify → notes/ → STATE.md
-/research-review    review a plan or completed step → findings and independent checks → STATE.md
+/research-review    review a plan, a completed step, or the project against its question → findings → STATE.md
 /auto-calculate Claude-led solve → Codex review → corrections → calculation handoff
 /auto-paper     GPT-led paper → Claude review → corrections → final draft
 /pause         checkpoint before ending a session
@@ -138,6 +138,9 @@ The sibling containing `Index.md` and `wiki/` is the primary knowledge source
 ## State discipline
 
 - Update `STATE.md` at the end of **every completed step**, not only at `/pause`.
+- When the user changes the question a project answers, follow
+  [MEMORY](MEMORY.md#changing-the-question): PROJECT and STATE's Question are rewritten,
+  inherited material is inventoried and the project is reviewed before new steps.
 - `notes/` is the permanent derivation record; `RESULTS.md` holds the detailed catalog.
 - Follow [MEMORY.md](MEMORY.md): update PLAN, RESULTS and DECISIONS as appropriate, and
   replace STATE's current status, next action and its required-reading dependencies

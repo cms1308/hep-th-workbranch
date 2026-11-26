@@ -5,10 +5,10 @@ entry point, not the complete result archive. A project uses these files:
 
 | File | Authority and update rule |
 |---|---|
-| PROJECT.md | Problem and conventions; change only when scope or conventions change. |
-| STATE.md | One Status, one Current step, next action, critical constraints, links. Replace superseded status. Advisory budget: 200 lines and 16 KB. |
+| PROJECT.md | The question the project currently answers (Problem, Success criteria), background and conventions. When a user decision changes the question, replace Problem and Success criteria in the same edit (see Changing the question); change conventions only when they change. |
+| STATE.md | One Question (the current question in one or two sentences, linked to PROJECT's success criteria), one Status, one Current step, next action, critical constraints, links. Replace superseded status. Advisory budget: 200 lines and 16 KB. |
 | RESULTS.md | Detailed result catalog with existing R/N IDs unchanged. Each new result records scope, evidence kind, assumptions, dependencies, note and run links. Mark superseded results with the replacement ID. |
-| PLAN.md | Complete checklist, including completed steps and every open step's predeclared `verify:` criterion. |
+| PLAN.md | Complete checklist, including completed steps and, for every open step, a `serves:` line (which success criterion it advances and which outcome would change the plan) and a predeclared `verify:` criterion. |
 | DECISIONS.md | Current standing decisions about scope, notation, writing and ownership. Read in full before project edits. Replace an obsolete decision here after recording it in HISTORY.md with its replacement and reason. |
 | HISTORY.md | Past decisions and dated changes. Historical evidence, not instructions overriding the current files. Do not read all history at startup. |
 | OPEN-QUESTIONS.md | Detailed unresolved issues, failed approaches and operational gotchas. STATE links the blockers for the current task. |
@@ -17,10 +17,12 @@ entry point, not the complete result archive. A project uses these files:
 ## Reading and writing
 
 - Startup: read each project's short Status. For the selected project read PROJECT,
-  STATE and DECISIONS in full, then STATE's task-specific required reading below.
-- Solve: choose the next relevant open PLAN step, fix its verification criterion before
-  calculation, record evidence, update RESULTS and PLAN, replace STATE's stopping point
-  and required reading for the next action.
+  STATE and DECISIONS in full and the latest project review (`notes/review-project-*`)
+  if one exists, then STATE's task-specific required reading below.
+- Solve: choose the next relevant open PLAN step, check its `serves:` line against
+  PROJECT's success criteria, fix its verification criterion before calculation, record
+  evidence, update RESULTS and PLAN, replace STATE's stopping point and required reading
+  for the next action.
 - Paper/revision: read DECISIONS and the relevant draft context and RESULTS; use an
   existing section outline when helpful. Follow PAPER-REVIEW.md for proportional scope.
   Record a new standing decision in DECISIONS in the same edit, history in HISTORY.
@@ -30,10 +32,28 @@ entry point, not the complete result archive. A project uses these files:
   evidence or rationale. Do not turn an unverified imported result into a verified one
   during a state migration.
 
+## Changing the question
+
+A user decision can change what the project is trying to answer: a new target quantity,
+a new kind of result, or data, results and code built for one question reused for
+another. Treat such a change as a formulation, not as the next step:
+
+1. Rewrite PROJECT's Problem and Success criteria and STATE's Question in the same edit;
+   move the old text to HISTORY with its date and source.
+2. Write a note listing the inherited material the new question will rely on: each
+   dataset, result and code path, the question and selection it was built for (ranges,
+   cuts, enumeration, exposure, sources), whether that fits the new question, and what
+   is missing. Link it from PROJECT.
+3. Run a project review (`/research-review <slug> project`, by a reviewer who did not do
+   the work) of the new formulation and the inventory.
+4. Recheck the `serves:` lines of the open PLAN steps against the new success criteria;
+   start no step for the new question before the user signs off the formulation.
+
 ## Required reading
 
 STATE's `Required reading` is the dependency list for its next action, not an archive
-index. Name the PLAN step, RESULTS IDs, note sections and open issues needed, with
+index. It always includes PROJECT's success criteria and the latest project review, so
+that every action is read against the question. Name the PLAN step, RESULTS IDs, note sections and open issues needed, with
 links and a short reason for each. Use heading anchors or exact section titles;
 require a whole note only when the next action needs the whole derivation. Include
 assumptions, conventions, unresolved review findings and failed approaches that constrain

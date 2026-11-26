@@ -5,12 +5,20 @@
 ## Problem
 
 Precise statement: what is being computed/shown, in which theory/regime, and what form
-the answer will take. (This is the sign-off formulation — do not drift from it silently;
-if the problem changes, update this section and note the change in STATE.md.)
+the answer will take. (This is the sign-off formulation — do not drift from it silently.
+If the user changes the question, follow MEMORY "Changing the question": rewrite this
+section and the success criteria, keep the old text in HISTORY, and list the inherited
+material.)
 
 ## Success criteria
 
 - What result, verified how, would mean the project is done.
+
+## Inherited material
+
+Data, results and code built before this formulation or in another project that the
+success criteria rely on: for each, the question and selection it was built for and
+whether that fits this question, with a link to the inventory note. Omit if none.
 
 ## Background
 

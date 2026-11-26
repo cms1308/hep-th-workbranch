@@ -1,12 +1,12 @@
 ---
 name: research-review
-description: Review a research project's plan or a completed calculation step, including re-review after corrections. Use to review a research plan or completed solve step in either Codex or Claude. Records findings and independent checks without rewriting the author's calculation. Paper editing and whole-draft citation audits use their existing skills.
+description: Review a research project's plan, a completed calculation step, or the whole project against its question, including re-review after corrections. Use to review a research plan, a completed solve step, or the project as a whole (on a change of question, before /paper, or on request) in either Codex or Claude. Records findings and independent checks without rewriting the author's calculation. Paper editing and whole-draft citation audits use their existing skills.
 ---
 
 # Plan and calculation review
 
 Input examples: `/research-review <slug> plan`, `/research-review <slug> step 3`,
-`/research-review <slug> recheck step 3`. Infer the project from the user's context.
+`/research-review <slug> recheck step 3`, `/research-review <slug> project`. Infer the project from the user's context.
 Without a target, review the plan if no calculation exists; otherwise review the
 latest completed step awaiting review. Ask only if the target remains ambiguous.
 
@@ -41,6 +41,36 @@ fallbacks. Identify missing inputs and unjustified restrictions of parameter spa
 Check that the proposed checks can distinguish success from failure. Give concrete
 corrections with file/section references; do not rewrite PROJECT or PLAN during review.
 
+## Project review
+
+The target is the project as a whole, read against the question in PROJECT and STATE.
+Run it when the user changes the question (MEMORY, Changing the question), before
+`/paper`, and when the user asks; the reviewer is one who did not do the work.
+Read PROJECT (question, success criteria, inherited material), STATE, DECISIONS, PLAN,
+RESULTS in full, the inventory note if one exists, and the data, inputs and records the
+results actually rest on (their selection, ranges and composition), not only the notes
+that describe them. Answer, with locations:
+
+1. Is the question in PROJECT the one the user's latest decisions ask? A question that
+   lives only in DECISIONS or a note is a finding.
+2. Can the material the results rest on answer it? For each dataset, result or code path:
+   the question and selection it was built for, and what that selection does to the
+   claims (which cases dominate, which are cut or absent, what was exposed before).
+3. Do the checks and comparisons made test what the success criteria ask, at the
+   generality the claims use? A claim tested only where it is guaranteed, or on cases
+   the method has effectively seen, is a finding.
+4. Which results support, contradict or do not bear on the success criteria; which
+   criteria have no evidence yet.
+5. What a referee of the eventual paper would ask first, answered from the record or
+   listed as open.
+6. The open PLAN steps and their `serves:` lines against the success criteria: steps
+   that serve none, criteria that no step serves.
+
+Findings that invalidate the foundation of several steps are reported as such, not
+split into per-step items. Write `notes/review-project-YYYY-MM-DD.md` with the verdict
+`ready` (the work can answer the question as planned), `corrections required` or
+`inconclusive`, scoped to the question as stated.
+
 ## Completed-step review
 
 1. Identify the step, result IDs, predeclared criteria, assumptions and dependencies.
@@ -68,8 +98,8 @@ corrections with file/section references; do not rewrite PROJECT or PLAN during 
 
 ## Record and hand off
 
-Write an English review note under `notes/review-plan-YYYY-MM-DD.md` or
-`notes/review-step-NN-YYYY-MM-DD.md`; use a new suffix for subsequent passes so the
+Write an English review note under `notes/review-plan-YYYY-MM-DD.md`,
+`notes/review-step-NN-YYYY-MM-DD.md` or `notes/review-project-YYYY-MM-DD.md`; use a new suffix for subsequent passes so the
 earlier record survives. Include:
 
 - Target and reviewed versions, actual reviewer, and agreed success criteria.

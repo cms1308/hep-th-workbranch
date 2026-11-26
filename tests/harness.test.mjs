@@ -110,7 +110,7 @@ test('unchanged remote push succeeds and clears the queued job', t => {
 test('state migration preserves original bytes and every whole section, and refuses a rerun', t => {
   const root = temp(t);
   put(root, 'PROJECT.md', '# Formulation');
-  const state = '# STATE\r\n\r\n## Status\r\nold\r\n\r\n## Plan\r\n- [ ] test\r\n  verify: exact\r\n\r\n## Established results\r\nR1 $x=1$\r\n\r\n## Established results (continued)\r\nR2 unverified\r\n\r\n## Paper\r\nDo not restore user cut.\r\n\r\n## Current step\r\nnext\r\n\r\n## Open questions / gotchas\r\nfailed branch\r\n';
+  const state = '# STATE\r\n\r\n## Status\r\nold\r\n\r\n## Plan\r\n- [ ] test\r\n  serves: the one criterion\r\n  verify: exact\r\n\r\n## Established results\r\nR1 $x=1$\r\n\r\n## Established results (continued)\r\nR2 unverified\r\n\r\n## Paper\r\nDo not restore user cut.\r\n\r\n## Current step\r\nnext\r\n\r\n## Open questions / gotchas\r\nfailed branch\r\n';
   put(root, 'STATE.md', state);
   migrateState(root, { status: 'waiting', next: 'review', decisions: 'keep cut', results: 'R1, R2', gotchas: 'pending' });
   assert.equal(fs.readFileSync(path.join(root, 'notes/state-before-2026-09-08.md'), 'utf8'), state);
@@ -132,9 +132,19 @@ function paper(root) {
   put(root, 'paper/PUNCHLINES.md', '# Map'); put(root, 'paper/CITATIONS.md', '# Ledger');
 }
 
+test('check asks for the current question and for the criterion each open step serves', t => {
+  const root = temp(t);
+  put(root, 'STATE.md', '## Status\nRunning\n\n## Current step\nStep 2.\n');
+  put(root, 'PLAN.md', '- [x] 1. done\n- [ ] 2. fit — verify: exact\n- [ ] 3. read — serves: criterion 1 — verify: exact\n');
+  assert.deepEqual(checkProject(root), ['Expected exactly one Question section.', 'Unchecked step lacks serves line (the success criterion it advances): - [ ] 2. fit — verify: exact']);
+  put(root, 'STATE.md', '## Question\nWhat a is.\n\n## Status\nRunning\n\n## Current step\nStep 2.\n');
+  put(root, 'PLAN.md', '- [x] 1. done\n- [ ] 2. fit — serves: criterion 1 — verify: exact\n');
+  assert.deepEqual(checkProject(root), []);
+});
+
 test('ordinary manuscript checks require no outline or review tracker and create no files', t => {
   const root = temp(t);
-  put(root, 'STATE.md', '## Status\nDrafting\n\n## Current step\nCorrect wording.\n');
+  put(root, 'STATE.md', '## Question\nWhat is drafted.\n\n## Status\nDrafting\n\n## Current step\nCorrect wording.\n');
   put(root, 'paper/main.tex', '\\begin{document}\nA useful definition.\n\\end{document}\n');
   assert.deepEqual(checkProject(root), []);
   assert.deepEqual(fs.readdirSync(path.join(root, 'paper')), ['main.tex']);
@@ -142,7 +152,7 @@ test('ordinary manuscript checks require no outline or review tracker and create
 
 test('existing review tracking counts cited blocks and chosen map reviews without writing', t => {
   const root = temp(t); paper(root);
-  put(root, 'STATE.md', '## Status\nDrafting\n\n## Current step\nReview citations.\n');
+  put(root, 'STATE.md', '## Question\nWhat is drafted.\n\n## Status\nDrafting\n\n## Current step\nReview citations.\n');
   const state = scanPaper(root), unit = state.units.find(u => u.citations.length);
   const file = path.join(root, 'paper/REVIEW.json');
   const counts = () => {

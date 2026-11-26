@@ -15,12 +15,15 @@ export function checkProject(project) {
   const findings = [];
   const state = read(path.join(project, 'STATE.md'));
   if (state.split('\n').length > 200 || Buffer.byteLength(state) > 16000) findings.push('STATE exceeds the 200-line / 16-KB advisory budget.');
-  for (const name of ['Status', 'Current step']) if ((state.match(new RegExp(`^## ${name}$`, 'gm')) || []).length !== 1) findings.push(`Expected exactly one ${name} section.`);
+  for (const name of ['Question', 'Status', 'Current step']) if ((state.match(new RegExp(`^## ${name}$`, 'gm')) || []).length !== 1) findings.push(`Expected exactly one ${name} section.`);
   for (const m of state.matchAll(/\[[^\]]+\]\(([^)#]+)(?:#[^)]*)?\)/g)) {
     if (!/^(https?:|mailto:)/.test(m[1]) && !fs.existsSync(safePath(project, m[1]))) findings.push(`Missing STATE link: ${m[1]}`);
   }
   const plan = fs.existsSync(path.join(project, 'PLAN.md')) ? read(path.join(project, 'PLAN.md')) : state;
-  for (const m of plan.matchAll(/^[-*] \[ \][\s\S]*?(?=^[-*] \[[ xX]\]|^## |$(?![\s\S]))/gm)) if (!/verify\s*:/i.test(m[0])) findings.push(`Unchecked step lacks verify criterion: ${m[0].split('\n')[0].slice(0, 140)}`);
+  for (const m of plan.matchAll(/^[-*] \[ \][\s\S]*?(?=^[-*] \[[ xX]\]|^## |$(?![\s\S]))/gm)) {
+    if (!/verify\s*:/i.test(m[0])) findings.push(`Unchecked step lacks verify criterion: ${m[0].split('\n')[0].slice(0, 140)}`);
+    if (!/serves\s*:/i.test(m[0])) findings.push(`Unchecked step lacks serves line (the success criterion it advances): ${m[0].split('\n')[0].slice(0, 140)}`);
+  }
   if (fs.existsSync(path.join(project, 'paper', 'main.tex')) && fs.existsSync(path.join(project, 'paper', 'REVIEW.json'))) {
     let paper;
     try { paper = scanPaper(project, { persist: false }); }

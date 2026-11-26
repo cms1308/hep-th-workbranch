@@ -1,5 +1,11 @@
 # STATE — <project slug>
 
+## Question
+
+<The question this project currently answers, in one or two sentences, with a link to
+[PROJECT's success criteria](PROJECT.md#success-criteria). Changed only together with
+PROJECT when the user changes the question (MEMORY, Changing the question).>
+
 ## Status
 
 <phase> — last updated <YYYY-MM-DD>. <One current status, no session log.>
@@ -19,7 +25,8 @@ zero conversation memory can continue from here alone.
 
 ## Required reading
 
-- [Problem and conventions](PROJECT.md)
+- [Problem, success criteria and conventions](PROJECT.md)
+- [Latest project review](notes/review-project-YYYY-MM-DD.md) — <omit only if none exists yet>.
 - [Standing decisions](DECISIONS.md)
 - [Plan](PLAN.md) — <next step ID/title and its verification criterion>.
 - [Results](RESULTS.md) — <required R/N IDs and why the next action needs them; omit if none>.

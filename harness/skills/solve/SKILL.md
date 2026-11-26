@@ -23,9 +23,13 @@ is not a proof; record the evidence kind and checked range in RESULTS.
 
 For each step:
 
-1. **Prepare.** Re-read the wiki method/derivation pages relevant to this step. If a
-   technique or reference gap appears mid-step, stop and suggest `/wiki-ingest` rather
-   than improvising from general knowledge.
+1. **Prepare.** Read the step's `serves:` line against PROJECT's success criteria and
+   the latest project review. If the step no longer serves them, or it relies on data,
+   results or code built for another question that no inventory covers (MEMORY,
+   Changing the question), say so and propose the change before calculating.
+   Re-read the wiki method/derivation pages relevant to this step. If a technique or
+   reference gap appears mid-step, stop and suggest `/wiki-ingest` rather than
+   improvising from general knowledge.
 2. **Calculate.** Nontrivial algebra goes in `calc/` as a re-runnable sympy script
    (Mathematica only if the user asks); keep the hand derivation for the note. Use the
    conventions fixed in `PROJECT.md`.
@@ -46,7 +50,8 @@ For each step:
    Run `node harness/cli.mjs check <slug>`; report remaining findings honestly.
 
 If a step reveals the plan itself is wrong, propose the revised plan to the user before
-continuing — do not silently reroute.
+continuing — do not silently reroute. If the user's instruction changes the question the
+project answers, follow MEMORY "Changing the question" instead of adding steps.
 
-End of turn: summarize in Korean what was established, how it was verified, and what
-comes next. Append the one-line session recommendation from harness/PROTOCOL.md.
+End of turn: summarize in Korean what was established, how it was verified, what it
+changes for the success criteria, and what comes next. Append the one-line session recommendation from harness/PROTOCOL.md.

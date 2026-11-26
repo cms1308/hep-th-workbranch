@@ -444,7 +444,7 @@ test('queued commits of an unverified enrolled manuscript are marked; the instal
 
 test('paper-verify prints the completion table and fails its exit status while a verdict is open; ordinary checks are untouched', async t => {
   const { root, project } = make(t, 'We find 204 theories in section~\\ref{s}.');
-  put(project, 'STATE.md', '## Status\nDrafting\n\n## Current step\nCorrect wording.\n');
+  put(project, 'STATE.md', '## Question\nWhat is drafted.\n\n## Status\nDrafting\n\n## Current step\nCorrect wording.\n');
   const saved = process.exitCode;
   try {
     const text = await main(['paper-verify', 'demo', '--no-build'], root);

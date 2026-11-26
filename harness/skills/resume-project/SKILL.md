@@ -18,7 +18,8 @@ Input: optional project slug in $ARGUMENTS.
 
 1. If no slug: `ls projects/`, read each `STATE.md` Status block; if more than one project
    is active, ask the user which one.
-2. Read the project's `PROJECT.md`, `STATE.md` and `DECISIONS.md` in full. Identify
+2. Read the project's `PROJECT.md`, `STATE.md` and `DECISIONS.md` in full, and the
+   latest project review (`notes/review-project-*`) if one exists. Identify
    the requested task, or STATE's next action if none was specified. Follow the
    task-specific `Required reading`: the relevant PLAN step, RESULTS IDs, note
    sections and open issues, including their necessary dependencies. Do not load
@@ -27,7 +28,9 @@ Input: optional project slug in $ARGUMENTS.
    dependencies instead. Read an existing outline for substantial paper work, a
    manuscript briefing or an explicit task dependency; use the draft itself if absent.
 3. Brief the user in Korean, concretely:
-   - 이 프로젝트가 무엇인지 (문제 한 문장)
+   - 이 프로젝트가 지금 답하려는 질문 (STATE의 Question, PROJECT의 success criteria)과,
+     지금까지 쌓은 데이터·결과로 그 질문에 답할 수 있는지 — 최근 project review의 판단과
+     그 뒤에 바뀐 것; review가 없거나 질문이 바뀐 뒤의 것이 아니면 그렇다고 말한다
    - 논문 작업이나 원고 브리핑이면 핵심 결과와 원고의 구성·진행 상태
    - 어디까지 했는지 — established results를 수식 포함해서
    - 지금 어느 단계이고 정확히 어디서 멈췄는지

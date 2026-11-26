@@ -37,8 +37,12 @@ Input: the user's problem statement (possibly vague), from $ARGUMENTS or the con
 ## 3. Plan
 
 - Decompose into steps small enough that each has a concrete `verify:` criterion decided
-  now, before any calculation. Order by dependency; flag risky or uncertain steps and say
-  what the fallback is.
+  now, before any calculation, and a `serves:` line naming the success criterion it
+  advances and the outcome that would change the plan. Order by dependency; flag risky
+  or uncertain steps and say what the fallback is.
+- If the formulation relies on data, results or code that already exist (another
+  project, an earlier phase), list them with the question and selection each was built
+  for and whether that fits this question; put the list in PROJECT's Inherited material.
 
 ## 4. Scaffold
 
@@ -46,10 +50,19 @@ Input: the user's problem statement (possibly vague), from $ARGUMENTS or the con
   `notes/` and `calc/`.
 - `PROJECT.md`: formulation, success criteria, background summary with wiki links and
   citations, references (marking which need ingest), conventions.
-- `PLAN.md`: plan checklist; `STATE.md`: status `formulated`, current step = step 1.
+- `PLAN.md`: plan checklist; `STATE.md`: the Question, status `formulated`, current step = step 1.
 - Show the user the formulation and plan (in Korean) and get sign-off **before** any
   `/solve` work begins.
 
 Scaffold STATE, PLAN, RESULTS, DECISIONS, HISTORY and OPEN-QUESTIONS from their
 templates together. Results and the full plan go in their dedicated files; STATE
 links them. Imported claims retain their original verification status.
+
+## Changing the question of an existing project
+
+When the user changes what an existing project is trying to answer, apply sections 2–3
+to that project as MEMORY "Changing the question" specifies: rewrite PROJECT's Problem
+and Success criteria and STATE's Question (old text to HISTORY), write the inventory of
+inherited material, have it reviewed with `/research-review <slug> project`, recheck the
+open steps' `serves:` lines, and get the user's sign-off before steps for the new
+question start.
