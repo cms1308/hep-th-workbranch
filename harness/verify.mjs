@@ -415,8 +415,8 @@ export const CHECKS = {
         const list = forms.map(f => `«${f}»`).join(', ');
         pending.push(`the name ${list} is declared ${standard ? 'standard' : 'defined here'}: whether ${standard ? 'it is a standard name' : 'this sentence defines it'} needs the independent verdict`);
         ask.push({ tag: forms[0], q: standard
-          ? `The manuscript declares ${list} a standard name: the numerals in it name something and count or measure nothing, and it needs no definition. Its first use in the manuscript is the unit. Pass if hep-th papers commonly write it with this meaning without defining it, and the unit uses it with that meaning. Fail otherwise.`
-          : `The writer declares ${list} a name defined by the unit: the numerals in it name something (a case, a configuration, an entry of a table) and count or measure nothing. Its first use in the manuscript: «${first}». Pass if the unit defines or introduces what each of these names, and that use reads it as that name. Fail if the unit does not define it, or if the name counts or measures something.` });
+          ? `The manuscript declares ${list} a standard name: the numerals in it belong to the name of an object (the 1 of $\\mathcal N=1$ supersymmetry belongs to the name of the algebra) and state no result of the manuscript, and the name needs no definition. Its first use in the manuscript is the unit. Pass if hep-th papers commonly write it with this meaning without defining it, and the unit uses it with that meaning. Fail otherwise.`
+          : `The writer declares ${list} a name defined by the unit: the numerals in it say which object is meant (a case, a configuration given by the numbers that define it, an entry of a table) and state no result of the manuscript. Its first use in the manuscript: «${first}». Pass if the unit defines or introduces what each of these names, and that use reads it as that name. Fail if the unit does not define it, or if a numeral in the name is a count or a value that the manuscript reports as a result.` });
       }
       u.numbers.forEach((n, i) => {
         const [key, id, f, a, b, where] = inputs[i];
