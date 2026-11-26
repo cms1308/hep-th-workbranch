@@ -172,7 +172,7 @@
     {
       "id": "sentence-grounds",
       "kind": "grounds",
-      "source": "design/paper-verification (user, 2026-11-25): every sentence has grounds, a type and a link to an equation, a note or evidence, or a cited source, judged independently (table \"Units and grounds\"); built on 2026-11-26 (user: \"문장 근거 연결 진행해\"). The planted failing text is the origin: the sentence on cases (3) and (5) that the user found (susu-quiver HISTORY), which the condition for case (5) with a superpotential contradicts.",
+      "source": "design/paper-verification (user, 2026-11-25): every sentence has grounds, a type and a link to an equation, a note or evidence, or a cited source, judged independently (table \"Units and grounds\"); built on 2026-11-26 (user: \"문장 근거 연결 진행해\"). The planted failing text is the origin: the sentence on cases (3) and (5) that a reviewer of the publishability pass caught (susu-quiver PLAN 83, HISTORY), which the condition for case (5) with a superpotential contradicts.",
       "fail": [
         {"tex": "The coupling is relevant."},
         {"tex": "We study SQCD.\n\nThe coupling of SQCD is relevant at the free point.", "grounds": {"sentences": [{"at": "We study", "type": "transition"}]}},

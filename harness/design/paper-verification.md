@@ -18,15 +18,20 @@ needs explicit grounds. A rule that only enters the prompt is not enough: each r
 pass an actual verification, and the excuses "either wording is fine", "I did not notice
 while reading" and "the harness had the rule but I did not apply it" are not acceptable.
 
-Origin (susu-quiver, same day). The lead applied about a hundred edits from reviewer
-reports by scripted replacement and reported the pass as finished. The user then found,
-one at a time: coined labels ("saddle scenario", "symmetry-quotient method", "one-pair
-theories") despite the standing rule against them; a sentence about case (3) left at the
-end of the Section on case (5); a physically wrong statement about case (5); numbers
-that appeared without explanation ("204") or were wrong in the report (ten rows for
-nine); a main result whose scope contradicted a later Section; symbols used before their
-definition; an outline (`PUNCHLINES.md`) that was neither read nor updated. Every one of
-these was covered by an existing written rule. None of the rules had a check.
+Origin (susu-quiver, same day). Before the publishability pass the user found, one at a
+time, the coined label "saddle scenario", a number that appeared without explanation
+("204") and a paragraph of Section 3.1 that the argument did not need, with the coined
+"one-pair theories"; the lead's report in the chat counted ten rows for nine. On the
+user's instruction to judge for itself, the lead then applied about a hundred edits from
+the reports of two report-only reviewers by scripted replacement and reported the pass as
+finished. The reviewers, not the lead's reading, had caught the coined "symmetry-quotient
+method", a physically wrong statement about case (5), a main result whose scope
+contradicted a later Section and symbols used before their definition (susu-quiver
+PLAN 83). After the pass the user found a sentence about case (3) left at the end of the
+Section on case (5) and an outline (`PUNCHLINES.md`) that was neither read nor updated
+(PLAN 85). Every one of these was covered by an existing written rule. None of the rules
+had a check. (Corrected on 2026-11-26 against the session record: this paragraph had
+said that the user found all of them after the pass.)
 
 History to respect. On 2026-10-13 the user removed the earlier global paragraph-map
 requirement ([record](../style/history-2026-10-13.md)) because it forced a claim onto
@@ -166,7 +171,7 @@ Each stage has its criterion before work starts.
 4a. Sentence grounds: the row "sentence" of the table "Units and grounds". It was assigned
    to no stage when these stages were written, and was added on 2026-11-26 after the user
    found it missing ([record](#sentence-grounds-2026-11-26)).
-   verify: the sentence on cases (3) and (5) that the user found, grounded by the passages
+   verify: the sentence on cases (3) and (5) of the origin, grounded by the passages
    it rests on, fails; a sentence typed as needing no ground that states a result fails.
 5. The origin incidents added to `evals/`; pilot on susu-quiver.
    verify: all existing evaluation cases still pass, including the two on unnecessary
@@ -1315,9 +1320,14 @@ above assigned that row to no stage, and the records of stages 3 and 4 listed it
 without saying that the central requirement was missing. The user asked why it was not
 built ("내가 이 하네스 다시 구축하라고 했을 때 부터 모든 단어 문장을 근거있게 써야한다고
 했는데 왜 구현이 안되어있는거야?") and gave the go ("문장 근거 연결 진행해", 2026-11-26).
-The incident it answers: the user, and not the lead, found the sentence "The only way
-around the exclusions of cases (3) and (5) is a superpotential constraint …" (susu-quiver,
-HISTORY), which the derivation of case (5) with a superpotential contradicts.
+The incident it answers: the sentence "The only way around the exclusions of cases (3)
+and (5) is a superpotential constraint …" (susu-quiver, HISTORY), which the derivation of
+case (5) with a superpotential contradicts. The lead wrote it out from an earlier "either
+exclusion" when the user asked what that phrase referred to, and a report-only reviewer of
+the publishability pass, not the lead's reading, caught it (PLAN 83). The user found the
+sentence on case (3) that its correction left in the Section on case (5) (PLAN 85). Until
+2026-11-26 this record said that the user had found the wrong sentence, which the session
+record does not support.
 
 Criterion and plan of checks, written before the code. Tests use an injected judge.
 
@@ -1349,7 +1359,7 @@ Criterion and plan of checks, written before the code. Tests use an injected jud
    with the counts that change listed.
 7. Live with Codex, on a scratch manuscript made of the introduction and the Section on
    case (5) of the pilot draft before its correction (a09e65a), grounded by the lead in
-   the project's notes: the sentence the user found fails, and calls, tokens and time are
+   the project's notes: the sentence of the incident fails, and calls, tokens and time are
    reported with the estimate for the pilot draft.
 
 Code: in `harness/verify.mjs` the registry of grounds (`grounded`: entries, links and the
@@ -1397,7 +1407,7 @@ pass. By the numbers of the plan above:
 Measured, live with Codex (provider default, gpt-6.2-astra at reasoning effort xhigh in
 this computer's configuration), on a scratch copy with no project file written. The lead
 grounded the 19 sentences in notes 01, 04 and 05, RESULTS and three cited sources in the
-wiki, quoting for each the passage it rests on. The sentence the user found was grounded in
+wiki, quoting for each the passage it rests on. The sentence of the incident was grounded in
 its own origin, the Interpretation of note 05, whose block goes on to say that case (5)
 resists even that, and in the case-(5) result of note 04.
 
@@ -1407,7 +1417,7 @@ resists even that, and in the case-(5) result of note 04.
   the wiki.
 - First run: 4 calls, 97,490 input and 9,058 output tokens, 85 s with four at a time,
   16 of 16 planted texts as registered. The judge failed 7 sentences:
-  - The sentence the user found fails: the passages leave the charges of the field
+  - The sentence of the incident fails: the passages leave the charges of the field
     unspecified, and note 04 excludes case (5) for a class of superpotentials.
   - Statement (ii) of the introduction ("Case (5) … never occurs"), for the restriction
     to $W=0$ that the proposition carries. The project added "At $W=0$" in d089c83.
