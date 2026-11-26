@@ -158,7 +158,7 @@ local edit of one needs none of these files, and no user-approval step is added.
 | `RULES.json` | The project's rules, `{"version": 1, "rules": [...]}`, and optionally `"judges": n`. Harness-wide rules are in `harness/rules.json`. |
 | `LEXICON.json` | `symbols`: `{"symbol", "at"}` or `{"symbol", "standard"}`. `terms`: `{"term"}` with exactly one of `"at"`, `"approved"`, `"ordinary"`. |
 | `FACTS.json` | `facts`: id to `{"file", "pointer"}`, `{"file", "pattern"}` or `{"at"}`. `uses`: sentence to numeral to fact id. |
-| `OUTLINE.json` | `claims`: `{"id", "claim"}`, the central claims of the manuscript, each stated with the restrictions it holds under. `sections`: `{"title", "paragraphs"}` for every Section, Subsection and Subsubsection, with the TeX of its heading and one `{"role", "does"}` for each paragraph. |
+| `OUTLINE.json` | `claims`: `{"id", "claim"}`, the central claims of the manuscript, each stated with the restrictions it holds under. `setting` (optional): pointers to the sentences of the manuscript that state its setting. `sections`: `{"title", "paragraphs"}` for every Section, Subsection and Subsubsection, with the TeX of its heading, one `{"role", "does"}` for each paragraph and an optional `setting` of the section. |
 | `VERIFY.json` | Written by the CLI only: one verdict for each (unit, rule), bound to content hashes. It counts only together with the run metadata the CLI keeps on the same computer. |
 
 - **Rules.** An entry has `id`, `kind`, `source`, at least one `fail` text and one `pass`
@@ -170,15 +170,17 @@ local edit of one needs none of these files, and no user-approval step is added.
   by the independent verdict: `judge`, a rule only a reader can apply, with its `question`
   (what passes and what fails), an optional `family` (the rules asked together in one call,
   `content` by default), optional `roles`, `unit` (`sentence` by default, or `paragraph`)
-  and `shows` (what of the outline the judge is shown with the unit: `entry`, `claims`;
-  the rule then applies where the outline has it). And `better`, the search for a better
+  and `shows` (what of the outline the judge is shown with the unit: `entry`, `claims`,
+  `setting`; a rule that shows the entry or the claims applies where the outline has them,
+  and the setting is shown where it stands before the paragraph). And `better`, the search for a better
   sentence, which gives advice on request and no verdict, and has `fail` texts only (texts
   a judge must improve). The `fail` and `pass` texts of these kinds open with a `\section`
   heading of their own (or are an abstract), and
   `at` names the sentence or paragraph the rule is tested on (the last one otherwise). A
   text of a family whose calls show the outline carries an `outline` of its own, in the
   form of `OUTLINE.json`, since a planted paragraph without an entry would stand out. A
-  rule that shows the outline therefore has a family apart from `content`. Code cannot test
+  rule that shows the outline therefore has a family apart from `content`. A family that
+  shows the setting has at least one text with a paragraph that is shown a setting. Code cannot test
   such a rule at registration. Instead every run of the judges plants these texts, so a
   defect the user found is registered as a `judge` rule with the failing text verbatim and
   is seeded from then on. One text may serve several registrations (a paragraph with a
@@ -247,6 +249,16 @@ local edit of one needs none of these files, and no user-approval step is added.
   claim, a heading that the outline does not list, a section whose number of entries
   differs from its number of paragraphs, an entry without a known role or without `does`,
   and an outline section that matches no heading.
+- **Setting.** `setting`, of the manuscript or of a section, lists the sentences that state
+  the setting in which later paragraphs are read (the class of theories, an assumption that
+  holds throughout a Section), each as `label:`, a unit id or a passage that stands in
+  exactly one sentence. A sentence of the setting is shown to the judge in its own words,
+  never in a summary, with every paragraph of its scope (the manuscript, or the section
+  with its subsections) that stands after the paragraph holding it. Code fails a pointer
+  that matches no sentence or several, and one whose sentence stands after every paragraph
+  it would be shown with. An edited sentence of the setting asks again the paragraphs that
+  are shown it. The setting is shown under `claim-scope` only: a reader who has read it
+  does not need a restriction it imposes repeated in every sentence (user, 2026-11-26).
   `node harness/cli.mjs paper-outline <slug> [paper-dir]` prints every heading with its
   paragraphs and their entries, and with `--skeleton` the JSON to fill in, which keeps the
   entries that stand. It writes nothing and enrolls nothing. The judges are then asked: for
@@ -258,8 +270,10 @@ local edit of one needs none of these files, and no user-approval step is added.
   and for a heading, whether it covers what each paragraph and part under it does. The
   first two rules form the family `outline`, in calls of their own: `scope-stated` and
   `in-place` are asked without the outline, because an entry written by the writer would
-  otherwise sway them (measured, design record). State in `claim` the restrictions the
-  result needs, since a judge holds a sentence to every qualifier of a registered claim.
+  otherwise sway them (measured, design record). `claim-scope` reads a sentence as a
+  reader of the setting, the headings and the paragraph: a restriction that they impose,
+  or that follows from them, need not be repeated, and a qualifier that widens a claim is
+  no restriction.
   The writer does not attest the outline again after an edit. The key of a verdict covers the
   paragraph, its entry and the claims that the judge was shown: an edited paragraph is
   judged against its entry again, an edited entry asks its paragraph and its heading
@@ -274,8 +288,9 @@ local edit of one needs none of these files, and no user-approval step is added.
 - **Independent verdicts.** `node harness/cli.mjs paper-judge <slug> [paper-dir] --writer
   <claude|codex>` asks judges of the vendor that did not write the manuscript. The writer is
   a declaration, kept after the first run and printed in every report. Asked are the
-  registered `judge` rules (harness-wide `scope-stated`, `in-place` and `claim-scope` for
-  every sentence, `entry-delivered` for every paragraph with an entry, `abstract-covered`
+  registered `judge` rules (harness-wide `scope-stated`, which accepts a restriction in
+  the sentence, earlier in its paragraph or in the headings above it, `in-place` and
+  `claim-scope` for every sentence, `entry-delivered` for every paragraph with an entry, `abstract-covered`
   for the abstract) and, for the units where code left a question, a numeral bound with
   `at`, a colon or semicolon, a word pair that occurs once, an `ordinary` declaration, the
   notation declared `standard` and a heading with what the outline lists under it. A unit that fails a code check is not put to a judge until the failure is
@@ -283,7 +298,8 @@ local edit of one needs none of these files, and no user-approval step is added.
 - **Calls.** One call puts one rule family to the judge. For the `judge` rules (and the
   better sentence when advice is asked) a call holds one paragraph with the list items
   that belong to it: its sentences and the paragraph itself, under its headings, with its
-  entry and the central claims of the outline where a rule of the family shows them, and
+  entry, the central claims and the setting of the outline where a rule of the family
+  shows them, and
   no other paragraph of the manuscript. A judge that sees two uses the one on the other
   (measured, design record), and the key of a verdict covers what its own call showed of
   the manuscript. The questions that code left open are about the unit alone (a sentence,

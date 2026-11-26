@@ -15,7 +15,7 @@ import { flatten, decompose, symbols, value, expand, numberWord } from './tex.mj
 import { load as storedCorpus, fromTex, attest, key as gram, symbolPapers, ATTESTED } from './corpus.mjs';
 
 export const TOOL = 1;                                   // raise when the decomposition or a check changes meaning: every verdict is judged again
-export const JUDGE = 3;                                  // raise when a question, the prompt, the schema or the reading of an answer changes: every independent verdict is asked again
+export const JUDGE = 4;                                  // raise when a question, the prompt, the schema or the reading of an answer changes: every independent verdict is asked again
 export const JUDGES = 1;                                 // judges that must pass a question unless the manuscript's RULES.json asks for more ("judges": n); one failing judge fails it
 export const FIT = [9, 10];                              // share of a rule's planted texts a run must answer as registered for its answers on that rule to count
 export const SHORTER = [4, 5];                           // a replacement that is only shorter counts when it has at most this share of the unit's words
@@ -24,7 +24,7 @@ export const SHORTER = [4, 5];                           // a replacement that i
 export const CRITERIA = ['physical and mathematical correctness', "the user's decisions", 'harness rules', 'completeness of the information the argument needs', 'no redundancy', 'terminology attested in the literature', 'the shorter text'];
 // What a paragraph does for the argument, as its outline entry names it. No paragraph is forced to carry a result.
 export const ROLES = ['motivation', 'setup', 'definition', 'review', 'derivation', 'result', 'evidence', 'interpretation', 'transition', 'outlook'];
-export const SHOWN = ['entry', 'claims'];                // what of the outline a rule judged by a reader can show the judge with a paragraph
+export const SHOWN = ['entry', 'claims', 'setting'];     // what of the outline a rule judged by a reader can show the judge with a paragraph
 const AWAIT = 'awaits the independent verdict';
 const BASE = fileURLToPath(new URL('./rules.json', import.meta.url));
 const R_MARK = '⟦R⟧', D_MARK = '⟦D⟧';
@@ -85,17 +85,19 @@ const MAIN = 'manuscript';
 const sound = e => !!e && ROLES.includes(e.role) && typeof e.does === 'string' && !!e.does.trim();
 // The outline held against the text. An entry belongs to a block: a body paragraph with the list items after it, or a run of
 // items that follows no paragraph. The sections of an outline are matched to the headings of level 1 to 3 by title, and the
-// entries of a section to its blocks in order. `seeds`: the outlines of planted texts, each for the units of its own file.
+// entries of a section to its blocks in order. The setting of the manuscript and of a section points to sentences of the text;
+// each is shown, in its own words, with the paragraphs of its scope that stand after the paragraph holding it. `seeds`: the
+// outlines of planted texts, each for the units of its own file.
 function outlined(doc, main, seeds = {}) {
   const shape = (o, name) => {
     if (o === null || o === undefined) return null;
     const bad = why => { throw Error(`${name}: ${why}`); };
     if (typeof o !== 'object' || Array.isArray(o)) bad('an outline is an object with "claims" and "sections"');
-    for (const key of ['claims', 'sections']) if (o[key] !== undefined && !Array.isArray(o[key])) bad(`"${key}" must be a list`);
-    for (const s of o.sections || []) if (!s || typeof s !== 'object' || (s.title !== undefined && typeof s.title !== 'string') || (s.paragraphs !== undefined && !Array.isArray(s.paragraphs))) bad('a section has "title" (the TeX of its heading, empty for the paragraphs before the first heading) and "paragraphs" (a list of entries)');
+    for (const key of ['claims', 'sections', 'setting']) if (o[key] !== undefined && !Array.isArray(o[key])) bad(`"${key}" must be a list`);
+    for (const s of o.sections || []) if (!s || typeof s !== 'object' || (s.title !== undefined && typeof s.title !== 'string') || (s.paragraphs !== undefined && !Array.isArray(s.paragraphs)) || (s.setting !== undefined && !Array.isArray(s.setting))) bad('a section has "title" (the TeX of its heading, empty for the paragraphs before the first heading), "paragraphs" (a list of entries) and optionally "setting" (a list of pointers to sentences)');
     return o;
   };
-  const scopes = new Map(), scopeOf = new Map(), blockOf = new Map(), sections = new Map(), byId = new Map(doc.units.map(u => [u.id, u]));
+  const scopes = new Map(), scopeOf = new Map(), blockOf = new Map(), sections = new Map(), secOf = new Map(), byId = new Map(doc.units.map(u => [u.id, u]));
   const enter = name => scopes.get(name) || scopes.set(name, { name, source: shape(name === MAIN ? main : seeds[name], name === MAIN ? 'OUTLINE.json' : `the outline of the planted text ${name}`), front: { unit: null, level: 0, blocks: [], subs: [] }, sections: [] }).get(name);
   let scope = null, sec = null, cur = null;
   for (const u of doc.units) {
@@ -105,15 +107,27 @@ function outlined(doc, main, seeds = {}) {
     if (u.kind === 'title') {
       cur = null;                                        // a heading of any level ends a block
       if (u.level < 1 || u.level > 3) continue;
-      scope.sections.findLast(s => s.level < u.level)?.subs.push(u.text);
-      sec = { unit: u, level: u.level, blocks: [], subs: [] };
+      const parent = scope.sections.findLast(s => s.level < u.level) ?? null;
+      parent?.subs.push(u.text);
+      sec = { unit: u, level: u.level, blocks: [], subs: [], parent };
       scope.sections.push(sec); sections.set(u.id, sec);
-    } else if (u.kind === 'paragraph' && (u.role === 'body' || u.role === 'item')) {
+    } else if (u.kind === 'paragraph') secOf.set(u.id, sec);
+    if (u.kind === 'paragraph' && (u.role === 'body' || u.role === 'item')) {
       if (u.role === 'body' || !cur) { cur = { lead: u, members: [], section: sec }; sec.blocks.push(cur); }
       cur.members.push(u); blockOf.set(u.id, cur);
     }
   }
   const norm = title => squash(expand(String(title ?? ''), doc.macros)), problems = [];
+  // A pointer to a sentence of the setting: `label:`, a unit id, or a passage that stands in exactly one sentence of the scope.
+  const resolve = (sc, ref, where) => {
+    const mine = doc.units.filter(u => u.kind === 'sentence' && scopeOf.get(u.id) === sc), named = typeof ref === 'string' && ref.trim();
+    const hit = !named ? [] : ref.startsWith('label:') ? [byId.get(doc.labels[ref.slice(6)])].filter(u => u && scopeOf.get(u.id) === sc) : byId.has(ref) ? [byId.get(ref)].filter(u => scopeOf.get(u.id) === sc) : mine.filter(u => u.text.includes(ref) || u.prose.includes(ref));
+    if (hit.length === 1 && hit[0].kind === 'sentence') return hit[0];
+    if (sc.name === MAIN) problems.push(`the setting ${JSON.stringify(ref)} of ${where} ${!named ? 'is not a pointer to a sentence' : hit.length > 1 ? `stands in ${hit.length} sentences: point to one` : hit.length ? 'points to a unit that is not a sentence' : 'matches no sentence of the manuscript'}`);
+    return null;
+  };
+  // Is any paragraph of the scope after the paragraph that holds the setting sentence?
+  const reaches = (s, inside) => doc.units.some(p => p.kind === 'paragraph' && p.index > byId.get(s.paragraph).index && p.id !== s.paragraph && inside(p));
   for (const sc of scopes.values()) {
     const src = sc.source, own = sc.name === MAIN, ids = new Set();
     sc.claims = [];
@@ -131,13 +145,26 @@ function outlined(doc, main, seeds = {}) {
       s.listed = !!hit; s.entries = hit?.s.paragraphs ?? [];
       s.aligned = s.listed && s.entries.length === s.blocks.length;
       if (s.aligned) s.blocks.forEach((b, i) => { b.entry = s.entries[i]; });
+      const where = s.unit ? `the section ${JSON.stringify(s.unit.text)}` : 'the paragraphs before the first heading';
+      s.setting = (hit?.s.setting ?? []).map(ref => resolve(sc, ref, where)).filter(Boolean);
+      if (own) for (const t of s.setting) if (!reaches(t, p => { for (let x = secOf.get(p.id); x; x = x.parent) if (x === s) return true; return false; })) problems.push(`the setting ${JSON.stringify(t.text.slice(0, 60))} of ${where} stands after every paragraph it would be shown with`);
     }
+    sc.setting = (src.setting ?? []).map(ref => resolve(sc, ref, 'the manuscript')).filter(Boolean);
+    if (own) for (const t of sc.setting) if (!reaches(t, p => scopeOf.get(p.id) === sc)) problems.push(`the setting ${JSON.stringify(t.text.slice(0, 60))} of the manuscript stands after every paragraph it would be shown with`);
     if (own) for (const p of pool.filter(p => !p.used)) problems.push(`the outline section ${JSON.stringify(p.title || '(no title)')} matches no ${p.title ? 'Section, Subsection or Subsubsection' : 'paragraph before the first heading'} of the manuscript`);
   }
-  const of = u => { const p = u.kind === 'paragraph' ? u : byId.get(u.paragraph), block = (p && blockOf.get(p.id)) ?? null; return { block, entry: sound(block?.entry) ? block.entry : null, claims: scopeOf.get(u.id)?.claims ?? [] }; };
+  // The setting shown with a unit: the sentences of the manuscript and of the sections around its paragraph that stand before it.
+  const settingOf = (u, p, block) => {
+    const at = block?.lead ?? p, sc = scopeOf.get(u.id);
+    if (!at || !sc?.source) return [];
+    const all = [...(sc.setting ?? [])];
+    for (let x = secOf.get(at.id); x; x = x.parent) all.push(...(x.setting ?? []));
+    return [...new Set(all)].filter(s => s.index < at.index && !(block?.members ?? [p]).some(m => m.id === s.paragraph)).sort((a, b) => a.index - b.index).map(s => s.text);
+  };
+  const of = u => { const p = u.kind === 'paragraph' ? u : byId.get(u.paragraph), block = (p && blockOf.get(p.id)) ?? null; return { block, entry: sound(block?.entry) ? block.entry : null, claims: scopeOf.get(u.id)?.claims ?? [], setting: settingOf(u, p, block) }; };
   const own = scopes.get(MAIN);
-  return { present: !!main, problems, of, has: u => !!scopeOf.get(u.id)?.source, section: u => sections.get(u.id) ?? null,
-    counts: main && own ? { claims: own.claims.length, sections: own.sections.filter(s => s.listed).length, entries: [own.front, ...own.sections].reduce((n, s) => n + s.blocks.filter(b => sound(b.entry)).length, 0) } : null };
+  return { present: !!main, problems, of, has: u => !!scopeOf.get(u.id)?.source, section: u => sections.get(u.id) ?? null, setting: () => own?.setting ?? [],
+    counts: main && own ? { claims: own.claims.length, setting: [...own.setting, ...own.sections.flatMap(s => s.setting ?? []), ...(own.front.setting ?? [])].length, sections: own.sections.filter(s => s.listed).length, entries: [own.front, ...own.sections].reduce((n, s) => n + s.blocks.filter(b => sound(b.entry)).length, 0) } : null };
 }
 
 function context(doc, { lexicon = {}, facts = {}, file, build: builder, baseline = null, corpus: source = () => null, outline: plan = {} }) {
@@ -352,7 +379,7 @@ export const CHECKS = {
   // with "unit": "paragraph" a paragraph). `shows`: what of the outline the judge is shown with the unit; the rule then applies
   // where the outline has it (the entry of a paragraph is asked about once, on the paragraph that opens its block).
   judge: { reader: true, units: (u, rule) => u.kind === (rule.unit ?? 'sentence') && (!rule.roles || rule.roles.includes(u.role)),
-    applies: (u, rule, ctx) => (rule.shows ?? []).every(what => { const o = ctx.outline.of(u); return what === 'entry' ? !!o.entry && (u.kind !== 'paragraph' || o.block.lead === u) : o.claims.length > 0; }),
+    applies: (u, rule, ctx) => (rule.shows ?? []).every(what => { const o = ctx.outline.of(u); return what === 'entry' ? !!o.entry && (u.kind !== 'paragraph' || o.block.lead === u) : what === 'claims' ? o.claims.length > 0 : true; }),
     ask: rule => rule.question },
   better: { reader: true, advice: true, units: (u, rule) => prose(u) && (!rule.roles || rule.roles.includes(u.role)), ask: () => 'Can you write a sentence that is strictly better than the unit under the ranked criteria stated above?' },
 };
@@ -430,13 +457,17 @@ export function rules(project, paper = 'paper') {
   // The calls of a family show the judge what any of its rules shows, for every unit of the call. A planted text without it
   // would stand out among the paragraphs of the manuscript, so every text of such a family carries its own outline. A rule
   // that shows the outline therefore joins a family whose other rules are judged with the outline as well, or has its own.
-  const shows = showing(list);
+  // The setting is shown only where a sentence of it stands before a paragraph, so a family that shows it needs at least one text
+  // with a paragraph that is shown one: planted paragraphs with and without a setting then stand in every call, as real ones do.
+  const shows = showing(list), seen = new Set();
   for (const rule of list.filter(r => r.kind === 'judge' && shows.has(family(r)))) for (const s of [...(rule.fail ?? []), ...(rule.pass ?? [])].map(sample)) {
     const { doc, ctx } = probe(s, () => null), need = shows.get(family(rule)), leads = doc.units.filter(u => u.kind === 'paragraph' && ctx.outline.of(u).block?.lead === u);
+    if (leads.some(u => ctx.outline.of(u).setting.length)) seen.add(family(rule));
     const lacks = [...(need.has('entry') && leads.some(u => !ctx.outline.of(u).entry) ? ['an entry for each of its paragraphs'] : []), ...(need.has('claims') && doc.units.some(u => u.kind === 'sentence' && !ctx.outline.of(u).claims.length) ? ['its central claims'] : [])];
     const cause = list.find(r => r.kind === 'judge' && family(r) === family(rule) && r.shows?.length && (r.id === rule.id || !rule.shows?.length));
     if (lacks.length) throw Error(`Rule ${cause.id} refused: it shows the judge the outline in the calls of the family ${family(rule)}, so every text of that family needs an "outline" of its own with ${lacks.join(' and ')}, and a text of ${rule.id === cause.id ? 'the rule' : `the rule ${rule.id}`} has none (give the rule a family of its own, or the text its outline): ${JSON.stringify(s.tex).slice(0, 140)}`);
   }
+  for (const [name, need] of shows) if (need.has('setting') && !seen.has(name)) throw Error(`Rule ${list.find(r => r.kind === 'judge' && family(r) === name && r.shows?.includes('setting')).id} refused: it shows the judge the setting in the calls of the family ${name}, so at least one text of that family needs an "outline" whose setting points to a sentence before one of its paragraphs`);
   return list;
 }
 
@@ -490,7 +521,7 @@ function assess(doc, ctx, list, prior = () => undefined, run = null) {
       const read = reading.has(name), o = ctx.outline.of(u), show = shows.get(name), whole = u.kind === 'paragraph';
       const q = { unit: u.id, family: name, kind: u.kind, where: u.where, file: u.file ?? null, text: read && whole ? '' : u.text ?? '',
         context: !read ? '' : o.block ? o.block.members.map(m => m.text).join('\n\n') : whole ? u.text : u.paragraph ? byId.get(u.paragraph).text : '', headings: read && u.role !== 'abstract' ? above : [],
-        aside: read ? { ...(show?.has('entry') && o.entry ? { entry: `${o.entry.role}. ${squash(o.entry.does)}` } : {}), ...(show?.has('claims') && o.claims.length ? { claims: o.claims.map(c => c.claim) } : {}) } : {},
+        aside: read ? { ...(show?.has('setting') && o.setting.length ? { setting: o.setting } : {}), ...(show?.has('entry') && o.entry ? { entry: `${o.entry.role}. ${squash(o.entry.does)}` } : {}), ...(show?.has('claims') && o.claims.length ? { claims: o.claims.map(c => c.claim) } : {}) } : {},
         needs: read && show && contract ? [['document', contract], ...(o.block?.section.unit ? [[o.block.section.unit.id, contract]] : []), ...(o.block ? [[o.block.lead.id, contract]] : [])] : [],
         items: items.map((a, i) => ({ id: a.id ?? `item-${i + 1}`, rule: a.rule, tag: a.tag ?? a.id, q: a.q, ...(a.better ? { better: true } : {}) })) };
       into.push({ ...q, key: sha(JSON.stringify([JUDGE, q.family, q.kind, q.text, q.context, q.headings, q.aside, q.items.map(i => [i.id, i.q, !!i.better])])).slice(0, 16) });
@@ -519,13 +550,15 @@ export function outlineView(project, paper = 'paper', { skeleton = false } = {})
   const doc = decompose(flatten(project, `${paper}/main.tex`).lines), file = path.join(project, paper, 'OUTLINE.json'), main = fs.existsSync(file) ? json(file) : null, o = outlined(doc, main);
   const front = doc.units.filter(u => u.kind === 'paragraph' && o.of(u).block?.lead === u && !o.of(u).block.section.unit), heads = doc.units.filter(u => o.section(u)), plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
   const entries = s => s.aligned ? s.blocks.map(b => b.entry) : [...(s.entries ?? []), ...Array.from({ length: Math.max(0, s.blocks.length - (s.entries?.length ?? 0)) }, () => ({ role: '', does: '' }))];
-  if (skeleton) return JSON.stringify({ version: 1, claims: main?.claims?.length ? main.claims : [{ id: '', claim: '' }],
-    sections: [...(front.length ? [{ title: '', paragraphs: entries(o.of(front[0]).block.section) }] : []), ...heads.map(u => ({ title: u.text, paragraphs: entries(o.section(u)) }))] }, null, 2);
+  const kept = (title, s) => { const had = (main?.sections ?? []).find(x => squash(expand(String(x?.title ?? ''), doc.macros)) === title)?.setting; return { title, ...(had?.length ? { setting: had } : {}), paragraphs: entries(s) }; };
+  if (skeleton) return JSON.stringify({ version: 1, claims: main?.claims?.length ? main.claims : [{ id: '', claim: '' }], setting: main?.setting ?? [],
+    sections: [...(front.length ? [kept('', o.of(front[0]).block.section)] : []), ...heads.map(u => kept(u.text, o.section(u)))] }, null, 2);
+  const shown = list => list.map(t => `  setting: ${t.where} | ${t.text.slice(0, 90)}`);
   const line = u => { const b = o.of(u).block, e = b.entry, items = b.members.length - 1; return `  ${u.where}${items ? ` (with ${plural(items, 'list item', 'list items')})` : ''}: ${e ? `[${e.role ?? ''}] ${squash(e.does)}` : 'NO ENTRY'}\n      | ${u.text.slice(0, 90)}`; };
   return [`Outline of ${path.basename(project)}/${paper}: OUTLINE.json ${main ? 'read' : 'absent'}. Roles: ${ROLES.join(', ')}.`,
-    ...(main ? ['Central claims:', ...(main.claims || []).map(c => `- (${c?.id ?? '?'}) ${squash(c?.claim)}`)] : []), ...o.problems.map(p => `PROBLEM: ${p}`),
-    ...(front.length ? ['Before the first heading:', ...front.map(line)] : []),
-    ...heads.flatMap(u => { const s = o.section(u); return [`${u.where} ${u.prose}: ${plural(s.blocks.length, 'paragraph', 'paragraphs')}${main ? `, ${s.listed ? plural(s.entries.length, 'entry', 'entries') : 'NOT IN THE OUTLINE'}${s.listed && !s.aligned ? ' (THE NUMBERS DIFFER)' : ''}` : ''}`, ...s.blocks.map(b => line(b.lead))]; })].join('\n');
+    ...(main ? ['Central claims:', ...(main.claims || []).map(c => `- (${c?.id ?? '?'}) ${squash(c?.claim)}`), ...(o.setting().length ? ['Setting of the manuscript:', ...shown(o.setting())] : [])] : []), ...o.problems.map(p => `PROBLEM: ${p}`),
+    ...(front.length ? ['Before the first heading:', ...shown(o.of(front[0]).block.section.setting ?? []), ...front.map(line)] : []),
+    ...heads.flatMap(u => { const s = o.section(u); return [`${u.where} ${u.prose}: ${plural(s.blocks.length, 'paragraph', 'paragraphs')}${main ? `, ${s.listed ? plural(s.entries.length, 'entry', 'entries') : 'NOT IN THE OUTLINE'}${s.listed && !s.aligned ? ' (THE NUMBERS DIFFER)' : ''}` : ''}`, ...shown(s.setting ?? []), ...s.blocks.map(b => line(b.lead))]; })].join('\n');
 }
 
 // The answers of the judges, read from the run records the CLI wrote on this computer. Every call carries the planted texts of
@@ -613,7 +646,7 @@ export function verify(project, paper = 'paper', { build: builder = () => build(
   return { state, open, awaiting, questions, advice, list };
 }
 
-const LIMITS = 'Not judged at this stage: whether a sentence is correct or supported by the notes, the data or the cited source (a judge sees a sentence with its paragraph and its headings, and under the rules of the outline its entry and the central claims, nothing else); whether the outline registers the right central claims, beyond the results that the abstract states; a restriction made once for a whole Section, which the judge of a later paragraph does not see; the headings of `\\paragraph` level and the title of the paper; whether a sentence could be better (the search for a better sentence gives advice on request, `paper-judge --advice`, and no verdict); single words and the wording of a phrase beyond its adjacent word pairs and hyphenated compounds; numerals in display equations and table cells; one, ordinals and comparisons with zero; indices of symbols.';
+const LIMITS = 'Not judged at this stage: whether a sentence is correct or supported by the notes, the data or the cited source (a judge sees a sentence with its paragraph and its headings, and under the rules of the outline its entry and the central claims, nothing else); whether the outline registers the right central claims, beyond the results that the abstract states; a restriction made once for a whole Section, which the judge of a later paragraph sees only under claim-scope and only when the outline registers the sentence as its setting; the headings of `\\paragraph` level and the title of the paper; whether a sentence could be better (the search for a better sentence gives advice on request, `paper-judge --advice`, and no verdict); single words and the wording of a phrase beyond its adjacent word pairs and hyphenated compounds; numerals in display equations and table cells; one, ordinals and comparisons with zero; indices of symbols.';
 // The completion report: the only evidence of verification that a report to the user may cite.
 export function report(slug, { state, open, awaiting = [] }, { pending = false } = {}) {
   const c = state.counts, ind = state.independent, rows = state.rules.map(r => `| ${r.id} | ${r.pass} | ${r.fail} | ${r.pending} | ${r.unjudged} |`);
@@ -624,7 +657,7 @@ export function report(slug, { state, open, awaiting = [] }, { pending = false }
     '| rule | pass | fail | awaiting independent verdict | not judged |', '| --- | ---: | ---: | ---: | ---: |', ...rows, '',
     state.corpus ? `Corpus: ${state.corpus.documents} hep-th papers, ${state.corpus.words} words, inspected sources dated before ${state.corpus.cutoff} (${state.corpus.hash.slice(0, 12)}).` : 'Corpus: not built (node harness/cli.mjs corpus-build).',
     ...(state.approved.length ? [`Terms that pass on the user's approval recorded in LEXICON: ${state.approved.join('; ')}.`] : []),
-    state.outline ? `Outline: ${state.outline.claims} central claim${state.outline.claims === 1 ? '' : 's'}, ${state.outline.sections} Section${state.outline.sections === 1 ? '' : 's'} and ${state.outline.entries} paragraph entr${state.outline.entries === 1 ? 'y' : 'ies'} (OUTLINE.json).` : 'Outline: none (OUTLINE.json).',
+    state.outline ? `Outline: ${state.outline.claims} central claim${state.outline.claims === 1 ? '' : 's'}, ${state.outline.setting ? `${state.outline.setting} sentence${state.outline.setting === 1 ? '' : 's'} of the setting, ` : ''}${state.outline.sections} Section${state.outline.sections === 1 ? '' : 's'} and ${state.outline.entries} paragraph entr${state.outline.entries === 1 ? 'y' : 'ies'} (OUTLINE.json).` : 'Outline: none (OUTLINE.json).',
     ind.runs.length ? `Independent verdicts: writer ${ind.writer}. ${ind.rest} verdicts rest on the runs of the judges recorded on this computer. A pass needs ${ind.judges === 1 ? 'one judge' : `${ind.judges} judges of different models (named with --model)`}, and one failing judge fails the unit. The answers of a call on a rule count when the call answered all planted texts of that rule as registered, and those of a run when it answered ${FIT[0]} in ${FIT[1]} of them.`
       : `Independent verdicts: none recorded on this computer${ind.writer ? ` (writer ${ind.writer})` : ''}.`,
     ...ind.runs.map(r => `- run ${r.id} (${judgeName(r)}): ${r.calls} calls, ${r.met} of ${r.planted} planted texts answered as registered${r.missed.length ? ` (missed: ${r.missed.join(', ')})` : ''}, ${r.answers} verdicts rest on it${r.unfit.length ? `; below ${FIT[0]} in ${FIT[1]} and not used for: ${r.unfit.join(', ')}` : ''}`), LIMITS,

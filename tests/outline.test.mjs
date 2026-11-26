@@ -84,7 +84,7 @@ test('an enrolled manuscript needs its outline, and code holds the outline to th
   // The outline of the fixture: four headings, and six entries for nine paragraphs, since a list belongs to the paragraph before it.
   const { project, para, head } = make(t);
   r = verify(project, 'paper', check);
-  assert.deepEqual([open(r), r.state.outline, tally(r, 'outline-contract')], [[], { claims: 1, sections: 4, entries: 6 }, [7, 0, 4, 0]], 'the document and six paragraphs pass, and four headings await the verdict on what they name');
+  assert.deepEqual([open(r), r.state.outline, tally(r, 'outline-contract')], [[], { claims: 1, setting: 0, sections: 4, entries: 6 }, [7, 0, 4, 0]], 'the document and six paragraphs pass, and four headings await the verdict on what they name');
   assert.deepEqual(NAMES.map(rule => verdicts(r.state, rule).length), [13, 6, 3, 13, 13]); assert.equal(waiting(r.state), 52);
   assert.match(report('demo', r), /\nOutline: 1 central claim, 4 Sections and 6 paragraph entries \(OUTLINE\.json\)\.\n/);
   for (const item of ['In the first case', 'In the second case']) assert.deepEqual(['outline-contract', 'entry-delivered'].map(rule => r.state.units[para(item)].checks[rule]), [undefined, undefined], 'a list item has no entry of its own');
@@ -145,12 +145,12 @@ test('the judge is shown a paragraph with its entry and the registered claims: t
   const out = await judge(root, 'demo', 'paper', { writer: 'claude', ...check, runner: answerer(defects, log) });
   assert.deepEqual(out.runs.map(r => r.calls.map(c => [c.family, c.units])), [[['content', 3], ['content', 1], ['content', 1], ['content', 3], ['content', 3], ['content', 1], ['content', 1], ['outline', 3], ['outline', 2], ['outline', 2], ['outline', 4], ['outline', 4], ['outline', 2], ['outline', 2], ['abstract', 3], ['outline-contract', 4]]],
     'for the abstract and for each paragraph (a list with the paragraph before it) a call under the rules about a sentence and a call with the outline, which also holds the paragraph itself; one call for the abstract against the claims, and one for the four headings');
-  assert.deepEqual(out.runs.map(r => r.calls.flatMap(c => c.planted).filter(p => p.met).length), [61]);
+  assert.deepEqual(out.runs.map(r => r.calls.flatMap(c => c.planted).filter(p => p.met).length), [75]);
   const text = n => fs.readFileSync(path.join(ledger(project, 'paper'), out.runs[0].id, String(n).padStart(4, '0'), 'prompt.txt'), 'utf8');
   for (const part of ['A block may also print what the outline of its manuscript holds for it', 'Headings above it: The fifth case\nEntry of the paragraph in the outline: result. States where the flow ends in the fifth case.\nCentral claims registered in the outline:\n- Without a superpotential, the third case never occurs.\nUnit U',
     ': the paragraph of this block as a whole, with the list items that belong to it.', 'In the third case the first node has no flavors.\\label{three}\n>>>', 'Headings above it: Case (5): two asymptotically free nodes\nEntry of the paragraph in the outline: result. States where the flow ends in case (5), in which both gauge couplings are asymptotically free.']) assert.ok(text(11).includes(part), part);
   assert.ok(!/seed|plant/i.test(text(11)) && !text(11).includes('Paragraph:\n'), 'nothing names a planted text, and a paragraph whose sentences are all units is not printed twice');
-  for (const asked of [/\n- claim-scope \(units U\d+(?:, U\d+){11}\): The block prints the central claims/, /\n- entry-delivered \(units U\d+(?:, U\d+){3}\): The block prints the entry/]) assert.match(text(11), asked, 'a question put to several units is printed once');
+  for (const asked of [/\n- claim-scope \(units U\d+(?:, U\d+){15}\): The block prints the central claims/, /\n- entry-delivered \(units U\d+(?:, U\d+){5}\): The block prints the entry/]) assert.match(text(11), asked, 'a question put to several units is printed once');
   assert.ok(text(4).includes('In the third case the first node has no flavors.') && !/Entry of the paragraph|Central claims|outline/.test(text(4)), 'the same paragraph under the rules about a sentence is shown without the outline: an entry written by the writer cannot excuse a sentence there');
   assert.deepEqual(log[11].entries.filter(e => !e.planted).map(e => [e.whole, e.text.replace(/\\label\{\w+\}/, '')]), [[true, ''], [false, 'The other cases are the following.'], [false, 'In the first case a node is free.'], [false, 'In the second case no node is free.']], 'the paragraph that opens a list is judged with its items');
   assert.ok(text(15).includes('The unit is a sentence of an abstract') && !text(15).includes('Headings above it') && text(15).includes('We also find that the theory confines'), 'the abstract stands under no heading, and neither does the planted one');
@@ -221,4 +221,53 @@ test('paper-outline prints the outline next to the text and the skeleton to fill
   assert.match(await main(['paper-outline', 'demo'], root), /\nPROBLEM: the outline section "Results" matches no Section, Subsection or Subsubsection of the manuscript\n/);
   await assert.rejects(main(['paper-outline', 'demo', '--all'], root), /Expected paper-outline <slug> \[paper-dir\] \[--skeleton\]/);
   assert.ok(!fs.existsSync(path.join(project, 'paper/VERIFY.json')));
+});
+
+test('the setting of the manuscript and of a Section is shown, in its own words, with the paragraphs of its scope after it; code holds its pointers to the text, and an edit of a setting sentence asks again only the paragraphs that show it', async t => {
+  const SET = { ...OUTLINE, setting: ['The quivers of this paper have several'], sections: OUTLINE.sections.map(s => s.title === 'The fifth case' ? { ...s, setting: ['label:five'] } : s) };
+  const { root, project, at, para, sentence } = make(t, { 'paper/OUTLINE.json': SET }), log = [];
+  const text = label => load(project, 'paper/main.tex').units.find(u => u.id === at(label)).text, intro = text('intro'), five = text('five');
+  let r = verify(project, 'paper', check);
+  assert.deepEqual([r.open, r.state.outline.setting], [[], 2]);
+  assert.match(report('demo', r), /\nOutline: 1 central claim, 2 sentences of the setting, 4 Sections and 6 paragraph entries \(OUTLINE\.json\)\.\n/);
+  const shown = (family, unit) => r.questions.find(q => q.family === family && q.unit === unit)?.aside.setting ?? [];
+  assert.deepEqual(['The quivers of this paper', 'Our main result', 'In the fifth case', 'The other cases', 'We derive', 'Seiberg duality realizes'].map(p => shown('outline', para(p))), [[], [intro], [intro], [intro, five], [intro, five], [intro]],
+    "a sentence of the setting is shown after its own paragraph, and a Section's with the paragraphs of the Section and of its Subsections");
+  assert.deepEqual([shown('outline', at('main')), shown('outline', sentence('In the first case a node')), shown('outline', sentence('Without a superpotential, the third case')), shown('content', at('main'))], [[intro], [intro, five], [], []],
+    'a sentence is shown the setting of its paragraph (a list item that of the paragraph it belongs to), the abstract none, and the rules about a sentence in its paragraph none');
+  // In the prompt the setting stands in its own words with the block it belongs to.
+  const out = await judge(root, 'demo', 'paper', { writer: 'claude', ...check, runner: answerer(undefined, log) });
+  const n = log.find(call => call.family === 'outline' && call.entries.some(e => e.unit === para('The other cases'))).n, prompt = fs.readFileSync(path.join(ledger(project, 'paper'), out.runs[0].id, String(n).padStart(4, '0'), 'prompt.txt'), 'utf8');
+  assert.ok(prompt.includes(`Headings above it: The fifth case\nSentences earlier in the manuscript that state the setting:\n<<<\n${intro}\n>>>\n<<<\n${five}\n>>>\nEntry of the paragraph in the outline: setup. Lists the other cases.`), prompt.slice(0, 3000));
+  assert.ok(prompt.includes('Sentences earlier in the manuscript that state the setting:\n<<<\nWe consider connected two-node quivers'), 'a planted paragraph with a setting stands in the same call');
+  assert.equal(out.result.state.complete, true);
+  // An edit of a sentence of the setting: its own paragraph, and the paragraphs that are shown it under the rules that show the setting.
+  edit(project, 'In the fifth case both gauge couplings are asymptotically free.', 'In the fifth case both gauge couplings are asymptotically free at the origin.');
+  log.length = 0;
+  const again = await judge(root, 'demo', 'paper', { ...check, runner: answerer(undefined, log) });
+  assert.deepEqual(again.runs.map(run => run.calls.map(c => [c.family, c.units])), [[['outline', 4], ['outline', 4], ['outline', 2], ['content', 3]]]);
+  assert.deepEqual([...new Set(log.flatMap(call => call.entries.filter(e => !e.planted).map(e => e.unit)))].length, 10, 'the edited paragraph with its three sentences, the list with its sentence and its two items, and the Subsection with its sentence');
+  for (const p of ['Our main result', 'Seiberg duality realizes']) assert.deepEqual(again.result.state.units[para(p)], out.result.state.units[para(p)]);
+  assert.equal(again.result.state.complete, true);
+  // Pointers that code holds to the text.
+  const fault = change => { const o = structuredClone(SET); change(o); put(project, 'paper/OUTLINE.json', o); return verify(project, 'paper', check).open.filter(f => f.rule === 'outline-contract').flatMap(f => f.evidence); };
+  assert.deepEqual(fault(o => { o.setting = ['No such words']; }), ['the setting "No such words" of the manuscript matches no sentence of the manuscript']);
+  assert.deepEqual(fault(o => { o.setting = ['the third case']; }), ['the setting "the third case" of the manuscript stands in 4 sentences: point to one']);
+  assert.deepEqual(fault(o => { o.setting = ['label:sec:five']; }), ['the setting "label:sec:five" of the manuscript points to a unit that is not a sentence']);
+  assert.deepEqual(fault(o => { o.setting = ['label:w']; o.sections[3].setting = ['label:w']; }), ['the setting "With a superpotential, Seiberg duality realizes the third ca" of the section "With a superpotential" stands after every paragraph it would be shown with', 'the setting "With a superpotential, Seiberg duality realizes the third ca" of the manuscript stands after every paragraph it would be shown with']);
+  put(project, 'paper/OUTLINE.json', { ...SET, setting: 'The quivers' }); assert.throws(() => verify(project, 'paper', check), /OUTLINE\.json: "setting" must be a list/);
+  // paper-outline prints the setting and the skeleton keeps it.
+  put(project, 'paper/OUTLINE.json', SET);
+  assert.match(await main(['paper-outline', 'demo'], root), /\nSetting of the manuscript:\n  setting: §1 ¶1 s1 \| The quivers of this paper have several gauge couplings\.[^\n]*\n[\s\S]*\n§2 The fifth case: 2 paragraphs, 2 entries\n  setting: §2 ¶1 s1 \| In the fifth case both gauge couplings are asymptotically free at the origin\./);
+  const skeleton = JSON.parse(await main(['paper-outline', 'demo', '--skeleton'], root));
+  assert.deepEqual([skeleton.setting, skeleton.sections[1].setting, 'setting' in skeleton.sections[0]], [SET.setting, ['label:five'], false]);
+  // A judge that demands of a sentence a restriction that the setting supplies misses a planted text, and gives no verdict on the rule.
+  const strict = make(t, { 'paper/OUTLINE.json': SET });
+  const pedant = await judge(strict.root, 'demo', 'paper', { writer: 'claude', ...check, runner: answerer((call, e, i) => i.seed === 'claim-scope:pass:2' ? 'fail' : undefined) });
+  assert.deepEqual([[...new Set(verdicts(pedant.result.state, 'claim-scope'))], [...new Set(verdicts(pedant.result.state, 'entry-delivered'))]], [['pending'], ['pass']]);
+  assert.match(report('demo', pedant.result), /\(missed: claim-scope:pass:2\)[^\n]*below 9 in 10 and not used for: claim-scope/);
+  // A family that shows the setting needs a text that is shown one.
+  const lonely = { id: 'lonely-rule', kind: 'judge', family: 'lonely', shows: ['setting'], question: 'Does the sentence hold?', source: 'fixture', fail: ['\\section{A}\n\nOne sentence.'], pass: ['\\section{B}\n\nAnother sentence.'] };
+  put(project, 'paper/RULES.json', { version: 1, rules: [lonely] });
+  assert.throws(() => rules(project), /Rule lonely-rule refused: it shows the judge the setting in the calls of the family lonely, so at least one text of that family needs an "outline" whose setting points to a sentence before one of its paragraphs/);
 });

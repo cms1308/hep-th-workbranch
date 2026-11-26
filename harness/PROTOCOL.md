@@ -184,8 +184,8 @@ authorized multi-step work solely because of it. Include it in the normal report
   `node harness/cli.mjs paper-judge <slug> [paper-dir] --writer <claude|codex>`: a judge of
   the vendor that did not write the text, tested on seeded defects in every call. The
   outline of an enrolled manuscript is `OUTLINE.json`: its central claims with their
-  restrictions and one entry for every paragraph, held to the text by code and by the
-  judges (`paper-outline` prints it next to the text;
+  restrictions, one entry for every paragraph and the sentences that state its setting,
+  held to the text by code and by the judges (`paper-outline` prints it next to the text;
   [PAPER-REVIEW](PAPER-REVIEW.md#verification-gate)). A manuscript is gated once it is
   enrolled (its directory holds `VERIFY.json`). For an enrolled manuscript the table
   printed by `paper-verify` is the only evidence of verification a report may cite, and

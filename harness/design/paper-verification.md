@@ -1146,3 +1146,156 @@ Open after stage 4.
   not yet held a live session. The items open after stage 3 stand otherwise (local run
   records, the limits of the seal, a Claude judge never launched live, planted texts that
   are fixed fixtures).
+
+### Stage 4, the setting of a manuscript (2026-11-26)
+
+Why. In the live run of stage 4, `claim-scope` failed four sentences of the introduction
+and of Section 2.1 for want of "with at least one bifundamental", a qualifier of a claim as
+written for the run, which every quiver of the manuscript satisfies: the manuscript is
+about connected quivers. A reader who has read the introduction does not need it repeated.
+The judge had not read the introduction, since it is shown one paragraph. The user: "with
+at least one bifundamental을 문장마다 요구하면 안돼. 그냥 사람이 읽듯이 한문장한문장
+읽어보고 판단하는게 안되는거야?" (2026-11-26). Two remedies were proposed: show every
+paragraph with all of the text before it, which costs 1.3 to 2.7 million more input tokens
+for a pass over the pilot draft and asks every later paragraph again after an edit near the
+start, or register the setting of the manuscript and of its Sections as pointers to the
+sentences that state it, which the judge reads in their own words. The user chose the
+second ("(나)로 고치고 다시 실측해봐", 2026-11-26).
+
+The same run showed why the setting is given as sentences of the manuscript and not as a
+summary: shown the entry that the writer gave a paragraph, the judge passed under
+`in-place` two sentences that it fails when it reads the paragraph alone. Material written
+by the writer can loosen a verdict. A sentence of the manuscript is what a reader has read.
+
+Criterion and plan of checks, written before the code. Tests use an injected judge.
+
+1. `OUTLINE.json` takes `setting`, for the whole manuscript and for each section: a list of
+   pointers to sentences (`label:`, a unit id, or a passage that stands in exactly one
+   sentence). A pointer that matches no sentence or several, and one whose sentence stands
+   after every paragraph it would apply to, fail by code.
+2. A sentence of the setting is shown, in its own words, with each paragraph of its scope
+   (the manuscript, or the section with its subsections) that stands after the paragraph
+   holding it, and with no paragraph before it. It is shown under the rules that name
+   `setting` in `shows`.
+3. The key of a verdict covers the setting sentences shown: an edit of one asks again the
+   paragraphs that show it and nothing else.
+4. `claim-scope` shows the setting and reads a sentence as a reader of these sentences, the
+   headings and the paragraph: a restriction that they impose, or that follows from them,
+   need not be repeated; a qualifier that widens a claim is no restriction; a claim's
+   restrictions apply where the sentence states that claim's result. A planted pair tests
+   it: under the setting "connected two-node quivers" a sentence that omits "with at least
+   one bifundamental" passes, and one that states the result beyond $W=0$ fails.
+5. `scope-stated` accepts a restriction in the headings above the sentence, which a reader
+   has read, as well as in the sentence and earlier in its paragraph.
+6. A family that shows the setting has at least one text whose paragraph is shown a
+   setting, so that planted paragraphs with and without it stand in every call, as real
+   ones do. Registration is refused otherwise.
+7. The 55 earlier tests pass, with the counts that change listed.
+8. Live with Codex, on the scratch manuscript of the stage 4 run with its four claims
+   unchanged (the qualifier "with at least one bifundamental" kept): run A with the new
+   questions and no setting, run B with the setting. Counted: the four failures for the
+   qualifier, the true failures of the origin (the main result without its restriction,
+   the exclusion of case (5) without $W=0$), the planted texts, tokens and time. Run A
+   tells whether the question alone suffices, in which case the setting is not needed.
+
+Code: in `harness/verify.mjs` the `setting` of the outline (resolved in `outlined`, its
+faults among the problems of `outline-contract`, shown through `shows: ["setting"]`),
+`JUDGE` raised to 4, the setting in `paper-outline`; in `harness/judge.mjs` the setting
+printed with its block; in `harness/rules.json` the new questions of `claim-scope` and
+`scope-stated`, the planted pair of the setting for `claim-scope` and a failing text of
+`outline-contract` with a pointer that matches nothing; one test in
+`tests/outline.test.mjs`.
+
+Result. All 56 tests pass. By the numbers of the plan above:
+
+1. Passed. A passage that matches no sentence, one that stands in four, a label of a
+   heading, and a pointer whose sentence stands in the last paragraph of its scope each
+   fail by code with their reason, and a `setting` that is not a list stops the
+   verification.
+2. Passed. On the fixture a sentence of the introduction is shown with the paragraphs after
+   its own and not with its own or the abstract, and a sentence of the Section on the fifth
+   case with the later paragraph of that Section and with its Subsection, not with the next
+   Section. A list item is shown the setting of the paragraph it belongs to. The rules about
+   a sentence in its paragraph are shown none.
+3. Passed. After an edit of the sentence of the Section's setting, 4 calls: its own
+   paragraph under both families, and the two paragraphs that are shown it. The other
+   verdicts are kept.
+4. Passed. A judge that fails the planted sentence which omits the qualifier that the
+   setting supplies gives no verdict on `claim-scope`. Live, both runs answered the 44
+   planted texts of `claim-scope` as registered.
+5. Done. Live, the sentence that `scope-stated` had failed for a condition that stands only
+   in its heading now passes.
+6. Passed. A family that shows the setting and has no text with one is refused.
+7. The 55 earlier tests pass. The counts that changed with the added planted pair: an
+   outline call holds 18 planted units instead of 12, the run of the judge fixture answers
+   43 planted texts instead of 37, the run of the outline fixture 75 instead of 61, and a
+   question put to several units names 16 and 6 of them instead of 12 and 4. The counts of
+   the outline gain `setting: 0`.
+8. Done, below.
+
+Measured, live with Codex (provider default, gpt-6.2-astra at reasoning effort xhigh in
+this computer's configuration), on the scratch manuscript of the stage 4 run with its four
+claims unchanged. Run B registers as setting of the manuscript the first sentence of the
+abstract and the sentence of the introduction that introduces "connected two-node quivers
+with gauge group $SU(N)\times SU(N)$". The rules of the family `content` are the same in
+both runs (their questions have the same keys), so they were asked in run A only.
+
+| failing verdicts | stage 4 run | run A: new questions | run B: and the setting |
+| --- | ---: | ---: | ---: |
+| `claim-scope` | 12 | 10 | 8 |
+| of them for "with at least one bifundamental" | 4 | 2 | 0 |
+| `scope-stated` | 4 | 2 | 2 |
+| `in-place` | 2 | 1 | 1 |
+| planted texts answered as registered | 93 of 93 | 110 of 110 | 66 of 66 |
+
+- The question alone does not suffice. Run A still fails two sentences of the
+  introduction for the qualifier, both after the sentence on connected quivers, which the
+  judge did not see. With the setting none is failed for it.
+- The eight failures of run B were read against the current draft (2a4d45a). Seven stand
+  corrected there: the main result in the introduction and in two sentences of the abstract
+  now carries "without a superpotential coupling relevant at a single-node fixed point",
+  statement (ii) of the introduction now opens "At $W=0$", with the sentence after it, and
+  the sentence on the routes to the fully interacting fixed point now opens "At $W=0$",
+  with the sentence after it. The eighth, a sentence of the abstract in which "without a
+  superpotential" may or may not govern its second clause, was removed by the project in
+  ab33de3. Run B also passes the sentence on the two configurations without a unitary
+  fixed point, which the stage 4 run and run A held to a restriction of a different claim.
+- `scope-stated` fails the main result, whose restriction stands nowhere before it, and a
+  sentence of Section 2.1 on "any two-node quiver at any finite $N$", for a reason about
+  its support rather than its scope. The current draft keeps that sentence.
+- `in-place` fails the first of the two sentences on case (3) in the Section on case (5)
+  and passes the second, which the stage 4 run failed. The paragraph is the origin
+  incident, for which `outline-contract` failed its heading in the stage 4 runs.
+- Cost. A call of the family `outline` took 24,680 input and 3,606 output tokens and 79 s
+  on average in run B, against 23,720, 2,999 and 71 s in the stage 4 run: the added
+  planted pair and the setting sentences. One pass over the pilot draft rises by about 0.1
+  million input tokens. Run A: 22 calls, 525,698 input and 77,028 output tokens, 461 s.
+  Run B: 11 calls, 271,476 input and 39,661 output tokens, 225 s.
+
+Choices made in the implementation, each the lead's and open to the user's correction.
+
+1. The setting is given as pointers to sentences and shown in their own words, never as a
+   summary. The writer chooses which sentences, and cannot add to what they say. A sentence
+   left out makes the judge stricter.
+2. The setting is shown under `claim-scope` only. `scope-stated` and `in-place` belong to
+   the family `content`, which is asked whether or not the manuscript has an outline, and a
+   setting there would tie them to it. `scope-stated` now accepts a restriction in the
+   headings, which every call already shows.
+3. A pointer may be a passage of the sentence, since sentences of prose seldom carry a
+   label.
+4. A family that shows the setting needs one text with a setting, not every text: real
+   paragraphs before the first sentence of the setting are shown none either.
+5. The claims of the run kept the qualifier, so that the measurement tests the reading of
+   the judge and not a rewording of the claims. The advice of stage 4 to state in a claim
+   only the restrictions beyond the setting is withdrawn from PAPER-REVIEW.
+
+Open.
+
+- `claim-scope` shows the registered claims, which the writer wrote. A claim registered
+  wider than the paper establishes lets a sentence of that width pass it. `abstract-covered`
+  checks that the claims cover the abstract, not their width, and `scope-stated`, asked
+  without the outline, is the check of scope that does not depend on them.
+- `scope-stated` reads a paragraph and its headings only, and holds the main result of the
+  run for restrictions that stand later in its paragraph. Whether it should also be shown
+  the setting is a question for the pilot, by its count of failures that are not defects.
+- The items open after stage 4 stand otherwise.

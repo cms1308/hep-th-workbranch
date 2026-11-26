@@ -24,15 +24,16 @@ const sample = s => typeof s === 'string' ? { tex: s } : s;
 // What one call shows the judge: blocks (a paragraph with its headings and the units to judge in it), then the questions.
 // A question's key (verify.mjs) covers every part of a question that enters here: when this wording changes, raise JUDGE.
 function material(call) {
-  const entries = call.blocks.flatMap(b => b.entries), better = entries.some(e => e.items.some(i => i.better)), outlined = call.blocks.some(b => b.aside?.entry || b.aside?.claims), groups = new Map();
+  const entries = call.blocks.flatMap(b => b.entries), better = entries.some(e => e.items.some(i => i.better)), outlined = call.blocks.some(b => b.aside?.entry || b.aside?.claims || b.aside?.setting), groups = new Map();
   const same = entries.every(e => e.items.length === entries[0].items.length && e.items.every((i, k) => i.show === entries[0].items[k].show && i.q === entries[0].items[k].q));
   // A question put to several units is printed once, with the units it is put to.
   for (const e of entries) for (const i of e.items) { const k = `${i.show}\n${i.q}`; groups.set(k, [...(groups.get(k) || []), { e, i }]); }
   return [
     'You are an independent judge of parts of a manuscript in theoretical high-energy physics (hep-th). You did not write it and neither answer is preferred.',
     'Judge only the questions below, from the material in this message. Do not read files, run commands or search: everything you need is here.',
-    `The material comes in blocks. A block is a paragraph of the manuscript with the headings above it, or one sentence or title taken alone, or the notation the manuscript declares. Where a block has several units and prints no paragraph, its units, in their order, are the whole paragraph.${outlined ? ' A block may also print what the outline of its manuscript holds for it: the entry of the paragraph (its role, then what the paragraph does) and the central claims that the outline registers.' : ''} The blocks do not belong together: judge each unit within its own block, use nothing from another block, and judge only the units listed.`,
+    `The material comes in blocks. A block is a paragraph of the manuscript with the headings above it, or one sentence or title taken alone, or the notation the manuscript declares. Where a block has several units and prints no paragraph, its units, in their order, are the whole paragraph.${outlined ? ' A block may also print what the outline of its manuscript holds for it: sentences that stand earlier in the manuscript and state the setting in which the paragraph is read, copied from the manuscript, the entry of the paragraph (its role, then what the paragraph does) and the central claims that the outline registers.' : ''} The blocks do not belong together: judge each unit within its own block, use nothing from another block, and judge only the units listed.`,
     ...call.blocks.map((b, k) => [`Block ${k + 1}`, ...(b.headings.length ? [`Headings above it: ${b.headings.join(' > ')}`] : []),
+      ...(b.aside?.setting ? [`Sentences earlier in the manuscript that state the setting:\n${b.aside.setting.map(fence).join('\n')}`] : []),
       ...(b.aside?.entry ? [`Entry of the paragraph in the outline: ${b.aside.entry}`] : []),
       ...(b.aside?.claims ? [`Central claims registered in the outline:\n${b.aside.claims.map(c => `- ${c}`).join('\n')}`] : []),
       ...(b.context && bare(b.context) !== bare(b.entries.filter(e => !e.whole).map(e => e.text).join('')) ? [`Paragraph:\n${fence(b.context)}`] : []),
