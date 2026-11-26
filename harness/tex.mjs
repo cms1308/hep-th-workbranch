@@ -346,6 +346,12 @@ const STOP = new Set(`a an the this that these those it its their our we us they
 // A prose view cut at marks and punctuation; each segment is its tokens in order, null for a token that is not a word.
 export const segments = prose => prose.split(new RegExp(`${L}[A-Z]${R}|[.,;:!?()\\[\\]"–…]|---`)).map(s => s.split(/\s+/).filter(Boolean).map(w => /^[A-Za-z][A-Za-z'’-]*$/.test(w) ? w : null));
 // Candidate terms: maximal runs of content words (two or more words, or one hyphenated compound).
+// The content words of a prose view, each once, as written (the single words that the term check compares with the corpus).
+export function contentWords(prose) {
+  const out = new Set();
+  for (const segment of segments(prose)) for (const w of segment) if (w && !STOP.has(w.toLowerCase())) out.add(w);
+  return [...out];
+}
 export function terms(prose) {
   const out = [];
   for (const segment of segments(prose)) {

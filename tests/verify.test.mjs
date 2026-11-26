@@ -491,3 +491,26 @@ In case (3) we find 5 theories.\label{mixed}
   assert.throws(() => with_([{ name: 'case (5)' }]), /FACTS\.json names\[0\]: a name is/);
   assert.throws(() => with_([{ name: 'case (5)', at: 'label:cases', standard: true }]), /FACTS\.json names\[0\]: a name is/);
 });
+
+// Single words (design record, "Single words"): compared with a corpus of WORD_PAPERS papers or more.
+test('a single word absent from the literature corpus is a finding like a coined pair, once the corpus is large enough to hold common words', t => {
+  const TEX = String.raw`\documentclass{article}
+\begin{document}
+\section{Words}
+The admission criterion keeps the theories with a fixed point.\label{first}
+Every theory that passes the admission is kept.\label{second}
+The flavorless theories flow to the fixed point.\label{third}
+\end{document}
+`;
+  const { project } = make(t, TEX, { 'paper/VERIFY.json': '{}' });
+  const plainText = 'The criterion keeps the theories with a fixed point. Every theory that passes is kept. The theories flow to the fixed point.';
+  const wide = { ...built, corpus: () => fromTex(Array(20).fill(plainText)) }, narrow = { ...built, corpus: () => fromTex(Array(19).fill(plainText)) };
+  const at = l => load(project, 'paper/main.tex').labels[l];
+  let r = verify(project, 'paper', wide);
+  assert.deepEqual(failing(r, 'term-attested'), ['the word "admission" (corpus papers: 0, sentences or titles here: 2) needs attested wording, a definition site or the user\'s approval', 'the word "admission" (corpus papers: 0, sentences or titles here: 2) needs attested wording, a definition site or the user\'s approval']);
+  assert.deepEqual(r.questions.filter(q => q.family === 'term-attested').flatMap(q => q.items.map(i => i.tag)), ['"flavorless"'], 'a word used once awaits the judge, and its pairs add nothing');
+  assert.match(r.questions.find(q => q.unit === at('third') && q.family === 'term-attested').items[0].q, /^The word "flavorless" occurs once in the manuscript and in 0 of the 20 papers/);
+  assert.deepEqual(failing(verify(project, 'paper', narrow), 'term-attested'), [], 'a corpus of 19 papers compares pairs only');
+  put(project, 'paper/LEXICON.json', { terms: [{ term: 'admission criterion', at: 'label:first' }] });
+  assert.deepEqual(failing(verify(project, 'paper', wide), 'term-attested'), [], 'a definition site of a term with the word grounds it');
+});

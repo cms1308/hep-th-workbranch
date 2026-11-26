@@ -1681,3 +1681,40 @@ Result. 63 tests pass. By the plan:
 The pilot draft needs its declarations written, about 20 for the forms counted above. Not
 built: a name with a placeholder ("case (n)"), since the list form covers the six cases in
 one declaration.
+
+### Single words (2026-11-26)
+
+Why. The term check compared hyphenated compounds and pairs of words with the corpus, not
+single words, so a coined word ("flavorless") passed unless it stood in an unattested pair.
+Listed as open after stages 2 and 4.
+
+Measured first, on the pilot draft against the corpus of 277 papers: of its 797 distinct
+lower-case words, 13 occur in fewer than two corpus papers (admission, curable, imbalanced,
+flavorless, farthest, outright, imbalance, conditional, satisfiable, thirteen, undecided,
+verdicts, unreachable). So comparing single words costs little, and it finds words such
+as "verdicts", which belongs to the harness and not to a paper on quivers.
+
+Criterion, set before the code.
+
+1. Single words (lower case, four letters or more, not a number word or roman numeral, the
+   parts of a hyphenated word included) are candidates with the grounds and outcomes of
+   pairs: attested in two corpus papers, or a LEXICON entry containing the word; otherwise a
+   word in two or more sentences or titles fails, and a word used once awaits the judge
+   (ordinary English in its ordinary sense, or not).
+2. Only against a corpus of `WORD_PAPERS` = 20 papers or more: a smaller corpus lacks
+   common words. The fixture corpora of the tests are smaller, so no earlier test changes.
+3. A pair is left out when one of its words is a finding by itself, as for compounds.
+4. Planted texts for the question on a word: a coined word (must fail) and an ordinary rare
+   one (must pass), registered against a sample corpus of 20 copies of a text (a sample
+   corpus entry may now be `{"tex", "copies"}`).
+
+Code: `contentWords` in `harness/tex.mjs`; single candidates, `wide`, the word kinds of
+`term-attested` and the sample corpora in `harness/verify.mjs`; two judge texts in
+`harness/rules.json`; a test in `tests/verify.test.mjs`.
+
+Result. 64 tests pass, the earlier ones unchanged. On a copy of the pilot draft: the four
+words used in two or more places fail with their reasons (admission, imbalanced,
+flavorless, conditional), and the others await the judge.
+
+Open. Capitalized words are not compared (a name, or a word that opens a sentence), and
+British spellings are not folded into American ones.

@@ -11,11 +11,13 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { read, json, write, writeJSON, sha, safePath, run, wiki } from './core.mjs';
-import { flatten, decompose, symbols, value, expand, numberWord } from './tex.mjs';
+import { flatten, decompose, symbols, value, expand, numberWord, contentWords } from './tex.mjs';
 import { load as storedCorpus, fromTex, attest, key as gram, symbolPapers, ATTESTED } from './corpus.mjs';
 
 export const TOOL = 1;                                   // raise when the decomposition or a check changes meaning: every verdict is judged again
 export const JUDGE = 4;                                  // raise when a question, the prompt, the schema or the reading of an answer changes: every independent verdict is asked again
+// Corpus papers needed before single words are compared with it: a smaller corpus lacks common words, so their absence there says nothing.
+export const WORD_PAPERS = 20;
 export const JUDGES = 1;                                 // judges that must pass a question unless the manuscript's RULES.json asks for more ("judges": n); one failing judge fails it
 export const FIT = [9, 10];                              // share of a rule's planted texts a run must answer as registered for its answers on that rule to count
 export const SHORTER = [4, 5];                           // a replacement that is only shorter counts when it has at most this share of the unit's words
@@ -283,6 +285,7 @@ function context(doc, { lexicon = {}, facts = {}, file, build: builder, baseline
   // Candidate terms of a unit: its hyphenated compounds and its pairs of adjacent content words, by corpus key.
   // A number word, a roman numeral and a possessive end a phrase: the word after them starts another ("Type III | theories", "fifteen | theories", "the node's | fixed point").
   const closes = w => numberWord(w) || /^[ivx]+$|['’]s?$/.test(w);
+  const single = w => /^[a-z][a-z'’]{3,}$/.test(w) && !numberWord(w) && !/^[ivx]+$/.test(w);
   const lex = (lexicon.terms || []).map(t => {
     const kind = ['at', 'approved', 'ordinary'].filter(k => t[k] !== undefined);
     if (kind.length !== 1 || !gram(String(t.term ?? ''))) throw Error(`LEXICON term ${JSON.stringify(t.term)} needs exactly one of at (its definition site), approved (the user's words and their date) or ordinary (why it is wording and not a term).`);
@@ -294,8 +297,11 @@ function context(doc, { lexicon = {}, facts = {}, file, build: builder, baseline
     for (const run of u.terms || []) run.split(' ').forEach((w, i, ws) => {
       const show = t => t === run ? `"${t}"` : `"${t}" in "${run}"`;
       if (w.includes('-') && gram(w).includes(' ') && !numberWord(w)) out.set(gram(w), { text: show(w), compound: true });
-      if (i && !closes(ws[i - 1])) out.set(gram(`${ws[i - 1]} ${w}`), { text: show(`${ws[i - 1]} ${w}`), parts: [ws[i - 1], w].filter(x => x.includes('-')).map(gram).filter(k => k.includes(' ')) });
+      if (i && !closes(ws[i - 1])) out.set(gram(`${ws[i - 1]} ${w}`), { text: show(`${ws[i - 1]} ${w}`), parts: [ws[i - 1], w].filter(x => x.includes('-')).map(gram).filter(k => k.includes(' ')),
+        words: [ws[i - 1], w].flatMap(x => x.split('-')).filter(single).map(gram) });
     });
+    // Single words, lower case and of four letters or more (a capital marks a name or the start of a sentence).
+    for (const w of contentWords(u.prose)) for (const p of w.split('-')) if (single(p) && !out.has(gram(p))) out.set(gram(p), { text: `"${p}"`, single: true });
     return [...out].map(([key, c]) => ({ key, ...c }));
   })()).get(u.id);
   for (const u of doc.units) if (u.kind === 'sentence' || u.kind === 'title') for (const c of candidates(u)) occurs.set(c.key, (occurs.get(c.key) || 0) + 1);
@@ -308,11 +314,13 @@ function context(doc, { lexicon = {}, facts = {}, file, build: builder, baseline
     const n = papers(c.key), entry = ground(c.key);
     if (n >= ATTESTED) return ['attested'];
     if (entry?.kind === 'approved') approved.add(entry.term);
-    return entry ? [entry.kind, entry.term, ...(entry.kind === 'ordinary' ? [entry.note] : [])] : n === null ? ['no-corpus'] : [c.compound ? 'compound' : occurs.get(c.key) > 1 ? 'recurrent' : 'once', n, occurs.get(c.key)];
+    return entry ? [entry.kind, entry.term, ...(entry.kind === 'ordinary' ? [entry.note] : [])] : n === null ? ['no-corpus'] : [c.single ? (occurs.get(c.key) > 1 ? 'word-recurrent' : 'word-once') : c.compound ? 'compound' : occurs.get(c.key) > 1 ? 'recurrent' : 'once', n, occurs.get(c.key)];
   };
+  const wide = () => (corpus()?.papers?.length ?? 0) >= WORD_PAPERS;
   const lone = k => papers(k) !== null && papers(k) < ATTESTED && !ground(k);          // a compound that is a finding by itself: the pairs containing it add nothing
   return { hash: doc.hash, unit, used, symbol: k => table.get(k), terms, uses, naming, names: u => named.filter(d => d.first && (d.standard ? d.first === u : d.site === u)), orphans, facts: facts.facts || {}, file, capitals, baseline, corpus, approved, outline: outlined(doc, plan.main ?? null, plan.seeds), grounds: grounded(doc, plan2.main ?? null, plan2.seeds, { file, bib, sources }),
-    term: u => candidates(u).filter(c => c.compound || !c.parts.some(lone)).map(c => [c.text, ...status(c)]),
+    // Single words only against a corpus of WORD_PAPERS papers or more; a pair is left out when one of its words is a finding by itself.
+    term: u => candidates(u).filter(c => c.single ? wide() : c.compound || (!c.parts.some(lone) && !(wide() && c.words.some(k => occurs.has(k) && lone(k))))).map(c => [c.text, ...status(c)]),
     standard: [...table].filter(([, e]) => e.at === undefined).map(([k, e]) => [e.symbol, k, typeof e.standard === 'string' ? e.standard : null]), symbolPapers: k => corpus() ? symbolPapers(corpus(), k) : null,
     first: k => doc.units.find(u => u.kind === 'sentence' && used(u).has(k)) ?? null, papers: () => corpus()?.documents ?? 0,
     build: () => built === undefined ? (built = builder()) : built };
@@ -434,10 +442,13 @@ export const CHECKS = {
       const of = kind => inputs.filter(([, k]) => k === kind), missing = of('no-corpus').map(([t]) => t), needs = 'needs attested wording, a definition site or the user\'s approval';
       return { unjudged: missing.length ? [`the corpus is not built (node harness/cli.mjs corpus-build): ${missing.join(', ')}`] : [],
         fail: [...of('compound').map(([t, , n]) => `${t} (corpus papers with or without the hyphen: ${n}) ${needs}`),
-          ...of('recurrent').map(([t, , n, m]) => `${t} (corpus papers: ${n}, sentences or titles here: ${m}) ${needs}`)],
+          ...of('recurrent').map(([t, , n, m]) => `${t} (corpus papers: ${n}, sentences or titles here: ${m}) ${needs}`),
+          ...of('word-recurrent').map(([t, , n, m]) => `the word ${t} (corpus papers: ${n}, sentences or titles here: ${m}) ${needs}`)],
         pending: [...of('once').map(([t, , n]) => `${t} (corpus papers: ${n}) occurs once: whether it is a term needs the independent verdict`),
+          ...of('word-once').map(([t, , n]) => `the word ${t} (corpus papers: ${n}) occurs once: whether it is ordinary English needs the independent verdict`),
           ...of('ordinary').map(([t, , term]) => `${t} is declared ordinary wording (LEXICON "${term}"): the declaration needs the independent verdict`)],
-        ask: [...of('once').map(([t, , n]) => ({ tag: t, q: `${t} occurs once in the manuscript and in ${n} of the ${ctx.papers()} papers of the literature corpus. Pass if it is ordinary wording read literally (for example a subject and its verb, or an adjective and its noun). Fail if it is used as a technical term or as a label, which needs attestation in the literature or a definition.` })),
+        ask: [...of('word-once').map(([t, , n]) => ({ tag: t, q: `The word ${t} occurs once in the manuscript and in ${n} of the ${ctx.papers()} papers of the literature corpus. Pass if it is an ordinary English word used in its ordinary sense. Fail if it is a word coined for this manuscript, or a technical term or label that the literature does not use.` })),
+          ...of('once').map(([t, , n]) => ({ tag: t, q: `${t} occurs once in the manuscript and in ${n} of the ${ctx.papers()} papers of the literature corpus. Pass if it is ordinary wording read literally (for example a subject and its verb, or an adjective and its noun). Fail if it is used as a technical term or as a label, which needs attestation in the literature or a definition.` })),
           ...of('ordinary').map(([t, , term, note]) => ({ tag: t, q: `The author declares "${term}" ordinary wording and not a term, with the reason "${note}". Pass if ${t} is ordinary wording read literally in the unit. Fail if it is used there as a technical term or as a label coined for this manuscript.` }))] };
     },
   },
@@ -569,14 +580,14 @@ function admit(rule) {
     const all = (doc, ctx) => [...doc.units, DOCUMENT].filter(u => subject.units(u) && subject.applies(u, ctx));
     for (const want of ['fail', 'pass']) for (const s of rule[want].map(sample)) {
       let seen;
-      try { const { doc, ctx } = probe(s, () => s.corpus ? fromTex(s.corpus) : null); seen = all(doc, ctx).map(u => outcome(check, u, rule, ctx).v); } catch (e) { refuse(`its check cannot run (${e.message})`); }
+      try { const { doc, ctx } = probe(s, () => s.corpus ? fromTex(texts(s)) : null); seen = all(doc, ctx).map(u => outcome(check, u, rule, ctx).v); } catch (e) { refuse(`its check cannot run (${e.message})`); }
       if (want === 'fail' ? !seen.includes('fail') : seen.some(v => v !== 'pass' && !(check.asks && v === 'pending'))) refuse(`its check ${want === 'fail' ? 'does not flag the failing text' : 'does not pass the passing text'} ${shown(s)}`);
     }
     // What the code check leaves to a reader is tested on the judges by the rule's judge samples: each must reach the independent verdict.
     if (rule.judge && (!rule.judge.fail?.length || !rule.judge.pass?.length)) refuse('its judge samples need at least one text that must fail and one that must pass');
     for (const want of ['fail', 'pass']) for (const s of (rule.judge?.[want] ?? []).map(sample)) {
       let reached;
-      try { const { doc, ctx } = probe(s, () => fromTex(s.corpus || [])); reached = all(doc, ctx).some(u => { const o = outcome(check, u, rule, ctx); return o.v === 'pending' && o.ask.some(a => designates(a.tag, s.item)); }); } catch (e) { refuse(`its judge sample cannot be read (${e.message})`); }
+      try { const { doc, ctx } = probe(s, () => fromTex(texts(s))); reached = all(doc, ctx).some(u => { const o = outcome(check, u, rule, ctx); return o.v === 'pending' && o.ask.some(a => designates(a.tag, s.item)); }); } catch (e) { refuse(`its judge sample cannot be read (${e.message})`); }
       if (!reached) refuse(`its judge sample does not reach the independent verdict (the code check must leave ${s.item === undefined ? 'a question' : JSON.stringify(s.item)} awaiting it): ${shown(s)}`);
     }
   }
@@ -586,6 +597,8 @@ function admit(rule) {
 // A text that a judge is shown must not inherit the headings of whatever stands before it: it opens with its own \section, or it is an abstract.
 const OPENING = /^\s*\\(?:section\*?\s*\{|begin\s*\{abstract\})/;
 // A sample of a rule as a manuscript of its own, with the registries it carries.
+// The corpus of a sample: its texts, each given as TeX or as {"tex", "copies"} (a text standing for that many papers).
+const texts = s => (s.corpus || []).flatMap(c => typeof c === 'string' ? [c] : Array(c.copies ?? 1).fill(c.tex));
 const probe = (s, corpus) => { const doc = decompose(lines(s.tex)); return { doc, ctx: context({ ...doc, hash: 'sample' }, { lexicon: s.lexicon, facts: s.facts, file: rel => s.files?.[rel] ?? null, build: () => s.build ?? null, baseline: s.baseline, corpus, outline: { main: s.outline ?? null }, grounds: { main: s.grounds ?? null }, bib: bibliography([s.bib ?? '']), sources: id => s.sources ? s.sources[id] ?? null : undefined }) }; };
 export function rules(project, paper = 'paper') {
   const all = [...json(BASE).rules, ...(optional(path.join(project, paper, 'RULES.json')).rules || [])];

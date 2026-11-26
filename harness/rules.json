@@ -102,10 +102,12 @@
       "judge": {
         "fail": [
           {"tex": "This holds in the saddle scenario.", "item": "saddle scenario"},
+          {"tex": "The biflavored theories flow to the fixed point.", "corpus": [{"tex": "The theories flow to the fixed point.", "copies": 20}], "item": "biflavored"},
           {"tex": "We then apply the symmetry quotient.", "lexicon": {"terms": [{"term": "symmetry quotient", "ordinary": "an adjective and its noun"}]}, "item": "symmetry quotient"}
         ],
         "pass": [
           {"tex": "Here the enumeration ends.", "item": "enumeration ends"},
+          {"tex": "The theories flow to the farthest fixed point.", "corpus": [{"tex": "The theories flow to the fixed point.", "copies": 20}], "item": "farthest"},
           {"tex": "There the tabulation stops.", "lexicon": {"terms": [{"term": "tabulation stops", "ordinary": "a subject and its verb"}]}, "item": "tabulation stops"}
         ]
       }

@@ -234,7 +234,11 @@ local edit of one needs none of these files, and no user-approval step is added.
   occurs once, and a candidate declared `ordinary` (wording that is not a term, for
   example a subject and its verb, with the reason), await the independent verdict. The
   lead does not record an approval the user has not given. Without a built corpus the
-  check is not judged.
+  check is not judged. Against a corpus of 20 papers or more, single words are candidates
+  too (lower case, four letters or more, not a number word), with the same grounds and
+  outcomes: an unattested word in two or more sentences or titles fails, one used once
+  awaits the judge's verdict on whether it is ordinary English, and a pair is left out
+  when one of its words is such a finding.
 - **Punctuation.** An em-dash fails. A colon before a display or at the end of its
   sentence passes. Any other colon or semicolon in running prose awaits the independent
   verdict, because [PAPER-STYLE](../PAPER-STYLE.md) keeps punctuation that clarifies.
