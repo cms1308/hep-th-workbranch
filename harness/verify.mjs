@@ -262,6 +262,23 @@ function context(doc, { lexicon = {}, facts = {}, file, build: builder, baseline
   const terms = (lexicon.terms || []).filter(t => t.at !== undefined).map(t => ({ ...t, re: new RegExp(`(?<![A-Za-z-])${esc(t.term).replace(/ /g, '\\s+')}(?:e?s)?(?![A-Za-z-])`, 'i') }));
   const uses = new Map(), orphans = [], capitals = new Set();
   for (const [k, v] of Object.entries(facts.uses || {})) { const u = unit(k); if (u) uses.set(u.id, v); else orphans.push(k); }
+  // Names that contain numerals (FACTS.json "names"): a case, a configuration, an entry of a table, or a standard name such as
+  // $\mathcal N=1$. A numeral inside one names something and counts nothing, so it needs no fact: the declaration has one
+  // ground instead, the sentence that defines the name (`at`) or the literature (`standard`), judged once on that sentence or on
+  // the first use. A form in $...$ is an inline formula and covers the numerals of a formula written exactly so; any other form
+  // is prose and covers the numerals inside an occurrence of it.
+  const named = (facts.names || []).map((d, i) => {
+    const forms = typeof d?.name === 'string' ? [d.name] : d?.name;
+    if (!Array.isArray(forms) || !forms.length || !forms.every(f => typeof f === 'string' && f.trim()) || (d.at === undefined) === (d.standard !== true))
+      throw Error(`FACTS.json names[${i}]: a name is {"name": a phrase or a formula in $...$, or a list of them, "at": the sentence that defines it} or the same with "standard": true in place of "at"`);
+    return { forms: forms.map(f => f.trim()), at: d.at, standard: d.standard === true, scope: d.scope ?? MAIN, site: d.at === undefined ? null : unit(d.at) ?? null, first: null };
+  });
+  const flat = t => String(t).replace(/\s+/g, ''), scopeOf = u => String(u.file ?? '').startsWith('seed:') ? u.file : MAIN;
+  const spans = (prose, form) => { const out = [], a = prose.toLowerCase(), b = form.toLowerCase(); for (let i = a.indexOf(b); i >= 0; i = a.indexOf(b, i + 1)) out.push([i, i + b.length]); return out; };
+  const naming = (u, n) => named.find(d => d.scope === scopeOf(u) && d.forms.some(f => /^\$[\s\S]*\$$/.test(f) ? n.formula !== undefined && flat((u.math || [])[n.formula]) === flat(f.slice(1, -1))
+    : !!n.span && spans(u.prose, f).some(([a, b]) => a <= n.span[0] && n.span[1] <= b))) ?? null;
+  for (const u of doc.units) for (const n of u.numbers || []) { const d = naming(u, n); if (d && !d.first) d.first = u; }
+  for (const d of named) if (!d.first) orphans.push(`name ${d.forms.join(', ')}`);
   for (const u of doc.units) if (u.kind === 'sentence') for (const w of u.prose.split(/\s+/).slice(1)) for (const part of w.split(/[-/–]/)) { const m = /^[("'[]*([A-Z][A-Za-z]*)/.exec(part); if (m) capitals.add(m[1]); }
   // Candidate terms of a unit: its hyphenated compounds and its pairs of adjacent content words, by corpus key.
   // A number word, a roman numeral and a possessive end a phrase: the word after them starts another ("Type III | theories", "fifteen | theories", "the node's | fixed point").
@@ -294,7 +311,7 @@ function context(doc, { lexicon = {}, facts = {}, file, build: builder, baseline
     return entry ? [entry.kind, entry.term, ...(entry.kind === 'ordinary' ? [entry.note] : [])] : n === null ? ['no-corpus'] : [c.compound ? 'compound' : occurs.get(c.key) > 1 ? 'recurrent' : 'once', n, occurs.get(c.key)];
   };
   const lone = k => papers(k) !== null && papers(k) < ATTESTED && !ground(k);          // a compound that is a finding by itself: the pairs containing it add nothing
-  return { hash: doc.hash, unit, used, symbol: k => table.get(k), terms, uses, orphans, facts: facts.facts || {}, file, capitals, baseline, corpus, approved, outline: outlined(doc, plan.main ?? null, plan.seeds), grounds: grounded(doc, plan2.main ?? null, plan2.seeds, { file, bib, sources }),
+  return { hash: doc.hash, unit, used, symbol: k => table.get(k), terms, uses, naming, names: u => named.filter(d => d.first && (d.standard ? d.first === u : d.site === u)), orphans, facts: facts.facts || {}, file, capitals, baseline, corpus, approved, outline: outlined(doc, plan.main ?? null, plan.seeds), grounds: grounded(doc, plan2.main ?? null, plan2.seeds, { file, bib, sources }),
     term: u => candidates(u).filter(c => c.compound || !c.parts.some(lone)).map(c => [c.text, ...status(c)]),
     standard: [...table].filter(([, e]) => e.at === undefined).map(([k, e]) => [e.symbol, k, typeof e.standard === 'string' ? e.standard : null]), symbolPapers: k => corpus() ? symbolPapers(corpus(), k) : null,
     first: k => doc.units.find(u => u.kind === 'sentence' && used(u).has(k)) ?? null, papers: () => corpus()?.documents ?? 0,
@@ -366,18 +383,33 @@ export const CHECKS = {
     units: prose,
     inputs(u, rule, ctx) {
       const uses = ctx.uses.get(u.id) || {};
-      return u.numbers.map(n => {
+      // After the numerals: the names this unit defines, or first uses if they are standard.
+      return [...u.numbers.map(n => {
+        const nm = ctx.naming(u, n);
+        if (nm) return [n.key, 'name', nm.forms[0], nm.standard ? 'standard' : nm.site?.id ?? null, nm.site ? nm.site.index <= u.index : null, nm.site?.where ?? null];
         const id = uses[n.key], f = id === undefined ? null : ctx.facts[id];
         if (!f) return [n.key, id ?? null];
         if (f.file !== undefined) { const text = ctx.file(f.file); return [n.key, id, f, text === null ? null : sha(text), ctx.file(path.posix.join(path.posix.dirname(f.file), 'run.json'))]; }
         const d = ctx.unit(f.at);
         return [n.key, id, f, d?.id ?? null, d ? d.index <= u.index : null, d?.where];
-      });
+      }), ...ctx.names(u).map(d => ['defines', d.forms, d.standard, d.first.id, d.first.text])];
     },
     judge(u, rule, ctx, inputs) {
       const fail = [], pending = [], ask = [];
+      for (const [, forms, standard, , first] of inputs.slice(u.numbers.length)) {
+        const list = forms.map(f => `«${f}»`).join(', ');
+        pending.push(`the name ${list} is declared ${standard ? 'standard' : 'defined here'}: whether ${standard ? 'it is a standard name' : 'this sentence defines it'} needs the independent verdict`);
+        ask.push({ tag: forms[0], q: standard
+          ? `The manuscript declares ${list} a standard name: the numerals in it name something and count or measure nothing, and it needs no definition. Its first use in the manuscript is the unit. Pass if hep-th papers commonly write it with this meaning without defining it, and the unit uses it with that meaning. Fail otherwise.`
+          : `The writer declares ${list} a name defined by the unit: the numerals in it name something (a case, a configuration, an entry of a table) and count or measure nothing. Its first use in the manuscript: «${first}». Pass if the unit defines or introduces what each of these names, and that use reads it as that name. Fail if the unit does not define it, or if the name counts or measures something.` });
+      }
       u.numbers.forEach((n, i) => {
         const [key, id, f, a, b, where] = inputs[i];
+        if (id === 'name') {
+          if (a === null) fail.push(`"${key}" stands in the name «${f}», whose definition site is not in the manuscript`);
+          else if (a !== 'standard' && !b) fail.push(`"${key}" stands in the name «${f}», used before its definition at ${where}`);
+          return;
+        }
         if (!f) return fail.push(id === null ? `"${key}" is not bound to a fact` : `"${key}" is bound to the unknown fact ${id}`);
         if (f.file !== undefined) {
           if (a === null) return fail.push(`"${key}": ${f.file} of fact ${id} does not exist`);
@@ -656,7 +688,7 @@ export function examine(project, paper = 'paper', { build: builder = () => null,
   const print = fingerprint(project, paper), own = print.flat.lines, end = own.findIndex(l => l.text.includes('\\end{document}')), cut = end < 0 ? own.length : end;
   const doc = { ...decompose(extra ? [...own.slice(0, cut), ...extra.lines, ...own.slice(cut)] : own), hash: print.source }, list = rules(project, paper);
   let lexicon = optional(path.join(project, paper, 'LEXICON.json')), facts = optional(path.join(project, paper, 'FACTS.json'));
-  if (extra) { lexicon = { symbols: [...(lexicon.symbols || []), ...extra.symbols], terms: [...(lexicon.terms || []), ...extra.terms] }; facts = { facts: { ...facts.facts, ...extra.facts }, uses: { ...facts.uses, ...extra.uses } }; }
+  if (extra) { lexicon = { symbols: [...(lexicon.symbols || []), ...extra.symbols], terms: [...(lexicon.terms || []), ...extra.terms] }; facts = { facts: { ...facts.facts, ...extra.facts }, uses: { ...facts.uses, ...extra.uses }, names: [...(facts.names || []), ...(extra.names || [])] }; }
   const plan = path.join(project, paper, 'OUTLINE.json'), outline = { main: fs.existsSync(plan) ? json(plan) : null, seeds: extra?.outlines };
   const support = path.join(project, paper, 'GROUNDS.json'), grounds = { main: fs.existsSync(support) ? json(support) : null, seeds: extra?.grounds };
   const dir = path.join(project, paper), bib = bibliography(fs.existsSync(dir) ? fs.readdirSync(dir).filter(n => n.endsWith('.bib')).map(n => read(path.join(dir, n))) : []);

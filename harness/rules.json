@@ -113,9 +113,10 @@
     {
       "id": "number-bound",
       "kind": "number-bound",
-      "source": "design/paper-verification (user, 2026-11-25): every numeral in the prose is bound to a value produced by a calculation",
+      "source": "design/paper-verification (user, 2026-11-25): every numeral in the prose is bound to a value produced by a calculation; a numeral inside a declared name (a case, a configuration, an entry of a table, a standard name) is grounded by the sentence that defines the name or by the literature, judged once (2026-11-26, for the 470 numerals of the pilot draft, most of them names)",
       "fail": [
         { "tex": "We find 204 theories." },
+        { "tex": "Theory 7 is the conifold theory.\n\nThe theories of the table are numbered by their row.\\label{numbered-late}", "facts": { "names": [{ "name": "Theory 7", "at": "label:numbered-late" }] } },
         { "tex": "We find 204 theories.\\label{s}", "facts": { "facts": { "count": { "file": "calc/count.json", "pointer": "/n" } }, "uses": { "label:s": { "204": "count" } } }, "files": { "calc/count.json": "{\"n\": 208}" } }
       ],
       "pass": [
@@ -123,9 +124,11 @@
       ],
       "judge": {
         "fail": [
+          {"tex": "The conifold theory is the best known example.\\label{best-known}\n\nTheory 7 is the conifold theory.", "facts": {"names": [{"name": "Theory 7", "at": "label:best-known"}]}, "item": "Theory 7"},
           {"tex": "The theories fall into nine classes.\\label{count-of-classes}\n\nAll ten classes are listed below.\\label{list-of-classes}", "facts": {"facts": {"classes-counted": {"at": "label:count-of-classes"}}, "uses": {"label:list-of-classes": {"ten": "classes-counted"}}}, "item": "ten"}
         ],
         "pass": [
+          {"tex": "The theories of the table are numbered by their row.\\label{numbered}\n\nTheory 7 is the conifold theory.", "facts": {"names": [{"name": "Theory 7", "at": "label:numbered"}]}, "item": "Theory 7"},
           {"tex": "The quivers fall into six families.\\label{count-of-families}\n\nEach of the six families is treated in turn.\\label{each-family}", "facts": {"facts": {"families-counted": {"at": "label:count-of-families"}}, "uses": {"label:each-family": {"six": "families-counted"}}}, "item": "six"}
         ]
       }

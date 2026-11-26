@@ -458,3 +458,36 @@ test('paper-verify prints the completion table and fails its exit status while a
   } finally { process.exitCode = saved; }
   assert.deepEqual(checkProject(project), []);
 });
+
+// Names that contain numerals (design record, "Names that contain numerals"): a numeral inside a declared name needs no fact,
+// and the declaration is judged once, on the sentence that defines the name or, for a standard name, on its first use.
+test('a numeral inside a declared name needs no fact: the name rests on its definition site or the literature, judged once', t => {
+  const TEX = String.raw`\documentclass{article}
+\begin{document}
+\section{Names}
+The flows of the figure are labelled by the cases drawn there.\label{cases}
+The configurations are named by the R-charges of their fields.\label{conf}
+
+In case (5) both couplings are relevant.\label{use5}
+Configuration $(0,1,4)$ reaches the fixed point.\label{use014}
+The theory has $\mathcal N=1$ supersymmetry.\label{susy}
+In case (3) we find 5 theories.\label{mixed}
+\end{document}
+`;
+  const names = [{ name: ['case (3)', 'case (5)'], at: 'label:cases' }, { name: '$(0,1,4)$', at: 'label:conf' }, { name: '$\\mathcal N=1$', standard: true }];
+  assert.deepEqual(numbers('In case (5) we find 5 theories.', []).map(n => [n.key, n.span]), [['5', [9, 10]], ['5#2', [20, 21]]], 'a numeral keeps where it stands');
+  const { project } = make(t, TEX, { 'paper/VERIFY.json': '{}', 'paper/FACTS.json': { facts: {}, uses: {}, names } });
+  const r = verify(project, 'paper', built), at = l => load(project, 'paper/main.tex').labels[l], v = l => r.state.units[at(l)].checks['number-bound'];
+  assert.deepEqual(failing(r, 'number-bound'), ['"5" is not bound to a fact'], 'only the count fails: the numerals of the names need no fact');
+  assert.deepEqual(['use5', 'use014', 'mixed'].map(l => v(l).v), ['pass', 'pass', 'fail']);
+  assert.deepEqual(['cases', 'conf', 'susy'].map(l => v(l).v), ['pending', 'pending', 'pending'], 'each name is asked once: on its definition, or on the first use of a standard name');
+  assert.match(r.questions.find(q => q.unit === at('cases') && q.family === 'number-bound').items[0].q, /^The writer declares «case \(3\)», «case \(5\)» a name defined by the unit[\s\S]*Its first use in the manuscript: «In case \(5\) both couplings are relevant\.\\label\{use5\}»/);
+  assert.match(r.questions.find(q => q.unit === at('susy') && q.family === 'number-bound').items[0].q, /^The manuscript declares «\$\\mathcal N=1\$» a standard name/);
+  // A name used before its definition, a definition that is not in the manuscript, a name never used, and a declaration that is not one.
+  const with_ = list => { put(project, 'paper/FACTS.json', { facts: {}, uses: {}, names: list }); return verify(project, 'paper', built); };
+  assert.deepEqual(failing(with_([{ name: 'case (5)', at: 'label:mixed' }, ...names.slice(1)]), 'number-bound').sort(), ['"5" stands in the name «case (5)», used before its definition at §1 ¶2 s4', '"3" is not bound to a fact', '"5" is not bound to a fact'].sort());
+  assert.deepEqual(failing(with_([{ name: 'case (5)', at: 'label:nowhere' }]), 'number-bound').filter(e => e.includes('«case (5)»')), ['"5" stands in the name «case (5)», whose definition site is not in the manuscript']);
+  assert.deepEqual(with_([...names, { name: 'theory 99', at: 'label:conf' }]).state.orphans, ['name theory 99']);
+  assert.throws(() => with_([{ name: 'case (5)' }]), /FACTS\.json names\[0\]: a name is/);
+  assert.throws(() => with_([{ name: 'case (5)', at: 'label:cases', standard: true }]), /FACTS\.json names\[0\]: a name is/);
+});

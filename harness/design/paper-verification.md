@@ -1632,3 +1632,52 @@ Open.
   manuscript has only the defect of passages.
 - Sentences with a link to a place of the manuscript (`at`) are not used: in the planted
   copy that place does not exist.
+
+### Names that contain numerals (2026-11-26)
+
+Why. Every numeral of the prose needs a fact, a value of a calculation (`file`) or an
+earlier statement of the manuscript (`at`, judged for every use). Of the 470 numerals of
+the pilot draft (243 of its 448 sentences), most count nothing: case labels ("case (5)",
+78), configurations written as tuples ("$(0,1,4)$", about 60 in 10 forms), entries of
+the appendix tables ("theory 53"), standard names ("$\mathcal N=1$"). Binding each use
+would have meant an entry in `uses` and a question to a judge for every one. The record of
+stage 1 named "a registry of notation that contains a numeral" as the likely remedy and
+left it.
+
+Criterion, set before the code.
+
+1. `FACTS.json` takes `names`: a name (a phrase, or an inline formula in `$...$`, or a
+   list of them) with the sentence that defines it (`at`) or `"standard": true`. A numeral
+   of the prose inside an occurrence of a prose name, or of an inline formula written
+   exactly as a formula name, needs no fact. A numeral beside a name (a count in the same
+   sentence) still does.
+2. Code fails a numeral in a name whose definition site is not in the manuscript or comes
+   after the use, and lists a name that nothing uses among the orphans. A declaration that
+   is not one stops the verification with its reason.
+3. One question to the judge for each name: on its definition site, whether the sentence
+   defines what the name names and the first use reads it so; for a standard name, on its
+   first use, whether hep-th writes it so without definition. Planted texts for the
+   question: a name pointed to a sentence that does not define it (must fail) and one that
+   does (must pass).
+4. The earlier tests pass with the counts that change listed.
+
+Code: `span` and `formula` of a numeral in `harness/tex.mjs`; the registry (`naming`,
+`names`) in `context` and the name inputs and questions of `number-bound` in
+`harness/verify.mjs`; the names of planted texts, each held to its own text, in
+`harness/judge.mjs`; one failing code text and two judge texts in `harness/rules.json`; a
+test in `tests/verify.test.mjs`.
+
+Result. 63 tests pass. By the plan:
+
+1. and 2. Passed in the new test: of the numerals of six sentences, the one count fails and
+   the four in names pass; a name used before its definition, a definition site outside the
+   manuscript, an unused name and two malformed declarations give their reasons.
+3. Passed: the two definition sites and the first use of the standard name await the judge,
+   each with one question. The two planted texts are registered (registration requires that
+   both reach the judge).
+4. One earlier test changed, by the two planted texts in the calls of the number family: a
+   run of the fixture in `tests/judge.test.mjs` answers 57 planted texts instead of 55.
+
+The pilot draft needs its declarations written, about 20 for the forms counted above. Not
+built: a name with a placeholder ("case (n)"), since the list form covers the six cases in
+one declaration.

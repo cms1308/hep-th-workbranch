@@ -262,14 +262,16 @@ function words(token) {
 // Numerals of a sentence in reading order: digits and number words in the prose, numeric sides of inline formulas.
 export function numbers(prose, math) {
   const found = [];
-  for (const m of prose.matchAll(DIGITS)) found.push({ pos: m.index, token: m[0], value: +m[0].replace(/,/g, ''), decimals: (m[0].split('.')[1] || '').length });
-  for (const m of prose.matchAll(WORDS)) found.push({ pos: m.index, token: m[0].toLowerCase(), value: words(m[0]), decimals: 0 });
+  for (const m of prose.matchAll(DIGITS)) found.push({ pos: m.index, end: m.index + m[0].length, token: m[0], value: +m[0].replace(/,/g, ''), decimals: (m[0].split('.')[1] || '').length });
+  for (const m of prose.matchAll(WORDS)) found.push({ pos: m.index, end: m.index + m[0].length, token: m[0].toLowerCase(), value: words(m[0]), decimals: 0 });
   let k = 0;
   for (const m of prose.matchAll(new RegExp(L + 'M' + R, 'g'))) {
-    numericSides(math[k++] || '').forEach((token, j) => found.push({ pos: m.index + j / 1000, token, value: value(token), decimals: /^[-+]?\d+\.\d+$/.test(token) ? token.split('.')[1].length : /^[-+]?\d+$/.test(token) ? 0 : null }));
+    const formula = k;
+    numericSides(math[k++] || '').forEach((token, j) => found.push({ pos: m.index + j / 1000, formula, token, value: value(token), decimals: /^[-+]?\d+\.\d+$/.test(token) ? token.split('.')[1].length : /^[-+]?\d+$/.test(token) ? 0 : null }));
   }
   const seen = {};
-  return found.sort((a, b) => a.pos - b.pos).map(({ pos, ...n }) => { const c = seen[n.token] = (seen[n.token] || 0) + 1; return { ...n, key: c > 1 ? `${n.token}#${c}` : n.token }; });
+  // Where a numeral stands: `span` in the prose, or `formula`, the index of its inline formula (a declared name contains it there).
+  return found.sort((a, b) => a.pos - b.pos).map(({ pos, end, formula, ...n }) => { const c = seen[n.token] = (seen[n.token] || 0) + 1; return { ...n, key: c > 1 ? `${n.token}#${c}` : n.token, ...(formula === undefined ? { span: [pos, end] } : { formula }) }; });
 }
 
 const SKIP = new Set('frac tfrac dfrac sqrt left right big Big bigg Bigg bigl bigr Bigl Bigr biggl biggr Biggl Biggr cdot times div pm mp le leq ge geq neq ne simeq approx sim equiv to rightarrow leftarrow leftrightarrow Rightarrow Leftrightarrow Longrightarrow longrightarrow mapsto in notin subset subseteq supset supseteq cup cap setminus otimes oplus wedge vee propto ll gg lesssim gtrsim cong infty partial nabla hbar sum prod int oint quad qquad ldots cdots dots vdots ddots displaystyle textstyle scriptstyle scriptscriptstyle nonumber notag limits nolimits langle rangle lvert rvert lVert rVert vert Vert mid ast star dagger prime circ bullet forall exists neg not underbrace overbrace hline toprule midrule bottomrule cr bigoplus bigotimes bigwedge bigcup bigcap log ln exp sin cos tan sinh cosh tanh cot sec csc arcsin arccos arctan dim det ker deg gcd min max sup inf lim limsup liminf arg hom Pr mod bmod pmod binom stackrel overset underset iff implies lceil rceil lfloor rfloor allowbreak Longleftrightarrow xrightarrow xleftarrow begin end'.split(' '));

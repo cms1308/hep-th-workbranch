@@ -86,7 +86,7 @@ export function reading(call, value) {
 
 // The registered failing and passing texts of the families asked in a run, as lines and registry entries to append to a copy of the manuscript.
 function plant(list, families, made = []) {
-  const extra = { lines: [], symbols: [], terms: [], facts: {}, uses: {}, outlines: {}, grounds: {} }, samples = [], files = new Map();
+  const extra = { lines: [], symbols: [], terms: [], facts: {}, uses: {}, names: [], outlines: {}, grounds: {} }, samples = [], files = new Map();
   const add = (id, rule, want, s) => {
       const check = CHECKS[rule.kind];
       // A heading ends whatever precedes the text. A judge of a code rule's question sees no heading; a reader rule's text carries its own.
@@ -106,6 +106,7 @@ function plant(list, families, made = []) {
       if (s.grounds) { const had = extra.grounds[files.get(tex)]?.sentences ?? []; extra.grounds[files.get(tex)] = { sentences: [...had, ...(s.grounds.sentences || []).filter(e => !had.some(x => JSON.stringify(x) === JSON.stringify(e)))] }; }
       extra.symbols.push(...(s.lexicon?.symbols || [])); extra.terms.push(...(s.lexicon?.terms || []));
       Object.assign(extra.facts, s.facts?.facts); Object.assign(extra.uses, s.facts?.uses);
+      extra.names.push(...(s.facts?.names || []).map(d => ({ ...d, scope: files.get(tex) })));          // a planted name holds in its own text
       samples.push({ id, rule, want, s, file: files.get(tex) });
   };
   for (const rule of list) {

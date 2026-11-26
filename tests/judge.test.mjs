@@ -71,11 +71,11 @@ test('a call puts one rule family to the judge for many units and carries its pl
   assert.deepEqual(outline[0].entries.flatMap(e => e.items).filter(i => i.expect).map(i => `${i.seed}=${i.expect}`).sort(), ['claim-scope:fail:1=fail', 'claim-scope:fail:2=fail', 'claim-scope:pass:1=pass', 'claim-scope:pass:2=pass', 'entry-delivered:fail:1=fail', 'entry-delivered:pass:1=pass']);
   assert.deepEqual(log.find(call => call.family === 'term-attested').entries.filter(e => !e.planted).length, 3, 'units judged without their paragraph are put together');
   assert.deepEqual(log.find(call => call.family === 'defined-before-use').entries.map(e => [e.unit, e.items.map(i => i.expect).sort()]), [['document', ['fail', null, 'pass']]], 'the planted declarations join the notation of the document');
-  assert.deepEqual(sound.runs.map(r => r.calls.flatMap(c => c.planted).filter(p => p.met).length), [55]);
+  assert.deepEqual(sound.runs.map(r => r.calls.flatMap(c => c.planted).filter(p => p.met).length), [57]);
   assert.deepEqual([sound.result.state.complete, waiting(sound.result.state), sound.result.state.independent.rest], [true, 0, 27]);
   assert.ok(backed(sound.result.state).every(c => c.v === 'pass' && c.by.runs.length === JUDGES && new Set(c.by.runs.map(r => r[0])).size === JUDGES), 'a pass rests on the run of one judge');
-  assert.match(report('demo', sound.result), /Outline: 1 central claim, 1 Section and 3 paragraph entries \(OUTLINE\.json\)\.\nIndependent verdicts: writer claude\. 27 verdicts rest on the runs of the judges recorded on this computer\.[^\n]*\n- run [0-9a-f]{12} \(codex, provider default model\): 14 calls, 55 of 55 planted texts answered as registered, 27 verdicts rest on it\n[\s\S]*Status: verification complete: no failure, nothing unjudged, nothing awaiting the independent verdict\./);
-  assert.match(summary(sound), /Run [0-9a-f]{12} of the judges \(codex, provider default model; writer claude\): 14 calls with 23 units of the manuscript\. Planted texts answered as registered: 55 of 55 \(.*term-attested 4\/4.*\)\. \d+ s of call time, input_tokens 1400, output_tokens 140\./);
+  assert.match(report('demo', sound.result), /Outline: 1 central claim, 1 Section and 3 paragraph entries \(OUTLINE\.json\)\.\nIndependent verdicts: writer claude\. 27 verdicts rest on the runs of the judges recorded on this computer\.[^\n]*\n- run [0-9a-f]{12} \(codex, provider default model\): 14 calls, 57 of 57 planted texts answered as registered, 27 verdicts rest on it\n[\s\S]*Status: verification complete: no failure, nothing unjudged, nothing awaiting the independent verdict\./);
+  assert.match(summary(sound), /Run [0-9a-f]{12} of the judges \(codex, provider default model; writer claude\): 14 calls with 23 units of the manuscript\. Planted texts answered as registered: 57 of 57 \(.*term-attested 4\/4.*\)\. \d+ s of call time, input_tokens 1400, output_tokens 140\./);
   assert.equal((await judge(a.root, 'demo', 'paper', { ...check, runner: () => assert.fail('nothing is left to ask') })).runs.length, 0, 'the declared writer is kept, and a verified text costs no call');
   // The catch list of this judge lacks one seeded defect: the coined label used once.
   const b = make(t);
@@ -84,7 +84,7 @@ test('a call puts one rule family to the judge for many units and carries its pl
   assert.deepEqual([verdicts(lapse.result.state, 'term-attested').filter(v => v === 'pending').length, lapse.result.state.complete], [3, false]);
   assert.ok(Object.values(lapse.result.state.units).every(u => !u.checks['term-attested']?.by), 'no verdict on the rule whose seeded defect the judge missed');
   assert.deepEqual(['number-bound', 'aside-punctuation', 'scope-stated', 'in-place'].map(rule => verdicts(lapse.result.state, rule).every(v => v === 'pass')), [true, true, true, true], 'the other rules, tested by their own planted texts, are judged');
-  assert.match(report('demo', lapse.result), /- run [0-9a-f]{12} \(codex, provider default model\): 14 calls, 54 of 55 planted texts answered as registered \(missed: term-attested:fail:1\), 24 verdicts rest on it; below 9 in 10 and not used for: term-attested/);
+  assert.match(report('demo', lapse.result), /- run [0-9a-f]{12} \(codex, provider default model\): 14 calls, 56 of 57 planted texts answered as registered \(missed: term-attested:fail:1\), 24 verdicts rest on it; below 9 in 10 and not used for: term-attested/);
   assert.match(summary(lapse), /Missed: term-attested:fail:1 in call 13\. The answers of those calls on those rules are not used\. Below 9 in 10, so none of this run's answers is used for: term-attested\./);
   // A judge that fails a text registered as passing is as unfit for that rule as one that misses a defect.
   const c = make(t);
