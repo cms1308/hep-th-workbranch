@@ -23,6 +23,30 @@
           }
         ]
       }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash|Edit|Write|MultiEdit|apply_patch",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"const f=require('node:fs'),p=require('node:path');let d=process.cwd();while(!f.existsSync(p.join(d,'harness','cli.mjs'))){const n=p.dirname(d);if(n===d)throw Error('Cannot locate hep-th harness');d=n;}import(require('node:url').pathToFileURL(p.join(d,'harness','cli.mjs')).href).then(m=>m.entry(['hook']));\"",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash|Edit|Write|MultiEdit|apply_patch",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"const f=require('node:fs'),p=require('node:path');let d=process.cwd();while(!f.existsSync(p.join(d,'harness','cli.mjs'))){const n=p.dirname(d);if(n===d)throw Error('Cannot locate hep-th harness');d=n;}import(require('node:url').pathToFileURL(p.join(d,'harness','cli.mjs')).href).then(m=>m.entry(['hook']));\"",
+            "timeout": 15
+          }
+        ]
+      }
     ]
   }
 }

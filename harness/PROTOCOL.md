@@ -196,9 +196,8 @@ authorized multi-step work solely because of it. Include it in the normal report
   enrolled (its directory holds `VERIFY.json`). For an enrolled manuscript the table
   printed by `paper-verify` is the only evidence of verification a report may cite, and
   the Stop hook blocks the end of a turn that changed it without a complete verification
-  or a declared work in progress (once the tool hooks of
-  [OPERATIONS](OPERATIONS.md#manuscript-verification-gate) are installed, which awaits the
-  user's word). A judge sees a sentence with its paragraph, its headings, the
+  or a declared work in progress (the tool hooks of
+  [OPERATIONS](OPERATIONS.md#manuscript-verification-gate), installed 2026-11-26). A judge sees a sentence with its paragraph, its headings, the
   passages it rests on and the outline, not the rest of the notes, the data or the cited
   sources, and the pilot (stage 5) has not been run: the reading duty above stays in full
   for every manuscript, enrolled or not.

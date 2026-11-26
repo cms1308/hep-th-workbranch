@@ -68,13 +68,15 @@ unverified units for the report to the user). Otherwise the hook answers
 three times and is then released with a warning shown to the user, so the hook cannot
 loop without end. A declaration holds for the text it was made for.
 
-**Not installed yet (2026-11-25).** `node harness/install-hooks.mjs` adds the two tool
-events to `.claude/settings.json` and `.codex/hooks.json` (matcher
-`Bash|Edit|Write|MultiEdit|apply_patch`). This has not been run on this repository: it
-changes the hook configuration of every session, costs one short Node process before and
-after each shell or editing call, and needs the app's trust review, so it waits for the
-user's word. Until then no session is blocked. With no manuscript enrolled the hooks do
-nothing.
+**Installed (2026-11-26, user: "응 hook 설치해").** `node harness/install-hooks.mjs` added
+the two tool events to `.claude/settings.json` and `.codex/hooks.json` (matcher
+`Bash|Edit|Write|MultiEdit|apply_patch`), keeping SessionStart and Stop. They hold in every
+session of this repository, which may need a new session and the app's trust review before
+they run. Each shell or editing call costs one short Node process before and after it:
+about 0.075 s each on this computer with no manuscript enrolled. With no manuscript enrolled
+the hooks record nothing and Stop blocks nothing (checked with simulated events on
+installation). On another computer run the installer once after pulling, if the
+configuration files there were changed by hand.
 
 **Corpus.** The term check reads `.harness-local/corpus.json`, built by
 `node harness/cli.mjs corpus-build` from the wiki sources, which it only reads. The file is
