@@ -314,7 +314,8 @@ export function symbols(formulas, names = []) {
         const m = /^\\([A-Za-z]+|.)/.exec(s.slice(i)), name = m[1];
         i += m[0].length;
         last = false;
-        if (!/^[A-Za-z]/.test(name) || SKIP.has(name)) { if (name === 'begin' || name === 'end') i = args(s, i).end; continue; }
+        // \begin{array}{ll}: the column specification of an environment that takes one is no formula (pilot on susu-quiver: "l" read as a symbol).
+        if (!/^[A-Za-z]/.test(name) || SKIP.has(name)) { if (name === 'begin' || name === 'end') { const env = args(s, i); i = env.end; if (name === 'begin' && /^(?:array|subarray|tabular|alignedat|alignat\*?)$/.test(env.list[0]?.text ?? '')) i = args(s, i).end; } continue; }
         if (NOARG.test(name)) { i = args(s, i).end; continue; }
         const [body, e] = name in FONT || ROMAN.test(name) || name in ACCENT ? one(i) : ['', i];
         i = e;

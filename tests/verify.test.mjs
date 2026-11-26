@@ -108,6 +108,7 @@ test('numerals, numeric formulas, symbols, prose view and candidate terms are ex
   assert.ok(Math.abs(value('-\\frac{7}{2}+\\frac{3\\sqrt{5}}{2}') + 0.1459) < 1e-4);
   assert.deepEqual([...symbols(['SU(N)\\times SU(N)', 'N^{(a)}_{\\rm rank\\text{-}2}', 'N_{\\text{bif}}', '{\\cal N}=1', '\\tilde Q', 'b_0^{(2)}(\\mathcal{A})', '\\text{Type}^{(a)}', 'x \\text{ and } y'], ['SU'])],
     ['SU', 'N', 'N_{rank-2}', 'N_{bif}', '\\mathcal{N}', '\\tilde{Q}', 'b', '\\mathcal{A}', '\\mathrm{Type}', 'x', 'y']);
+  assert.deepEqual([...symbols(['\\begin{array}{ll} x & y \\end{array}'])], ['x', 'y']);      // the column specification is no symbol
   assert.equal(plain('In Section~\\ref{a} \\cite[p.~3]{b} we \\emph{prove} it\\renewcommand{\\arraystretch}{1.4}.'), 'In Section ⟦R⟧ ⟦C⟧ we prove it.');
   const found = terms('In the saddle scenario the symmetry-quotient method counts the one-pair theories.');
   for (const coined of ['saddle scenario', 'symmetry-quotient method', 'one-pair theories']) assert.ok(found.some(x => x.includes(coined)), coined);
