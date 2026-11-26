@@ -1783,3 +1783,106 @@ whose context changed, to codex only; the sentences of the other paragraphs to n
 Open. A heading or the document that both vendors' text enters needs judges of both, even
 when only a sentence under it changed; that is the price of judging a heading against
 everything under it.
+
+### Stage 5, the pilot on susu-quiver (2026-11-26)
+
+Criterion (set with the stages): the origin incidents are in `evals/`, every existing
+evaluation case still passes, and the pilot report lists zero unverified units.
+
+What was done. `projects/susu-quiver/paper` (43 pages, 453 sentences at the end) was enrolled
+and brought to a complete verification by the lead (Claude, writer of the changed text) with
+Codex as the judge (gpt-6.2-astra at effort xhigh). The user's instruction was to revise the
+draft from what the gate finds, not to write it again. The project record is
+`projects/susu-quiver/notes/76-verification-gate-pilot.md`.
+
+1. Registries. `LEXICON.json` (93 symbols, 53 terms), `FACTS.json` (164 facts, 7 name
+   declarations), `OUTLINE.json` (9 claims, 10 sentences of the setting, 81 paragraph entries)
+   and `GROUNDS.json` (one entry for each sentence). The facts and the grounds were first
+   written by seven report-only subagents, each comparing its sentences with the notes, the
+   calculation outputs and the cited sources (22 to 28 minutes and about half a million tokens
+   each). Six cited papers were missing from the wiki and were ingested first.
+2. Code checks. 760 failing verdicts at enrollment (defined-before-use 329, number-bound 243,
+   term-attested 184, and the missing outline and grounds), zero after three batches of edits.
+3. The judge, five passes:
+
+   | pass | calls | call time | input tokens | output tokens | failing verdicts after it |
+   | --- | ---: | ---: | ---: | ---: | ---: |
+   | 1 (whole draft, 4 at a time) | 291 | 26,028 s | 3.74 M | 0.93 M | 166 |
+   | 2 (6 at a time) | 254 | 17,901 s | 3.37 M | 0.74 M | 28 |
+   | 3 | 104 | 6,141 s | 1.54 M | 0.25 M | 8 |
+   | 4 | 40 | 2,219 s | 0.65 M | 0.09 M | 1 |
+   | 5 | 1 | 36 s | 0.01 M | 0.00 M | 0 |
+
+   With a trial call, 691 calls, 14.5 hours of call time (about 3.1 hours of wall time), 9.3
+   million input and 2.0 million output tokens. Planted texts answered as registered: 3606 of
+   3611. The five misses voided the answers of their calls on that rule (five verdicts stayed
+   open until the next pass), and one run of four calls fell below nine in ten on the grounds
+   and was not used for them.
+4. After each pass the lead compared every failing verdict with the manuscript and the
+   records and changed the unit: 112 sentences after pass 1, 18 after pass 2, 4 after pass 3,
+   none after pass 4. The rest were registry corrections (24, 8, 3 and 1 sentences).
+
+Result. `paper-verify` reports no failing verdict, none awaiting and none unjudged, with the
+build passing (source 65f3cba92b8a). The three origin incidents are in `evals/`
+(`scripted-edits-reported-as-pass`, `sentence-left-after-restructuring`,
+`stale-outline-as-plan-input`) and the 65 tests pass.
+
+What the pilot found that the complete reading of the day before had not, in writing the
+grounds and from the judge (details in the project note). An equation that kept one term of order one and dropped another of the same
+order, which is the omission the paper corrects in the work it cites. Two counts ("the two
+theories with a chiral pair" for six, "one flavor assignment" for two). A coefficient
+attributed to the wrong field. Four sentences of the Section on finite-rank tests that stated
+more than the records hold, one of them cut. An exception of a cited criterion that neither
+cited paper states. A property of the cited classification stated as a theorem where the
+source makes a choice. Many sentences that stated a result
+without a restriction it holds under ($W=0$, fixed flavor numbers, the flavor numbers examined,
+an endpoint identified conditionally), the abstract among them: `claim-scope` and
+`scope-stated` failed 63 times in the first pass. Three
+headings that did not cover a paragraph under them, and one paragraph in the wrong Subsection.
+
+Failures that were no defect of the manuscript, and what was changed for them.
+
+- The question on a declared name failed configuration tuples and $\mathcal N=1$, which this
+  design lists as names, on "the name counts or measures something". The question now asks
+  whether a numeral in the name is a result of the manuscript (`harness/verify.mjs`).
+- The column specification of an `array` was read as a symbol (`harness/tex.mjs`, with a test).
+- A stale record quoted as a ground reads as a contradiction: an old generated table in
+  another normalization, an old check script whose class labels are not the Types, and a
+  result entry with the labels of an earlier convention each produced failing verdicts. The
+  entries were pointed to current records, and the result entry was given the current labels.
+- 17 grounds entries had a type that did not fit or lacked the passage that carries the step.
+
+What the gate cannot see, measured here. The judge compares a sentence with the passages its
+entry quotes. That nine of the 208 theories of the census are free in the infrared, while the
+draft gives all 208 an interacting candidate, was found by a subagent that read the census
+output, and no judge failed those sentences: no entry quotes the passage that says so. The
+writer of an entry chooses what the judge is shown.
+
+Open, for the user.
+
+- Standard knowledge has no type. The anomaly conditions, the values of the dual Coxeter
+  number, the scaling of representations with their rank and the opening sentence of the
+  Introduction failed as definition or transition, and no record or cited passage holds them
+  as result or derivation. In the pilot they were reworded as requirements, cut, or replaced by
+  a cited statement. A type for such sentences, judged on whether a reader of the field accepts
+  them without a reference, would remove these failures and the pressure to cut.
+- A cited source without an eprint (two keys of the pilot) cannot be read. The one sentence
+  that cites only such a source rests on a convention of the project record instead.
+- The verdict on a sentence depends on the call. Seven sentences that passed in the first pass
+  failed in the second with the same text and entry, asked again because their paragraph or a
+  linked paragraph had changed, and one declaration of ordinary wording passed in several
+  sentences and failed in one. Each pass therefore adds a few failures of its own, and the
+  count fell as 166, 28, 8, 1, 0.
+- An edit asks more than it changes. One sentence asks its paragraph again under every
+  sentence rule, a changed claim or setting asks every paragraph again, and a grounds verdict
+  is asked again when a paragraph it links to changes. After the edit of 112 sentences the
+  second pass was 254 calls against 291.
+- Restrictions in the abstract. With every restriction of the registered claims the abstract
+  exceeded the arXiv limit of 1,920 characters, and a sentence had to be given up.
+- Registries are costly to keep. Pointers by unit id break at every edit of their sentence;
+  the pilot keeps specs that point by a passage and rebuilds the registries after each edit
+  (`calc/step86/build.mjs`, `regrounds.py` in the project). `paper-outline --skeleton` kept
+  the old number of entries of a Section after a paragraph had been moved out of it. A
+  sentence that stands twice is keyed by its id with a suffix and lost its facts when both
+  copies were reworded. Enrollment takes every overfull box as the baseline, whatever its
+  size: a table that ran 300 points off the page passed, and was found in the build log.
