@@ -41,6 +41,12 @@ export const JUDGE_INSTRUCTIONS = path.join(path.dirname(fileURLToPath(import.me
 const IDLE = ['shell_tool', 'unified_exec', 'multi_agent', 'image_generation', 'goals', 'plugins', 'apps', 'browser_use', 'browser_use_external', 'computer_use', 'in_app_browser',
   'sleep_tool', 'skill_search', 'tool_suggest', 'code_mode_host', 'hooks', 'view_image'];
 const toml = value => JSON.stringify(value);                // a TOML basic string has the escapes of JSON
+// The vendor of the app running this process: Codex marks its shell with CODEX_THREAD_ID (checked first, since a Codex launched
+// from Claude Code inherits CLAUDECODE), Claude Code with CLAUDECODE=1. Null outside both.
+export function runningVendor(env = process.env) {
+  if (env.CODEX_THREAD_ID || env.CODEX_SESSION_ID) return 'codex';
+  return env.CLAUDECODE === '1' ? 'claude' : null;
+}
 // The model and effort the user configured for a provider, which a judge's call passes explicitly since it leaves the configuration out.
 export function configured(provider, env = process.env) {
   try {

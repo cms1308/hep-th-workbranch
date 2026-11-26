@@ -5,7 +5,7 @@ import { ROOT, read, json, wiki, git, safePath, writeJSON } from './core.mjs';
 import { queue, flush } from './checkpoint.mjs';
 import { scanPaper, attest } from './paper.mjs';
 import { runEvidence } from './evidence.mjs';
-import { request, status } from './dispatch.mjs';
+import { request, status, runningVendor } from './dispatch.mjs';
 import { load } from './tex.mjs';
 import { verify, report, stopGate, toolEvent, outlineView, groundsView } from './verify.mjs';
 import { judge, summary } from './judge.mjs';
@@ -47,10 +47,13 @@ export async function main(args = process.argv.slice(2), root = ROOT) {
     const [slug, ...options] = rest;
     const values = {};
     for (let i = 0; i < options.length; i += 2) {
-      if (!['--target', '--reviewer', '--model'].includes(options[i]) || !options[i + 1] || values[options[i]]) throw Error('Expected --target, --reviewer and optional --model, each once');
+      if (!['--target', '--reviewer', '--model'].includes(options[i]) || !options[i + 1] || values[options[i]]) throw Error('Expected --target and optional --reviewer and --model, each once');
       values[options[i]] = options[i + 1];
     }
-    const result = await request(root, slug, values['--target'], values['--reviewer'], { model: values['--model'] });
+    // The reviewer is of the vendor that did not do the work: by default the other one than the app running this command.
+    const own = runningVendor(), reviewer = values['--reviewer'] ?? (own ? { claude: 'codex', codex: 'claude' }[own] : undefined);
+    if (!reviewer) throw Error('Name the reviewer with --reviewer codex|claude: the app running this command is not known');
+    const result = await request(root, slug, values['--target'], reviewer, { model: values['--model'] });
     if (result.state !== 'completed') process.exitCode = 1;
     return result;
   }
@@ -77,7 +80,10 @@ export async function main(args = process.argv.slice(2), root = ROOT) {
     }
     const wip = options.includes('--wip') ? options[options.indexOf('--wip') + 1] : undefined;
     if (options.includes('--wip') && !wip) throw Error('--wip needs the reason the manuscript is unfinished');
-    const result = verify(project, paper, { wip, ...(options.includes('--no-build') ? { build: () => null } : {}) });
+    // The writer of text that is new since the last verification: named, or the app running this command.
+    const named = options.includes('--writer') ? options[options.indexOf('--writer') + 1] : undefined, writer = named ?? runningVendor() ?? undefined;
+    if (options.includes('--writer') && !['claude', 'codex'].includes(named)) throw Error('--writer is claude or codex');
+    const result = verify(project, paper, { wip, ...(writer ? { writer } : {}), ...(options.includes('--no-build') ? { build: () => null } : {}) });
     if (!result.state.complete) process.exitCode = 1;
     return report(slug, result, { pending: options.includes('--pending') });
   }
@@ -99,7 +105,7 @@ export async function main(args = process.argv.slice(2), root = ROOT) {
       else throw Error('Expected --writer <claude|codex> and optional --model <model[,model]>, --batch <n>, --parallel <n>, --limit <n>, --family <id[,id]>, --all-units, --advice, --no-build, --dry-run, each once');
     }
     const count = name => { if (values[name] === undefined) return undefined; const n = Number(values[name]); if (!Number.isInteger(n) || n < 1) throw Error(`${name} needs a positive integer`); return n; };
-    const out = await judge(root, slug, paper, { writer: values['--writer'], models: values['--model']?.split(',') ?? [], batch: count('--batch'), parallel: count('--parallel'), limit: count('--limit'), families: values['--family']?.split(','), all: !!values['--all-units'], advice: !!values['--advice'], dry: !!values['--dry-run'], ...(values['--no-build'] ? { build: () => null } : {}) });
+    const out = await judge(root, slug, paper, { writer: values['--writer'] ?? runningVendor() ?? undefined, models: values['--model']?.split(',') ?? [], batch: count('--batch'), parallel: count('--parallel'), limit: count('--limit'), families: values['--family']?.split(','), all: !!values['--all-units'], advice: !!values['--advice'], dry: !!values['--dry-run'], ...(values['--no-build'] ? { build: () => null } : {}) });
     if (!out.result.state.complete || out.runs.some(r => r.state !== 'done')) process.exitCode = 1;
     return summary(out);
   }
@@ -126,7 +132,7 @@ export async function main(args = process.argv.slice(2), root = ROOT) {
     return result;
   }
   if (cmd === 'hook') return hook(root, jsonInput());
-  throw Error('Commands: review-request <slug> --target <plan|step-N|paper> --reviewer <codex|claude> [--model <model>] | review-status <slug> [id] | review-resume <slug> <id> | paths | check [slug...] | queue <repo> <message> <files...> | flush [--local-only] | paper-scan <slug> | paper-verify <slug> [paper-dir] [--no-build] [--pending] [--wip <reason>] | paper-judge <slug> [paper-dir] --writer <claude|codex> [--model <model[,model]>] [--batch <n>] [--parallel <n>] [--limit <n>] [--family <id[,id]>] [--all-units] [--advice] [--no-build] [--dry-run] | paper-units <slug> [paper-dir] [filter] | paper-outline <slug> [paper-dir] [--skeleton] | paper-grounds <slug> [paper-dir] [--skeleton] | corpus-build [--cutoff <YYYY-MM-DD>] | corpus-count <phrase...> | attest <slug> <map|citations> <reviewer> <note> <ids...> | run <slug> <spec.json> | hook');
+  throw Error('Commands: review-request <slug> --target <plan|step-N|paper> [--reviewer <codex|claude>] [--model <model>] | review-status <slug> [id] | review-resume <slug> <id> | paths | check [slug...] | queue <repo> <message> <files...> | flush [--local-only] | paper-scan <slug> | paper-verify <slug> [paper-dir] [--writer <claude|codex>] [--no-build] [--pending] [--wip <reason>] | paper-judge <slug> [paper-dir] [--writer <claude|codex>] [--model <model[,model]>] [--batch <n>] [--parallel <n>] [--limit <n>] [--family <id[,id]>] [--all-units] [--advice] [--no-build] [--dry-run] | paper-units <slug> [paper-dir] [filter] | paper-outline <slug> [paper-dir] [--skeleton] | paper-grounds <slug> [paper-dir] [--skeleton] | corpus-build [--cutoff <YYYY-MM-DD>] | corpus-count <phrase...> | attest <slug> <map|citations> <reviewer> <note> <ids...> | run <slug> <spec.json> | hook');
 }
 // Never throws: a gate error must not break the provider's hook.
 const guarded = action => { try { return action(); } catch (e) { return { block: '', notes: [`Verification gate error: ${e.message}`] }; } };

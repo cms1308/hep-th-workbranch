@@ -7,9 +7,9 @@ Read `harness/PAPER-REVIEW.md` (with its verification gate), `PAPER-STYLE.md` an
 `harness/AUTOMATION.md`. Write from recorded results and primary sources, not from memory
 of the conversation.
 
-The writer is the app that runs this skill: `claude` in Claude Code, `codex` in Codex.
-The reviewer and the judges are always of the other vendor. Nothing else in these steps
-depends on which app writes.
+Either model may write or edit the manuscript. The CLI records the app that runs it as the
+writer of the text that changed, and takes the reviewer and the judges of each unit from a
+vendor that did not write it.
 
 ## 1. Prerequisites
 
@@ -48,7 +48,7 @@ roles like any other.
 
 - `node harness/cli.mjs paper-verify <slug>`: its first run enrolls the draft. Repeat until
   code finds nothing to fix.
-- `node harness/cli.mjs paper-judge <slug> --writer <writer>`. A failed unit is changed,
+- `node harness/cli.mjs paper-judge <slug>`. A failed unit is changed,
   never overruled. A verdict the writer disputes goes to the user. Changed units are
   verified again.
 
@@ -58,10 +58,10 @@ roles like any other.
 - Read the whole manuscript sentence by sentence against the records (PAPER-REVIEW, "Judge
   every sentence"). The gate and the review do not replace this reading.
 
-## 6. Review by the other vendor
+## 6. Review by the other model
 
-- `node harness/cli.mjs review-request <slug> --target paper --reviewer <other vendor>`.
-  Do not edit the project while it runs.
+- `node harness/cli.mjs review-request <slug> --target paper` (the reviewer is the other
+  vendor's model). Do not edit the project while it runs.
 - Accept only a completed, current report (AUTOMATION). Save it in full with its version
   metadata as `notes/review-paper-<run-id>.md`, and record its scope and unresolved
   findings in STATE.

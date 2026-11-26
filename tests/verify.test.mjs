@@ -11,6 +11,8 @@ import { installHooks, toolMatcher } from '../harness/install-hooks.mjs';
 import { queue, flush } from '../harness/checkpoint.mjs';
 import { hook, main, checkProject } from '../harness/cli.mjs';
 import { settle, sketch } from './judges.mjs';
+// The CLI takes the writer and the reviewer from the app that runs it; these tests run as if outside both.
+for (const k of ['CLAUDECODE', 'CODEX_THREAD_ID', 'CODEX_SESSION_ID']) delete process.env[k];
 
 function temp(t) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'hep verify 한글 '));

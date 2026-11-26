@@ -9,10 +9,12 @@ import path from 'node:path';
 import { load } from '../harness/tex.mjs';
 import { verify, report, standing, rules, ledger, JUDGES } from '../harness/verify.mjs';
 import { judge, summary, prompt, shape, reading, BATCH } from '../harness/judge.mjs';
-import { invocation } from '../harness/dispatch.mjs';
+import { invocation, runningVendor } from '../harness/dispatch.mjs';
 import { fromTex } from '../harness/corpus.mjs';
 import { hook, main } from '../harness/cli.mjs';
 import { answerer, settle } from './judges.mjs';
+// The CLI takes the writer and the reviewer from the app that runs it; these tests run as if outside both.
+for (const k of ['CLAUDECODE', 'CODEX_THREAD_ID', 'CODEX_SESSION_ID']) delete process.env[k];
 
 function temp(t) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'hep judge 한글 '));
@@ -148,7 +150,10 @@ test('a verdict file is accepted only with the run metadata of the CLI: a hand-w
   // ... and with a judge of the writer's vendor: the copied run records name codex as the judge.
   fs.cpSync(ledger(project, 'paper'), ledger(twin.project, 'paper'), { recursive: true });
   assert.equal(verify(twin.project, 'paper', { ...check, writer: 'claude' }).state.complete, true, 'the run records carry the verdicts');
-  assert.deepEqual([verify(twin.project, 'paper', { ...check, writer: 'codex' }).state.complete, backed(stored(twin.project)).length], [false, 0], 'text written by codex is not judged by codex');
+  assert.equal(verify(twin.project, 'paper', { ...check, writer: 'codex' }).state.complete, true, 'a later writer does not take over text it did not change');
+  const third = make(t);
+  fs.cpSync(ledger(project, 'paper'), ledger(third.project, 'paper'), { recursive: true });
+  assert.deepEqual([verify(third.project, 'paper', { ...check, writer: 'codex' }).state.complete, backed(stored(third.project)).length], [false, 0], 'text written by codex is not judged by codex');
   // (c) A run record altered, removed or unreadable. What counts is computed from its calls, not from a summary in it.
   const runs = fs.readdirSync(ledger(project, 'paper')).filter(n => /^[0-9a-f]{12}$/.test(n)).map(n => JSON.parse(fs.readFileSync(path.join(ledger(project, 'paper'), n, 'run.json'), 'utf8'))).sort((x, y) => x.started < y.started ? -1 : 1);
   const record = n => path.join(ledger(project, 'paper'), runs[n].id, 'run.json'), kept = fs.readFileSync(record(0), 'utf8');
@@ -302,8 +307,8 @@ test('a defect the user found is planted in every call of its family from then o
 test('paper-judge needs the writer, plans without a call or an enrollment, and refuses a nested or concurrent run', async t => {
   const { root, project } = make(t), saved = process.exitCode, file = path.join(project, 'paper/VERIFY.json');
   try {
-    await assert.rejects(main(['paper-judge', 'demo', '--no-build'], root), /--writer claude or --writer codex/);
-    await assert.rejects(main(['paper-judge', 'demo', '--writer', 'gemini'], root), /--writer claude or --writer codex/);
+    await assert.rejects(main(['paper-judge', 'demo', '--no-build'], root), /--writer claude\|codex/);
+    await assert.rejects(main(['paper-judge', 'demo', '--writer', 'gemini'], root), /--writer claude\|codex/);
     await assert.rejects(main(['paper-judge', 'demo', '--writer', 'claude', '--batch', '0'], root), /--batch needs a positive integer/);
     await assert.rejects(main(['paper-judge', 'demo', '--writer'], root), /Expected --writer/);
     await assert.rejects(main(['paper-judge', '../demo', '--writer', 'claude'], root), /Invalid project slug/);
@@ -325,4 +330,21 @@ test('paper-judge needs the writer, plans without a call or an enrollment, and r
   assert.deepEqual(during.runs.map(r => [r.provider, r.state, r.models, r.calls.map(c => c.units)]), new Array(JUDGES).fill(['claude', 'done', ['fixture-model'], [1, 1]]), 'text written by codex is judged by claude; a limit bounds the questions asked');
   assert.ok(!fs.existsSync(path.join(ledger(project, 'paper'), 'active.lock')));
   assert.match(summary(during), /\(claude, provider default model \(reported: fixture-model\); writer codex\)/);
+});
+
+// Writers of a unit (design record, "Writers of a unit"): either model may edit the same manuscript.
+test('either model may edit the manuscript: a unit is judged by a vendor that did not write it, and a paragraph both wrote by both', async t => {
+  const { root, project, at } = make(t);
+  assert.equal((await settle(root, check)).result.state.complete, true, 'written by claude and judged by codex');
+  edit(project, 'There the flow reaches the endpoint.', 'There the flow reaches the endpoint quickly.');
+  const log = [], out = await judge(root, 'demo', 'paper', { writer: 'codex', ...check, runner: answerer(undefined, log) });
+  const state = out.result.state, para = Object.entries(state.units).find(([, u]) => u.where === '§1 ¶2')[0];
+  assert.deepEqual([state.units[at('flow')].wrote, state.units[at('use')].wrote, state.units[para].writers], [['codex'], ['claude'], ['claude', 'codex']]);
+  const real = provider => new Set(log.filter(c => c.provider === provider).flatMap(c => c.entries.filter(e => !e.planted).map(e => e.unit)));
+  assert.ok(real('claude').has(at('flow')) && !real('codex').has(at('flow')), 'the sentence codex changed is judged by claude only');
+  assert.ok(real('claude').has(para) && real('codex').has(para), 'the paragraph both wrote is judged by both');
+  assert.ok(![at('count'), at('susy')].some(u => real('claude').has(u) || real('codex').has(u)), 'sentences of the other paragraphs are not asked again');
+  assert.ok(!real('claude').has(at('use')), 'a sentence claude wrote, asked again for its changed paragraph, is judged by codex only');
+  assert.equal(state.complete, true);
+  assert.deepEqual([runningVendor({ CLAUDECODE: '1' }), runningVendor({ CLAUDECODE: '1', CODEX_THREAD_ID: 'x' }), runningVendor({})], ['claude', 'codex', null], 'a Codex launched from Claude Code is Codex');
 });

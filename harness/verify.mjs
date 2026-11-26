@@ -756,14 +756,14 @@ export function outlineView(project, paper = 'paper', { skeleton = false } = {})
 // The answers of the judges, read from the run records the CLI wrote on this computer. Every call carries the planted texts of
 // the rules it asks. An answer on a rule counts when its call answered every planted text of that rule as registered (a seeded
 // defect among them), when its run answered FIT of that rule's planted texts as registered, and when its judge is not of the
-// writer's vendor. Everything is computed from the calls of the record, never from a summary stored in it.
-export function recorded(project, paper, writer) {
+// vendor of a writer of the unit (settle). Everything is computed from the calls of the record, never from a summary stored in it.
+export function recorded(project, paper) {
   const dir = ledger(project, paper), index = new Map(), runs = new Map(), found = [];
   for (const name of fs.existsSync(dir) ? fs.readdirSync(dir) : []) {
     try { const run = json(path.join(dir, name, 'run.json')); if (run.id === name && run.tool === JUDGE && Array.isArray(run.calls)) found.push(run); } catch { /* not a run record */ }
   }
   for (const run of found.sort((a, b) => `${a.started} ${a.id}` < `${b.started} ${b.id}` ? -1 : 1)) {
-    if (!writer || run.writer !== writer || run.provider === writer || run.advice) continue;         // a run of advice holds no verdict
+    if (run.advice) continue;                                                                        // a run of advice holds no verdict
     const calls = run.calls.filter(c => c.state === 'ok'), tally = {};
     for (const c of calls) for (const p of c.planted || []) { const t = tally[p.rule] ||= { planted: 0, met: 0 }; t.planted++; if (p.met === true) t.met++; }
     const fit = rule => !!tally[rule] && tally[rule].met * FIT[1] >= tally[rule].planted * FIT[0];
@@ -772,7 +772,7 @@ export function recorded(project, paper, writer) {
       const kept = Object.fromEntries(Object.entries(a.items || {}).filter(([, x]) => fit(x.rule) && sound(c, x.rule)));
       if (!Object.keys(kept).length) continue;
       const key = `${a.unit}|${c.family}|${a.key}`;
-      index.set(key, [...(index.get(key) || []), { run: run.id, n: c.n, model: run.requestedModel ?? MODEL, answers: kept }]);
+      index.set(key, [...(index.get(key) || []), { run: run.id, n: c.n, provider: run.provider, model: run.requestedModel ?? MODEL, answers: kept }]);
     }
     const sum = pick => Object.values(tally).reduce((n, t) => n + t[pick], 0);
     runs.set(run.id, { id: run.id, time: run.started, provider: run.provider, model: run.requestedModel ?? null, ...(run.configured ? { configured: run.configured } : {}), models: run.models || [], calls: run.calls.length, planted: sum('planted'), met: sum('met'),
@@ -781,6 +781,29 @@ export function recorded(project, paper, writer) {
   return { index, runs };
 }
 export const MODEL = 'default';                          // how a judge is told apart when no model was named for its run
+export const AUTHORS = ['claude', 'codex'];                // the vendors whose models write and judge
+export const judgeKey = (provider, model) => `${provider}:${model ?? MODEL}`;
+// Whether a judge of `provider` may give a verdict on a unit written by `writers`: not one of them, unless both vendors wrote it
+// (then each judges it, independent of the other's part). A unit whose writer is unknown has no eligible judge.
+export const eligible = (writers = [], provider) => writers.length > 0 && (AUTHORS.every(v => writers.includes(v)) || !writers.includes(provider));
+// Who wrote each unit: a sentence or title keeps the vendor recorded for its text (`wrote`) while the text is unchanged, and new or
+// changed text is the writer's of this verification. A paragraph, a heading (with all that stands under it) and the document are
+// written by every vendor that wrote one of their sentences (`writers`), which decides who may judge their questions.
+function authorship(doc, old, writer) {
+  const wrote = new Map(), writers = new Map(), leaf = u => u.kind === 'sentence' || u.kind === 'title';
+  for (const u of doc.units) if (leaf(u)) { const had = old?.units?.[u.id]?.wrote; wrote.set(u.id, had?.length ? had : writer ? [writer] : []); }
+  const union = ids => [...new Set(ids.flatMap(id => wrote.get(id) ?? []))].sort();
+  for (const u of doc.units) if (u.kind === 'sentence') writers.set(u.id, union([u.id]));
+  for (const u of doc.units) if (u.kind === 'paragraph') writers.set(u.id, union(u.sentences));
+  doc.units.forEach((u, i) => {
+    if (u.kind !== 'title') return;
+    const under = [];
+    for (let j = i + 1; j < doc.units.length && !(doc.units[j].kind === 'title' && doc.units[j].level <= u.level); j++) if (leaf(doc.units[j])) under.push(doc.units[j].id);
+    writers.set(u.id, union([u.id, ...under]));
+  });
+  writers.set('document', union([...wrote.keys()]));
+  return { wrote, writers };
+}
 // The model a run asked for: one named for it, else the one configured for the provider (passed explicitly by the call), else the provider's default.
 export const judgeModel = (named, conf) => `${named ? `model ${named}` : conf?.model ? `configured model ${conf.model}` : 'provider default model'}${conf?.effort ? ` at effort ${conf.effort}` : ''}`;
 const judgeName = r => `${r.provider}, ${judgeModel(r.model, r.configured)}${r.models?.length ? ` (reported: ${r.models.join(', ')})` : ''}`;
@@ -790,13 +813,16 @@ const judgeName = r => `${r.provider}, ${judgeModel(r.model, r.configured)}${r.m
 function settle(units, questions, rec, judges) {
   const used = new Map();
   for (const q of questions) {
-    const records = rec.index.get(`${q.unit}|${q.family}|${q.key}`) || [];
+    const records = (rec.index.get(`${q.unit}|${q.family}|${q.key}`) || []).filter(b => eligible(units[q.unit].writers, b.provider));
+    const mixed = AUTHORS.every(v => (units[q.unit].writers || []).includes(v));
     q.lacks = {};
     for (const rule of new Set(q.items.map(i => i.rule))) {
       const c = units[q.unit].checks[rule], items = q.items.filter(i => i.rule === rule), seen = new Set();
       const read = records.filter(b => items.every(i => b.answers[i.id])).map(b => ({ ...b, bad: items.filter(i => b.answers[i.id].v === 'fail') })), failed = read.filter(b => b.bad.length);
-      const votes = read.filter(b => b.bad.length || (!seen.has(b.model) && seen.add(b.model)));
-      if (!failed.length && seen.size < judges) q.lacks[rule] = seen;
+      const votes = read.filter(b => b.bad.length || (!seen.has(judgeKey(b.provider, b.model)) && seen.add(judgeKey(b.provider, b.model))));
+      // A unit both vendors wrote passes only when a judge of each passes it: each is independent of the other's part.
+      const enough = seen.size >= judges && (!mixed || AUTHORS.every(v => [...seen].some(k => k.startsWith(`${v}:`))));
+      if (!failed.length && !enough) q.lacks[rule] = seen;
       if (!votes.length) continue;
       c.by = { q: q.key, runs: votes.map(b => [b.run, b.n, b.bad.length ? 'fail' : 'pass']) };
       for (const b of votes) used.set(b.run, (used.get(b.run) || 0) + 1);
@@ -804,7 +830,7 @@ function settle(units, questions, rec, judges) {
         c.v = 'fail';
         c.e = failed.flatMap(b => b.bad.map(i => { const a = b.answers[i.id], who = `judge ${judgeName(rec.runs.get(b.run))} (run ${b.run})`;
           return `${i.tag === i.id ? '' : `${i.tag}: `}${who} fails it: ${a.reason} Evidence: "${a.evidence}"`; }));
-      } else if (seen.size >= judges) { c.v = 'pass'; delete c.e; }
+      } else if (enough) { c.v = 'pass'; delete c.e; }
     }
     q.open = Object.keys(q.lacks).length > 0;
   }
@@ -818,11 +844,14 @@ function required(project, paper) {
 }
 
 // Judge every (unit, rule) pair whose content or dependencies changed; keep the other verdicts; take the independent verdicts from the run records.
-// writer: the vendor whose model wrote the manuscript (the last declaration is kept when omitted); a judge of that vendor supplies no verdict.
+// writer: the vendor whose model wrote the text that is new since the last verification (the last declaration when omitted); the
+// vendors that wrote a unit supply no verdict on it, unless both did.
 export function verify(project, paper = 'paper', { build: builder = () => build(project, paper), corpus = () => storedCorpus(path.resolve(project, '..', '..')), sources, wip, writer, dry = false, now = new Date() } = {}) {
   const old = sealed(project, paper) ? json(stateFile(project, paper)) : null, id = crypto.randomBytes(4).toString('hex');
   const { print, doc, ctx, list, units, questions, advice, judged, total } = examine(project, paper, { build: builder, corpus, ...(sources ? { sources } : {}), baseline: old?.baseline ?? null, prior: (unit, rule) => old?.units?.[unit]?.checks?.[rule], run: id });
-  const who = writer ?? declaredWriter(project, paper), rec = recorded(project, paper, who), judges = required(project, paper), used = settle(units, questions, rec, judges);
+  const who = writer ?? declaredWriter(project, paper), rec = recorded(project, paper), judges = required(project, paper), by = authorship(doc, old, who);
+  for (const [unit, u] of Object.entries(units)) { if (by.wrote.has(unit)) u.wrote = by.wrote.get(unit); u.writers = by.writers.get(unit) ?? []; }
+  const used = settle(units, questions, rec, judges);
   const tally = list.filter(rule => !CHECKS[rule.kind].advice).map(rule => Object.values(units).reduce((c, u) => (u.checks[rule.id] && c[u.checks[rule.id].v]++, c), { id: rule.id, kind: rule.kind, pass: 0, fail: 0, pending: 0, unjudged: 0 }));
   const pick = (...which) => Object.entries(units).flatMap(([unit, u]) => Object.entries(u.checks).filter(([, c]) => which.includes(c.v)).map(([rule, c]) => ({ unit, rule, where: u.where, at: u.at, verdict: c.v, evidence: c.e })));
   const sentences = doc.units.filter(prose), lit = ctx.corpus(), open = pick('fail', 'unjudged'), awaiting = pick('pending');

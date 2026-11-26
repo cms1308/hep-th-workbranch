@@ -320,9 +320,15 @@ first works on it. No user-approval step is added.
   verdict. A verdict is judged again only when its unit, its rule or what it depends on
   changed (a definition site, a bound fact, the calculation output, the attestation of one
   of its terms). A rebuilt corpus changes only the verdicts whose grounds it changes.
-- **Independent verdicts.** `node harness/cli.mjs paper-judge <slug> [paper-dir] --writer
-  <claude|codex>` asks judges of the vendor that did not write the manuscript. The writer is
-  a declaration, kept after the first run and printed in every report. Asked are the
+- **Independent verdicts.** `node harness/cli.mjs paper-judge <slug> [paper-dir]` asks,
+  for each unit, judges of a vendor that did not write it. Either model may edit the
+  manuscript: every sentence and title keeps the vendor that wrote its text while the text is
+  unchanged, and new or changed text is the writer's of the verification that first sees it
+  (the app running `paper-verify` or `paper-judge`, or `--writer <claude|codex>` outside
+  both). A paragraph, a heading with what stands under it and the document are written by
+  every vendor whose sentences they hold, and a question on one that both wrote passes only
+  when a judge of each vendor passes it. A unit whose writer is unknown is put to no judge.
+  Asked are the
   grounds of every sentence with a sound entry (`sentence-grounds`), the
   registered `judge` rules (harness-wide `scope-stated`, which accepts a restriction in
   the sentence, earlier in its paragraph or in the headings above it, `in-place` and

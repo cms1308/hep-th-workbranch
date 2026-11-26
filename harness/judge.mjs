@@ -12,7 +12,7 @@ import crypto from 'node:crypto';
 import { json, sha, safePath, writeJSON } from './core.mjs';
 import { execute, invocation, collect, configured } from './dispatch.mjs';
 import { load as storedCorpus } from './corpus.mjs';
-import { verify, examine, report, ledger, declaredWriter, family, designates, target, judgeModel, CHECKS, JUDGE, MODEL, CRITERIA, FIT, SHORTER } from './verify.mjs';
+import { verify, examine, report, ledger, declaredWriter, family, designates, target, judgeModel, eligible, judgeKey, CHECKS, JUDGE, MODEL, CRITERIA, FIT, SHORTER } from './verify.mjs';
 
 export const VENDORS = ['claude', 'codex'];
 export const BATCH = 25;                                 // units judged without their paragraph that one call holds, by default
@@ -273,12 +273,13 @@ async function run({ project, paper, slug, dir, writer, provider, model, setting
 // Questions a run has to ask: a rule of them still needs a judge and the model of this run has not passed it, and (unless
 // `all`) code finds nothing to fix in the unit first. For advice: the search for a better sentence, for the units whose
 // verdicts have all passed.
-function needed(result, { families, all, advice, model }) {
+function needed(result, { families, all, advice, model, provider }) {
   const verdicts = q => Object.values(result.state.units[q.unit].checks).map(c => c.v), named = q => !families || families.includes(q.family);
+  const may = q => eligible(result.state.units[q.unit].writers, provider);            // the vendor that wrote a unit does not judge it
   // A question that shows the outline waits until code finds nothing to fix in the outline of the document, of the Section and of the paragraph.
   const grounded = q => (q.needs || []).every(([unit, rule]) => { const c = result.state.units[unit]?.checks[rule]; return !c || c.by || !['fail', 'unjudged'].includes(c.v); });
-  if (advice) return result.advice.filter(q => named(q) && (all || verdicts(q).every(v => v === 'pass')));
-  return result.questions.filter(q => Object.values(q.lacks).some(passed => !passed.has(model ?? MODEL)) && named(q) && (all || (grounded(q) && (q.unit === 'document' || !verdicts(q).some(v => v === 'fail' || v === 'unjudged')))));
+  if (advice) return result.advice.filter(q => may(q) && named(q) && (all || verdicts(q).every(v => v === 'pass')));
+  return result.questions.filter(q => may(q) && Object.values(q.lacks).some(passed => !passed.has(judgeKey(provider, model))) && named(q) && (all || (grounded(q) && (q.unit === 'document' || !verdicts(q).some(v => v === 'fail' || v === 'unjudged')))));
 }
 function acquire(lock) {
   for (let attempt = 0; attempt < 2; attempt++) {
@@ -301,31 +302,38 @@ export async function judge(root, slug, paper = 'paper', { writer, models = [], 
   if (process.env.HEP_REVIEW_CHILD) throw Error('Nested judge dispatch is prohibited');
   if (typeof slug !== 'string' || !/^[a-zA-Z0-9_-]+$/.test(slug) || !/^paper[A-Za-z0-9_-]*$/.test(paper)) throw Error('Invalid project slug or paper directory');
   const project = safePath(root, `projects/${slug}`), who = writer ?? declaredWriter(project, paper);
-  if (!VENDORS.includes(who)) throw Error('Name the vendor whose model wrote the manuscript with --writer claude or --writer codex: the judges are taken from the other vendor.');
-  const provider = VENDORS.find(v => v !== who), dir = ledger(project, paper), lit = corpus ? corpus() : storedCorpus(root);
-  // A call leaves the user's configuration out, so it is given the model and effort configured there. An injected judge (tests) reads none.
-  const settings = runner === execute ? configured(provider) : {};
-  const check = { ...(build ? { build } : {}), ...(sources ? { sources } : {}), corpus: () => lit, writer: who }, out = { slug, paper, writer: who, provider, runs: [], plan: null };
+  if (!VENDORS.includes(who)) throw Error('The writer of the text that changed is not known: run this from Claude Code or Codex, or name it with --writer claude|codex. Each unit is judged by a vendor that did not write it.');
+  const other = VENDORS.find(v => v !== who), dir = ledger(project, paper), lit = corpus ? corpus() : storedCorpus(root);
+  const check = { ...(build ? { build } : {}), ...(sources ? { sources } : {}), corpus: () => lit, writer: who }, out = { slug, paper, writer: who, provider: other, runs: [], plan: null };
   fs.mkdirSync(dir, { recursive: true });
   const lock = path.join(dir, 'active.lock');
   acquire(lock);
   // Votes recorded so far: a run that adds none is not repeated in the same invocation.
   const votes = result => Object.values(result.state.units).reduce((n, u) => n + Object.values(u.checks).reduce((m, c) => m + (c.by?.runs.length || 0), 0), 0);
   try {
+    // The other vendor judges the text this writer wrote; this writer's vendor then judges what the other vendor wrote, if any awaits it.
+    for (const provider of [other, who]) {
+    // A call leaves the user's configuration out, so it is given the model and effort configured there. An injected judge (tests) reads none.
+    const settings = runner === execute ? configured(provider) : {};
     for (let seat = 0, before = -1, only = null; ; seat++) {
       const result = verify(project, paper, { ...check, dry }), judges = result.state.independent.judges, model = models.length ? models[seat % models.length] : null;
-      const need = needed(result, { families, all, advice, model }).filter(q => !only || only.has(`${q.unit}|${q.family}`)).slice(0, limit);
+      const need = needed(result, { families, all, advice, model, provider }).filter(q => !only || only.has(`${q.unit}|${q.family}`)).slice(0, limit);
       if (seat >= (advice ? 1 : 2 * judges) || !need.length || votes(result) === before) break;
       before = votes(result);
       if (limit < Infinity) only ||= new Set(need.map(q => `${q.unit}|${q.family}`));          // a limit fixes the questions of the whole invocation
       if (dry) {
         const count = {};
         for (const q of need) count[q.family] = (count[q.family] || 0) + 1;
-        out.plan = { questions: need.length, families: count, calls: new Set(need.map(q => q.context ? `${q.family}|${q.context}|${q.headings.join('>')}` : `${q.family}|${Math.floor(need.filter(x => x.family === q.family).indexOf(q) / batch)}`)).size,
-          note: `the calls of one run of a judge: one for each paragraph and rule family, and one for every ${batch} units that are judged without their paragraph; each call carries the planted texts of its family${advice ? '; advice is one run and gives no verdict' : `, and a question needs ${judges === 1 ? 'one passing judge' : `${judges} passing judges of different models`}`}` };
+        const plan = { questions: need.length, families: count, calls: new Set(need.map(q => q.context ? `${q.family}|${q.context}|${q.headings.join('>')}` : `${q.family}|${Math.floor(need.filter(x => x.family === q.family).indexOf(q) / batch)}`)).size,
+          note: `the calls of one run of a judge: one for each paragraph and rule family, and one for every ${batch} units that are judged without their paragraph; each call carries the planted texts of its family${advice ? '; advice is one run and gives no verdict' : `, and a question needs ${judges === 1 ? 'one passing judge' : `${judges} passing judges of different models`}`}; a unit is judged by a vendor that did not write it, and by both if both wrote it` };
+        // The plan of each vendor's judges, summed.
+        if (!out.plan) out.plan = { ...plan, judges: { [provider]: plan.questions } };
+        else out.plan = { ...out.plan, questions: out.plan.questions + plan.questions, calls: out.plan.calls + plan.calls, judges: { ...out.plan.judges, [provider]: plan.questions },
+          families: Object.fromEntries([...new Set([...Object.keys(out.plan.families), ...Object.keys(count)])].map(f => [f, (out.plan.families[f] || 0) + (count[f] || 0)])) };
         break;
       }
       out.runs.push(await run({ project, paper, slug, dir, writer: who, provider, model, settings, need, list: result.list, check, batch, parallel, timeout, runner, gate: result.state.hash, state: result.state, advice }));
+    }
     }
     out.result = verify(project, paper, { ...check, dry });
     // The replacements a judge wrote, from the calls in which it also improved the planted wordy sentence.

@@ -71,8 +71,9 @@ projects/<slug>/
                  Korean on request
 /pause           checkpoint before ending a session
 ```
-Every command is the same in Claude and in Codex. The app that runs it is the author of
-the work; review and the independent verdicts are always by the other vendor.
+Every command is the same in Claude and in Codex, and either model may edit the same
+manuscript or calculation. The CLI records the app that runs it as the author of what
+changed; review and the independent verdicts are always by a vendor that did not write it.
 
 If the user says they are about to clear/end the session, run the `/pause` protocol
 without being asked.

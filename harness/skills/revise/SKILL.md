@@ -5,9 +5,9 @@ description: Change a project's manuscript — a specified edit or referee respo
 
 Read `harness/PAPER-REVIEW.md` and, for prose, `PAPER-STYLE.md`. Keep the user's intended
 scope and work in proportion to the change: a local edit needs the surrounding paragraphs
-and targeted searches, not a pass over the whole draft. The writer of a change is the app
-that runs this skill (`claude` in Claude Code, `codex` in Codex); its judges and reviewer
-are of the other vendor.
+and targeted searches, not a pass over the whole draft. Either model may edit any
+manuscript: the CLI records the app that runs it as the writer of what changed, and its
+judges and reviewer are of the other vendor.
 
 ## Kinds of request
 
@@ -38,8 +38,7 @@ are of the other vendor.
    new or questionable attributions.
 3. In an enrolled manuscript (its directory holds `VERIFY.json`), give the changed sentences
    their entries (grounds, facts, names, lexicon, outline), then run
-   `node harness/cli.mjs paper-verify <slug>` and `paper-judge <slug> --writer <writer>`
-   for what changed. During the review loop of paper, or after a substantive change,
+   `node harness/cli.mjs paper-verify <slug>` and `paper-judge <slug>` for what changed. During the review loop of paper, or after a substantive change,
    request the other vendor's review as paper describes.
 4. Compile after source changes and check the affected references and layout. Record a
    standing decision only when the edit establishes one. Update STATE, checkpoint, and

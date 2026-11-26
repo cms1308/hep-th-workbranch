@@ -5,6 +5,8 @@ import os from 'node:os';
 import path from 'node:path';
 import { request, status, invocation, execute, configured, JUDGE_INSTRUCTIONS } from '../harness/dispatch.mjs';
 import { git, write, writeJSON } from '../harness/core.mjs';
+// The CLI takes the writer and the reviewer from the app that runs it; these tests run as if outside both.
+for (const k of ['CLAUDECODE', 'CODEX_THREAD_ID', 'CODEX_SESSION_ID']) delete process.env[k];
 
 function fixture(t) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'hep-dispatch-'));

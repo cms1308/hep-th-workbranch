@@ -1738,3 +1738,48 @@ safety" 0.07, "consistent | interacting fixed-point" 0.034) and four are not ter
 ("type i" 0.024, "term comes" 0.005, "condition reads" 0.002, "invariants built" 0.001). A
 share near 0.03 would separate this sample, but it would be fitted to it, and a missed
 coinage costs more than a declaration, so the share stays at 0.2.
+
+### Writers of a unit (2026-11-26)
+
+Why. The gate recorded one writer for a whole manuscript and used only the runs made for that
+writer (`recorded` skipped every other run). If a second model edited a manuscript and
+declared itself the writer, every earlier verdict was dropped and the whole text, the first
+model's included, went to the first model's judges: text judged by its own author. The user
+removed the project rule that kept each model to its own draft ("없애, 같은 원고를 누가
+고쳐도 되게 해", 2026-11-26), so the gate has to know who wrote each part.
+
+Criterion, set before the code.
+
+1. Every sentence and title keeps the vendor that wrote its text (`wrote` in `VERIFY.json`)
+   while the text is unchanged; new or changed text belongs to the writer of the verification
+   that first sees it. A paragraph, a heading with what stands under it, and the document
+   are written by every vendor whose sentences they hold (`writers`).
+2. An answer counts only from a judge of a vendor that did not write the unit. A unit both
+   vendors wrote passes only when a judge of each passes it. A unit whose writer is unknown
+   gets no verdict.
+3. `paper-judge` asks the other vendor's judges first and then this writer's vendor for text
+   the other vendor wrote; the dry-run plan sums both.
+4. The CLI takes the writer (`paper-verify`, `paper-judge`) and the reviewer (`review-request`)
+   from the app running it: Codex marks its shell with `CODEX_THREAD_ID` (checked first,
+   since a Codex launched from Claude Code inherits `CLAUDECODE`), Claude Code with
+   `CLAUDECODE=1`, measured in both apps; `--writer` and `--reviewer` name them outside both.
+   The skills mention no vendor.
+5. Tests: the earlier tests pass with the changes listed, and a manuscript written by claude
+   and edited by codex is judged as above.
+
+Code: `authorship`, `eligible`, `judgeKey` and `AUTHORS` in `harness/verify.mjs`, with
+`recorded` no longer filtered by writer and `settle` choosing answers by the unit's writers;
+`needed` and the loop over vendors in `harness/judge.mjs`; `runningVendor` in
+`harness/dispatch.mjs`; the defaults in `harness/cli.mjs`; a test in `tests/judge.test.mjs`.
+
+Result. 65 tests pass. Two earlier assertions changed: "text written by codex is not judged by
+codex" now verifies a fresh copy first written by codex (a later writer no longer takes over
+text it did not change), and the message for an unknown writer. The three test files that call
+the CLI clear the app markers, so they run alike in either app. In the new test, after codex
+edits one sentence of a manuscript claude wrote and codex judged: that sentence is put to
+claude only; its paragraph, now written by both, to both; the other sentence of the paragraph,
+whose context changed, to codex only; the sentences of the other paragraphs to nobody.
+
+Open. A heading or the document that both vendors' text enters needs judges of both, even
+when only a sentence under it changed; that is the price of judging a heading against
+everything under it.

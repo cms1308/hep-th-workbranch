@@ -2,7 +2,9 @@
 
 `/solve` has each plan and step reviewed, and `/paper` the manuscript, by the model of the
 vendor that did not do the work: in Claude Code the reviewer is `codex`, in Codex it is
-`claude`. The same skills drive the loop in either app; the CLI dispatches one review at a
+`claude`. `review-request` takes that reviewer by default from the app running it (Codex marks
+its shell with `CODEX_THREAD_ID`, Claude Code with `CLAUDECODE=1`); `--reviewer` names it
+outside both. The same skills drive the loop in either app; the CLI dispatches one review at a
 time.
 If a new skill is not discovered until app restart, explicitly read its shared
 `harness/skills/<name>/SKILL.md`. No desktop chat is created or switched automatically.
@@ -62,7 +64,10 @@ or paper attestations are performed by the launcher.
 `node harness/cli.mjs paper-judge <slug> [paper-dir] --writer <claude|codex>` uses the same
 launcher for the verification gate ([PAPER-REVIEW](PAPER-REVIEW.md#verification-gate),
 [OPERATIONS](OPERATIONS.md#manuscript-verification-gate)). It differs from a review in
-four ways. The judge is always of the vendor that did not write the manuscript. A call
+four ways. Each unit is judged by a vendor that did not write it: the CLI records the writer
+of every sentence and title (the app running `paper-verify` or `paper-judge`, or `--writer`),
+and a paragraph, heading or document question that both vendors' text enters is judged by
+both. A call
 puts one rule family to the judge for many units from its prompt alone, in an empty
 directory outside the repository, with no tools (Claude) or the read-only sandbox and no
 stored session (Codex), and returns one object that the generated schema of that call

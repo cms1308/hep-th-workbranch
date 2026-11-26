@@ -16,8 +16,8 @@ flush only the files changed by this task as described in `harness/OPERATIONS.md
 
 Precondition: `PROJECT.md` and `STATE.md` of the project have been read this session.
 Scope: the step(s) the user asked for; if unspecified, the next unchecked plan step.
-The calculating app is the lead: `claude` in Claude Code, `codex` in Codex. Its reviewer is
-always the other vendor (commands, acceptance and recovery in `harness/AUTOMATION.md`).
+Either model may lead. The CLI sends each review to the vendor other than the app that runs
+it (commands, acceptance and recovery in `harness/AUTOMATION.md`).
 User sign-off of the formulation stays the user's; a model's plan review does not replace it.
 
 Before each nontrivial calculation read `harness/EVIDENCE.md`, prepare the
@@ -52,8 +52,8 @@ For each step:
    dependency and decision rules rather than accumulating completed-step notes.
    Run `node harness/cli.mjs check <slug>`; report remaining findings honestly.
 6. **Review by the other vendor.** Before the first step of a plan that has not been
-   reviewed, run `node harness/cli.mjs review-request <slug> --target plan --reviewer
-   <other vendor>`; after each step is checkpointed, `--target step-N`. Do not edit the
+   reviewed, run `node harness/cli.mjs review-request <slug> --target plan`; after each step
+   is checkpointed, `--target step-N`. Do not edit the
    project while it runs. Accept only a completed, current report (AUTOMATION), save it in
    full as `notes/review-<target>-<run-id>.md`, and update STATE, RESULTS and
    OPEN-QUESTIONS by research-review's record rules.
