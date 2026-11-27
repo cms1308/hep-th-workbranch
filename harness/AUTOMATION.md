@@ -12,6 +12,7 @@ If a new skill is not discovered until app restart, explicitly read its shared
 ```
 node harness/cli.mjs review-request example --target plan --reviewer codex
 node harness/cli.mjs review-request example --target step-3 --reviewer codex
+node harness/cli.mjs review-request example --target project --reviewer codex
 node harness/cli.mjs review-request example --target paper --reviewer claude
 node harness/cli.mjs review-status example
 node harness/cli.mjs review-resume example <run-id>

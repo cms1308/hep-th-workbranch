@@ -43,6 +43,14 @@ for (const provider of ['codex', 'claude']) test(`${provider} records a valid re
   assert.equal(status(root, 'example', run.id).current, false);
 });
 
+test('project target is dispatched with the project review', async t => {
+  const { root } = fixture(t);
+  const run = await request(root, 'example', 'project', 'codex', { runner: async (_, __, options) => {
+    assert.ok(options.prompt.includes('Target: project') && options.prompt.includes('for project its project review')); response('codex', options);
+  } });
+  assert.equal(run.state, 'completed');
+});
+
 test('concurrent dispatch is rejected and changed inputs cannot pass', async t => {
   const { root, project } = fixture(t);
   const result = await request(root, 'example', 'plan', 'codex', { runner: async (_, __, options) => {
