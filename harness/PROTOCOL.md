@@ -135,6 +135,20 @@ The sibling containing `Index.md` and `wiki/` is the primary knowledge source
   is reported with its failure. A negative conclusion states the methods actually tried
   and is not generalized beyond them. Scope approvals for new data, physics ranges,
   papers and releases still apply.
+- **The data the question needs are made** (user rule, 2026-11-27). What a project
+  computes or generates is set by what its question needs, never by what already exists
+  or is cheap. "What exists first, new data later and on a condition" is not an order of
+  work in any project. A source, catalogue or engine that is missing is the first task
+  (find the source, ingest it, build it); it is not a reason to leave data out, to narrow
+  the scope to what a database or an earlier question happens to hold, to stop at the
+  cases a paper prints tables for, or to turn data the user asked for into a later,
+  optional or test-only item. Data taken over from an earlier question are named as such
+  to the user before they are used, with what they were made for. An approval that new
+  data need is asked for at once, with the data named, and is not designed around. Cost
+  is measured and reported while the data are made; alone it reorders nothing. Origin:
+  schur-central-charges ran on the records of an earlier question under one cut, called
+  new algebras a later test and stopped at $D_6$ because one source prints its tables
+  that far; the user learned of it from the first page of the finished report.
 
 ## State discipline
 
@@ -225,6 +239,16 @@ authorized multi-step work solely because of it. Include it in the normal report
 ## Conventions
 
 - Interact with the user in Korean; write all artifacts (STATE, notes, paper) in English.
+- **Briefings: the key points, all of them, and nothing that was not asked** (user rule,
+  2026-11-27). A briefing, an answer or a report to the user is short and complete. It
+  says what is being done and on what ground: which data are used, whether they were made
+  for this question or taken over, how and why they were selected, what the result is and
+  what is not done. Nothing the user needs in order to follow is left out, and nothing
+  the user did not ask is added. A choice the user has not been told of, with its ground,
+  counts as not made. A report states the selection of its data and the ground for it
+  where the data are introduced. Origin: the user did not know that
+  schur-central-charges had made no new data, and its report gave no ground for the
+  selection of its data.
 - **No automatic Codex side panels (user, 2026-11-16).** Do not open or focus a right-side
   panel, preview, editor, browser tab or other app window unless the user explicitly
   requests that UI action. Creating, editing, compiling or checking a file is not a
