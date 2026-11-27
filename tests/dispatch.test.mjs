@@ -32,6 +32,9 @@ for (const provider of ['codex', 'claude']) test(`${provider} records a valid re
   const { root, project } = fixture(t); let count = 0;
   const run = await request(root, 'example', 'step-3', provider, { runner: async (_, args, options) => {
     count++; assert.ok(options.prompt.includes('step-3')); response(provider, options);
+    // The snapshot is named by HEAD and its file; the hashes of every file stay out of the prompt, whose length a provider caps.
+    assert.ok(options.prompt.includes(git(project, ['rev-parse', 'HEAD']).trim()) && options.prompt.includes(path.join(options.dir, 'run.json')));
+    assert.ok(!options.prompt.includes(JSON.parse(fs.readFileSync(path.join(options.dir, 'run.json'), 'utf8')).snapshot.files['PLAN.md']));
   } });
   assert.equal(run.state, 'completed'); assert.equal(run.sessionId, 'test');
   assert.equal(status(root, 'example', run.id).current, true);
