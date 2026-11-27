@@ -135,6 +135,19 @@ The sibling containing `Index.md` and `wiki/` is the primary knowledge source
   is reported with its failure. A negative conclusion states the methods actually tried
   and is not generalized beyond them. Scope approvals for new data, physics ranges,
   papers and releases still apply.
+- **Every choice of a design carries its ground; a choice without one is named as such**
+  (user rule, 2026-11-27). In a formulation, a design or a plan, every chosen value and
+  restriction (a number of data points, a cut, a list of cases, a size of a model, a
+  threshold) is written with its ground and the kind of ground: the question itself, a
+  measurement (with its run), or a cited source. "It is convenient", "it keeps what
+  exists" and "it was so before" are not grounds. A value with no ground is not proposed
+  as a value: it is measured first, or it is put to the user as open and named as a
+  choice without a ground, before anything is built on it. The lead does this without
+  being asked, lists the choices without a ground first when a design is presented, and
+  sends a design to the plan review of the other vendor's model before presenting it as
+  ready. Origin: schur-central-charges proposed 4,566 units per type, the size of the
+  largest type at hand, in a design whose stated principle was that every choice has a
+  measured ground; the user had to ask whether the number had one.
 - **The data the question needs are made** (user rule, 2026-11-27). What a project
   computes or generates is set by what its question needs, never by what already exists
   or is cheap. "What exists first, new data later and on a condition" is not an order of

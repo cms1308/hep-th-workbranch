@@ -42,6 +42,14 @@ fallbacks. Identify missing inputs and unjustified restrictions of parameter spa
 Check that the proposed checks can distinguish success from failure. Give concrete
 corrections with file/section references; do not rewrite PROJECT or PLAN during review.
 
+List every chosen value and restriction of the plan (numbers of data points, cuts, lists
+of cases, sizes, thresholds) with the ground the plan states for it and the kind of
+ground: the question itself, a measurement with its run, or a cited source. A choice
+whose ground is convenience, habit or what already exists, or that has none, is a
+blocking finding unless the plan names it to the user as a choice without a ground.
+Check also that data taken over from an earlier question are named as such, and that
+nothing the question needs is left out or postponed because it does not exist yet.
+
 ## Project review
 
 The target is the project as a whole, read against the question in PROJECT and STATE.
