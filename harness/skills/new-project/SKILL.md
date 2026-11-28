@@ -86,8 +86,8 @@ additions of step 5.
    new section outline, `notes/00-import.md` as the import audit (inventory, result-by-result
    support status, discrepancies, what was not verified), PLAN with the done steps checked,
    and every imported result in RESULTS tagged **[imported — verified here: yes/no]**.
-6. **Offer verification.** Propose which imported results to verify first (cheap,
-   load-bearing or shaky) as the first `/solve` steps; the user decides and the plan
+6. **Offer verification.** Propose which imported results to verify first (load-bearing
+   or shaky) as the first `/solve` steps; the user decides and the plan
    records it. An imported result loses its tag only after passing a check in this harness.
    An imported draft is enrolled in the verification gate when `/paper` or `/revise` first
    works on it.

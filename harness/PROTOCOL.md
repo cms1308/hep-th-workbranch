@@ -162,6 +162,15 @@ The sibling containing `Index.md` and `wiki/` is the primary knowledge source
   schur-central-charges ran on the records of an earlier question under one cut, called
   new algebras a later test and stopped at $D_6$ because one source prints its tables
   that far; the user learned of it from the first page of the finished report.
+- **Physical meaning orders the work; cost is no ground** (user rule, 2026-11-28). The
+  next step of a project, and every proposal or recommendation of one, is chosen by what
+  it settles about the physics of the question: the physically meaningful step first.
+  That a step is inexpensive, quick or small is never a ground for choosing it, for
+  putting it before another or for recommending it, and is not offered to the user as
+  one. Cost is measured and reported as a fact beside the ground; alone it orders
+  nothing. Origin: n1-landscape-statistics recommended a check of merged classes as
+  inexpensive and as the one open item that could bear on the dataset's counts; the user
+  ruled that cost is no ground for any next step.
 
 ## State discipline
 
